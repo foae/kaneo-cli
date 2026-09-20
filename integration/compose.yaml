@@ -1,0 +1,59 @@
+# Disposable acceptance environment only. Never deploy these test credentials.
+# Digests resolved 2026-09-20; image identity is not API-spec compatibility proof.
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:3c5c8892d184f738f4fe282d14ddaa613a38f00f4189d2d94725ebe6f2909ddb
+    environment:
+      POSTGRES_DB: kaneo
+      POSTGRES_USER: kaneo
+      POSTGRES_PASSWORD: local-acceptance-only
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U kaneo -d kaneo]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  kaneo:
+    image: ghcr.io/usekaneo/kaneo@sha256:a85a23996c36166cfcebcb4ee161b40cc62c7b924faf06353684a84d5e84162c
+    ports:
+      - "127.0.0.1:15173:5173"
+      - "127.0.0.1:19000:19000"
+      - "127.0.0.1:19001:19001"
+    environment:
+      KANEO_CLIENT_URL: http://localhost:15173
+      KANEO_API_URL: http://localhost:15173/api
+      POSTGRES_DB: kaneo
+      POSTGRES_USER: kaneo
+      POSTGRES_PASSWORD: local-acceptance-only
+      AUTH_SECRET: local-acceptance-only-not-for-production-0123456789abcdef
+      DEVICE_AUTH_CLIENT_IDS: kaneo-cli
+      DISABLE_EMAIL_OTP_SIGN_IN: "true"
+      S3_ENDPOINT: http://localhost:19000
+      S3_BUCKET: kaneo-uploads
+      S3_ACCESS_KEY_ID: acceptance
+      S3_SECRET_ACCESS_KEY: local-acceptance-only
+      S3_REGION: us-east-1
+      S3_FORCE_PATH_STYLE: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, --no-verbose, --tries=1, --spider, http://127.0.0.1:5173/api/health]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    # Share loopback so presigned localhost URLs work in both API and host clients.
+    network_mode: service:kaneo
+    command: server /data --address :19000 --console-address :19001
+    environment:
+      MINIO_ROOT_USER: acceptance
+      MINIO_ROOT_PASSWORD: local-acceptance-only
+    volumes:
+      - minio_data:/data
+volumes:
+  postgres_data:
+  minio_data:

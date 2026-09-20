@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "openapi": {
+    "local_path": "api/openapi.json",
+    "official_url": "https://kaneo.app/docs/openapi.json",
+    "retrieved_at": "2026-09-20T20:01:45Z",
+    "sha256": "a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e",
+    "operation_count_observed": 162,
+    "upstream_repository": "https://github.com/usekaneo/kaneo",
+    "upstream_path": "apps/docs/openapi.json",
+    "upstream_source_commit": "ca70c72c4ed5585d0e4ffc3baf692def6f44d185",
+    "upstream_source_commit_url": "https://github.com/usekaneo/kaneo/commit/ca70c72c4ed5585d0e4ffc3baf692def6f44d185",
+    "upstream_main_commit_verified": "0982593b8206622c6f7e9bf774d39207bcf002b9",
+    "upstream_raw_url": "https://raw.githubusercontent.com/usekaneo/kaneo/ca70c72c4ed5585d0e4ffc3baf692def6f44d185/apps/docs/openapi.json",
+    "source_relationship": "Verified from usekaneo/kaneo apps/docs/docs.json at main commit 0982593b8206622c6f7e9bf774d39207bcf002b9: its API Reference tab sets openapi to openapi.json. The official kaneo.app/docs/openapi.json fetch and the pinned upstream source both had the recorded SHA-256."
+  },
+  "license": {
+    "spdx": "MIT",
+    "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/main/LICENSE",
+    "notice": "MIT License\n\nCopyright (c) 2024 Andrej Acevski\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
+  },
+  "supplements": {
+    "device_authorization": {
+      "official_url": "https://kaneo.app/docs/api-reference/authentication",
+      "local_path": "api/authentication.md",
+      "snapshot_url": "https://kaneo.app/docs/api-reference/authentication.md",
+      "sha256": "565e05be3dbaf58157f263a9d95ecac77f1cc7f99c21d8d98e146a747bc1f49a",
+      "snapshot_retrieved_at": "2026-09-20T20:12:23Z",
+      "retrieved_at": "2026-09-20T20:01:45Z",
+      "scope": "Documentation supplement only; it is not an OpenAPI operation and is not included in operation_count_observed.",
+      "facts": [
+        "The guide describes RFC 8628 device authorization for CLI and external-app browser sign-in.",
+        "It documents POST /api/auth/device/code, browser approval, then POST /api/auth/device/token; the issued token is sent as Authorization: Bearer <token>.",
+        "It states that self-hosted Kaneo allows the built-in device client IDs kaneo-cli and kaneo-mcp by default, and other IDs require DEVICE_AUTH_CLIENT_IDS approval."
+      ],
+      "gaps": [
+        "The vendored OpenAPI snapshot contains GET /auth/device but does not contain the documented POST /auth/device/code or POST /auth/device/token endpoints, so neither is mapped as an OpenAPI operation.",
+        "The authentication guide gives examples and polling error names but does not establish this CLI's final client ID, storage policy, browser-launch behavior, or complete machine-readable request and response schemas.",
+        "The guide says all API endpoints require authentication, while individual OpenAPI operations can override inherited security; future implementation must follow the endpoint-level OpenAPI security declaration and verify live behavior."
+      ]
+    }
+  }
+}

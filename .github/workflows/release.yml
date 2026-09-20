@@ -1,0 +1,169 @@
+name: release
+
+on:
+  workflow_call:
+    inputs:
+      verified_sha:
+        description: Exact SHA that the caller verified and cross-built.
+        required: true
+        type: string
+
+# The caller grants these permissions explicitly. This workflow is only called
+# from trusted main CI after verify and cross complete for the exact SHA.
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: kaneo-cli-release
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    outputs:
+      enabled: ${{ steps.readiness.outputs.enabled }}
+    steps:
+      - name: Check out the verified SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.verified_sha }}
+          fetch-depth: 0
+      - name: Assert caller and checkout SHA agree
+        env:
+          EXPECTED_SHA: ${{ inputs.verified_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_SHA" = "$EXPECTED_SHA"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - id: readiness
+        name: Read the reviewed release gate
+        run: |
+          set -euo pipefail
+          enabled=$(jq -r '.enabled | if type == "boolean" then . else error("enabled must be boolean") end' release/readiness.json)
+          jq -e '.requiredEvidence | type == "array" and length >= 5' release/readiness.json >/dev/null
+          printf 'enabled=%s\n' "$enabled" >>"$GITHUB_OUTPUT"
+
+  publish:
+    needs: gate
+    # This is the mechanical disabled-by-default gate: no tag, publishing,
+    # attestation, or formula PR job can run unless reviewed readiness is true.
+    if: needs.gate.outputs.enabled == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the verified SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.verified_sha }}
+          fetch-depth: 0
+      - name: Assert exact SHA before every remote mutation
+        env:
+          EXPECTED_SHA: ${{ inputs.verified_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_SHA" = "$EXPECTED_SHA"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          check-latest: false
+      - name: Install and verify pinned svu
+        env:
+          SVU_VERSION: v3.3.0
+        run: |
+          set -euo pipefail
+          go install github.com/caarlos0/svu/v3@"$SVU_VERSION"
+          go version -m "$(go env GOPATH)/bin/svu" | awk '$1 == "mod" && $2 == "github.com/caarlos0/svu/v3" && $3 == "v3.3.0" { found = 1 } END { exit !found }'
+      - id: version
+        name: Plan the release version
+        env:
+          EXPECTED_SHA: ${{ inputs.verified_sha }}
+        run: |
+          set -euo pipefail
+          plan=$(go run ./internal/cmd/release plan --json)
+          releasing=$(jq -er '.release | tostring' <<<"$plan")
+          printf 'release=%s\n' "$releasing" >>"$GITHUB_OUTPUT"
+          if test "$releasing" = false; then exit 0; fi
+          version=$(jq -er '.nextTag' <<<"$plan")
+          # svu v3.3.0 reads .svu.yml; --v0 prevents an automatic 1.0.0.
+          configured=$(svu next)
+          explicit=$(svu next --v0)
+          test "$configured" = "$explicit"
+          if jq -e '.currentTag != ""' <<<"$plan" >/dev/null; then
+            test "$version" = "$configured"
+          else
+            test "$version" = v0.1.0
+          fi
+          printf 'tag=%s\n' "$version" >>"$GITHUB_OUTPUT"
+      - id: recovery
+        if: steps.version.outputs.release == 'true'
+        name: Refuse ambiguous same-tag recovery
+        env:
+          EXPECTED_SHA: ${{ inputs.verified_sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          state=$(release/recover.sh '${{ steps.version.outputs.tag }}' "$EXPECTED_SHA")
+          printf 'state=%s\n' "$state" >>"$GITHUB_OUTPUT"
+      - name: Create immutable release tag
+        if: steps.recovery.outputs.state == 'fresh'
+        env:
+          EXPECTED_SHA: ${{ inputs.verified_sha }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git tag --annotate "$TAG" "$EXPECTED_SHA" --message "Release $TAG"
+          git push origin "refs/tags/$TAG"
+      - name: Publish immutable archives and checksums
+        if: steps.recovery.outputs.state == 'fresh'
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
+        with:
+          distribution: goreleaser
+          version: v2.18.0
+          args: release --clean --config .goreleaser.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attest published artifacts
+        if: steps.recovery.outputs.state == 'fresh'
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-name: kaneo-cli-release-artifacts
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/kaneo-cli_*_checksums.txt
+      - name: Generate a formula from published checksums
+        if: steps.recovery.outputs.state == 'fresh'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: foae/kaneo-cli
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = foae/kaneo-cli
+          release/formula.sh "$TAG" Formula/kaneo-cli.rb
+      - name: Open the formula update pull request
+        if: steps.recovery.outputs.state == 'fresh'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          TAP_URL: https://github.com/foae/kaneo-cli
+        run: |
+          set -euo pipefail
+          branch="chore/homebrew-${TAG}"
+          test "$GITHUB_REPOSITORY" = foae/kaneo-cli
+          test -z "$(git ls-remote --heads origin "$branch")" || { printf '%s\n' "formula branch already exists: $branch" >&2; exit 1; }
+          git switch --create "$branch"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add Formula/kaneo-cli.rb
+          git commit --message "chore(homebrew): update kaneo-cli ${TAG}"
+          git push origin "$branch"
+          body=$(printf "Generated from immutable release checksums for %s. Tap: %s; install with brew install foae/kaneo-cli/kaneo-cli." "$TAG" "$TAP_URL")
+          gh pr create --repo foae/kaneo-cli --base main --head "$branch" --title "chore(homebrew): update kaneo-cli ${TAG}" --body "$body"

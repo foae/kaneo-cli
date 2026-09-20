@@ -1,0 +1,1142 @@
+{
+  "schema_version": 1,
+  "status_values": [
+    "planned"
+  ],
+  "operations": [
+    {
+      "method": "GET",
+      "path": "/instance/status",
+      "group": "instance",
+      "action": "get-status",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/get-session",
+      "group": "auth",
+      "action": "get-session",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/asset/{id}",
+      "group": "asset",
+      "action": "download",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/user/avatar/{id}",
+      "group": "user",
+      "action": "download-avatar",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/config",
+      "group": "config",
+      "action": "get",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/accept-invitation",
+      "group": "org",
+      "action": "accept-invitation",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/add-team-member",
+      "group": "org",
+      "action": "add-team-member",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/cancel-invitation",
+      "group": "org",
+      "action": "cancel-invitation",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/check-slug",
+      "group": "org",
+      "action": "check-slug",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/create",
+      "group": "org",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/create-role",
+      "group": "org",
+      "action": "create-role",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/create-team",
+      "group": "org",
+      "action": "create-team",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/delete",
+      "group": "org",
+      "action": "delete",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/delete-role",
+      "group": "org",
+      "action": "delete-role",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/get-active-member",
+      "group": "org",
+      "action": "get-active-member",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/get-active-member-role",
+      "group": "org",
+      "action": "get-active-member-role",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/get-full-organization",
+      "group": "org",
+      "action": "get-full",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/get-invitation",
+      "group": "org",
+      "action": "get-invitation",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/get-role",
+      "group": "org",
+      "action": "get-role",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/has-permission",
+      "group": "org",
+      "action": "check-permission",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/invite-member",
+      "group": "org",
+      "action": "invite-member",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/leave",
+      "group": "org",
+      "action": "leave",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/list",
+      "group": "org",
+      "action": "list",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/list-invitations",
+      "group": "org",
+      "action": "list-invitations",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/list-members",
+      "group": "org",
+      "action": "list-members",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/list-roles",
+      "group": "org",
+      "action": "list-roles",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/list-team-members",
+      "group": "org",
+      "action": "list-team-members",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/list-teams",
+      "group": "org",
+      "action": "list-teams",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/list-user-invitations",
+      "group": "org",
+      "action": "list-user-invitations",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/organization/list-user-teams",
+      "group": "org",
+      "action": "list-user-teams",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/reject-invitation",
+      "group": "org",
+      "action": "reject-invitation",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/remove-member",
+      "group": "org",
+      "action": "remove-member",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/remove-team",
+      "group": "org",
+      "action": "remove-team",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/remove-team-member",
+      "group": "org",
+      "action": "remove-team-member",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/set-active",
+      "group": "org",
+      "action": "set-active",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/set-active-team",
+      "group": "org",
+      "action": "set-active-team",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/update",
+      "group": "org",
+      "action": "update",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/update-member-role",
+      "group": "org",
+      "action": "update-member-role",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/update-role",
+      "group": "org",
+      "action": "update-role",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/organization/update-team",
+      "group": "org",
+      "action": "update-team",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/device",
+      "group": "auth",
+      "action": "get-device-authorization-page",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/mcp/register",
+      "group": "mcp",
+      "action": "register-oauth-client",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/mcp/authorize",
+      "group": "mcp",
+      "action": "start-authorization",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/mcp/authorize/request/{requestId}",
+      "group": "mcp",
+      "action": "get-authorization-request",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/mcp/authorize/request/{requestId}",
+      "group": "mcp",
+      "action": "decide-authorization-request",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth/id-token",
+      "group": "oauth",
+      "action": "get-id-token",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/project",
+      "group": "project",
+      "action": "list",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/project",
+      "group": "project",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/project/{id}",
+      "group": "project",
+      "action": "get",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/project/{id}",
+      "group": "project",
+      "action": "update",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/project/{id}",
+      "group": "project",
+      "action": "delete",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/project/reorder",
+      "group": "project",
+      "action": "reorder",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/project/{id}/archive",
+      "group": "project",
+      "action": "archive",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/project/{id}/unarchive",
+      "group": "project",
+      "action": "unarchive",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/task/tasks/{projectId}",
+      "group": "task",
+      "action": "list",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/task/bulk",
+      "group": "task",
+      "action": "bulk-update",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/task/{projectId}",
+      "group": "task",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/task/{id}",
+      "group": "task",
+      "action": "get",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/task/{id}",
+      "group": "task",
+      "action": "update",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/task/{id}",
+      "group": "task",
+      "action": "delete",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/task/move/{id}",
+      "group": "task",
+      "action": "move",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/task/export/{projectId}",
+      "group": "task",
+      "action": "export",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/task/import/{projectId}",
+      "group": "task",
+      "action": "import",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/task/status/{id}",
+      "group": "task",
+      "action": "update-status",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/task/priority/{id}",
+      "group": "task",
+      "action": "update-priority",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/task/assignee/{id}",
+      "group": "task",
+      "action": "update-assignee",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/task/due-date/{id}",
+      "group": "task",
+      "action": "update-due-date",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/task/title/{id}",
+      "group": "task",
+      "action": "update-title",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/task/image-upload/{id}",
+      "group": "task",
+      "action": "create-image-upload",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/task/image-upload/{id}/finalize",
+      "group": "task",
+      "action": "finalize-image-upload",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/task/description/{id}",
+      "group": "task",
+      "action": "update-description",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/column/{projectId}",
+      "group": "column",
+      "action": "list",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/column/{projectId}",
+      "group": "column",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/column/reorder/{projectId}",
+      "group": "column",
+      "action": "reorder",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/column/{id}",
+      "group": "column",
+      "action": "update",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/column/{id}",
+      "group": "column",
+      "action": "delete",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/activity/{taskId}",
+      "group": "activity",
+      "action": "list-task",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/activity/create",
+      "group": "activity",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/activity/comment",
+      "group": "activity",
+      "action": "create-comment",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/activity/comment",
+      "group": "activity",
+      "action": "update-comment",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/activity/comment",
+      "group": "activity",
+      "action": "delete-comment",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/comment/{taskId}",
+      "group": "comment",
+      "action": "list-task",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/comment/{taskId}",
+      "group": "comment",
+      "action": "create-task",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/comment/{id}",
+      "group": "comment",
+      "action": "update",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/comment/{id}",
+      "group": "comment",
+      "action": "delete",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/time-entry/task/{taskId}",
+      "group": "time-entry",
+      "action": "list-task",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/time-entry/{id}",
+      "group": "time-entry",
+      "action": "get",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/time-entry/{id}",
+      "group": "time-entry",
+      "action": "update",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/time-entry",
+      "group": "time-entry",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/label/task/{taskId}",
+      "group": "label",
+      "action": "list-task",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/label/workspace/{workspaceId}",
+      "group": "label",
+      "action": "list-workspace",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/label",
+      "group": "label",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/label/{id}",
+      "group": "label",
+      "action": "get",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/label/{id}",
+      "group": "label",
+      "action": "update",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/label/{id}",
+      "group": "label",
+      "action": "delete",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/label/{id}/task",
+      "group": "label",
+      "action": "attach-task",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/label/{id}/task",
+      "group": "label",
+      "action": "detach-task",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/notification",
+      "group": "notification",
+      "action": "list",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/notification",
+      "group": "notification",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/notification/{id}/read",
+      "group": "notification",
+      "action": "mark-read",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/notification/read-all",
+      "group": "notification",
+      "action": "mark-all-read",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/notification/clear-all",
+      "group": "notification",
+      "action": "clear-all",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/notification-preferences",
+      "group": "notification-preference",
+      "action": "get",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/notification-preferences",
+      "group": "notification-preference",
+      "action": "update",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/notification-preferences/workspaces/{workspaceId}",
+      "group": "notification-preference",
+      "action": "upsert-workspace-rule",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/notification-preferences/workspaces/{workspaceId}",
+      "group": "notification-preference",
+      "action": "delete-workspace-rule",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/search",
+      "group": "search",
+      "action": "global",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/github-integration/app-info",
+      "group": "github",
+      "action": "get-app-info",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/github-integration/repositories/{projectId}",
+      "group": "github",
+      "action": "list-repositories",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/github-integration/verify",
+      "group": "github",
+      "action": "verify-installation",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/github-integration/project/{projectId}",
+      "group": "github",
+      "action": "get-integration",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/github-integration/project/{projectId}",
+      "group": "github",
+      "action": "create-integration",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/github-integration/project/{projectId}",
+      "group": "github",
+      "action": "update-integration",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/github-integration/project/{projectId}",
+      "group": "github",
+      "action": "delete-integration",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/github-integration/import-issues",
+      "group": "github",
+      "action": "import-issues",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/gitea-integration/repositories",
+      "group": "gitea",
+      "action": "list-repositories",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/gitea-integration/verify",
+      "group": "gitea",
+      "action": "verify-access",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/gitea-integration/project/{projectId}",
+      "group": "gitea",
+      "action": "get-integration",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/gitea-integration/project/{projectId}",
+      "group": "gitea",
+      "action": "create-integration",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/gitea-integration/project/{projectId}",
+      "group": "gitea",
+      "action": "update-integration",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/gitea-integration/project/{projectId}",
+      "group": "gitea",
+      "action": "delete-integration",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/gitea-integration/import-issues",
+      "group": "gitea",
+      "action": "import-issues",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/generic-webhook-integration/project/{projectId}",
+      "group": "webhook",
+      "action": "get-integration",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/generic-webhook-integration/project/{projectId}",
+      "group": "webhook",
+      "action": "create-integration",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/generic-webhook-integration/project/{projectId}",
+      "group": "webhook",
+      "action": "update-integration",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/generic-webhook-integration/project/{projectId}",
+      "group": "webhook",
+      "action": "delete-integration",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/discord-integration/project/{projectId}",
+      "group": "discord",
+      "action": "get-integration",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/discord-integration/project/{projectId}",
+      "group": "discord",
+      "action": "create-integration",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/discord-integration/project/{projectId}",
+      "group": "discord",
+      "action": "update-integration",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/discord-integration/project/{projectId}",
+      "group": "discord",
+      "action": "delete-integration",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/mattermost-integration/project/{projectId}",
+      "group": "mattermost",
+      "action": "get-integration",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/mattermost-integration/project/{projectId}",
+      "group": "mattermost",
+      "action": "create-integration",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/mattermost-integration/project/{projectId}",
+      "group": "mattermost",
+      "action": "update-integration",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/mattermost-integration/project/{projectId}",
+      "group": "mattermost",
+      "action": "delete-integration",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/slack-integration/project/{projectId}",
+      "group": "slack",
+      "action": "get-integration",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/slack-integration/project/{projectId}",
+      "group": "slack",
+      "action": "create-integration",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/slack-integration/project/{projectId}",
+      "group": "slack",
+      "action": "update-integration",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/slack-integration/project/{projectId}",
+      "group": "slack",
+      "action": "delete-integration",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/telegram-integration/project/{projectId}",
+      "group": "telegram",
+      "action": "get-integration",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/telegram-integration/project/{projectId}",
+      "group": "telegram",
+      "action": "create-integration",
+      "status": "planned"
+    },
+    {
+      "method": "PATCH",
+      "path": "/telegram-integration/project/{projectId}",
+      "group": "telegram",
+      "action": "update-integration",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/telegram-integration/project/{projectId}",
+      "group": "telegram",
+      "action": "delete-integration",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/task-relation/{taskId}",
+      "group": "task-relation",
+      "action": "list-task",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/task-relation",
+      "group": "task-relation",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/task-relation/{id}",
+      "group": "task-relation",
+      "action": "delete",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/external-link/task/{taskId}",
+      "group": "external-link",
+      "action": "list-task",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/workflow-rule/{projectId}",
+      "group": "workflow-rule",
+      "action": "list-project",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/workflow-rule/{projectId}",
+      "group": "workflow-rule",
+      "action": "upsert-project",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/workflow-rule/{id}",
+      "group": "workflow-rule",
+      "action": "delete",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/invitation/pending",
+      "group": "invitation",
+      "action": "list-pending",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/invitation/{id}",
+      "group": "invitation",
+      "action": "get",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/workspace/{workspaceId}/members",
+      "group": "workspace",
+      "action": "list-members",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/custom-field/project/{projectId}",
+      "group": "custom-field",
+      "action": "list-project",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/custom-field/project/{projectId}/values",
+      "group": "custom-field",
+      "action": "list-project-values",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/custom-field/task/{taskId}",
+      "group": "custom-field",
+      "action": "list-task-values",
+      "status": "planned"
+    },
+    {
+      "method": "GET",
+      "path": "/custom-field/project/{projectId}/filter-values",
+      "group": "custom-field",
+      "action": "list-project-filter-values",
+      "status": "planned"
+    },
+    {
+      "method": "POST",
+      "path": "/custom-field",
+      "group": "custom-field",
+      "action": "create",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/custom-field/reorder/{projectId}",
+      "group": "custom-field",
+      "action": "reorder-project",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/custom-field/value",
+      "group": "custom-field",
+      "action": "set-value",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/custom-field/{id}",
+      "group": "custom-field",
+      "action": "delete",
+      "status": "planned"
+    },
+    {
+      "method": "PUT",
+      "path": "/user/avatar",
+      "group": "user",
+      "action": "upload-avatar",
+      "status": "planned"
+    },
+    {
+      "method": "DELETE",
+      "path": "/user/avatar",
+      "group": "user",
+      "action": "delete-avatar",
+      "status": "planned"
+    }
+  ]
+}

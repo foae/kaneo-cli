@@ -1,0 +1,29 @@
+{
+  "enabled": false,
+  "activation": {
+    "method": "A reviewed pull request changes enabled to true after every required evidence item is linked below.",
+    "reviewers": "At least one repository maintainer reviews activation and repository release settings."
+  },
+  "requiredEvidence": [
+    {
+      "id": "public-api",
+      "requirement": "The complete documented public API is implemented, generated inventory coverage is current, and every documented operation has exercised local acceptance evidence."
+    },
+    {
+      "id": "authentication",
+      "requirement": "All supported authentication flows are implemented and locally accepted, including invalid, expired, and revoked credential behavior."
+    },
+    {
+      "id": "profiles",
+      "requirement": "All documented profile selection, persistence, isolation, and migration behavior is implemented and locally accepted."
+    },
+    {
+      "id": "safety",
+      "requirement": "Destructive and sensitive operations have their documented confirmation, error, redaction, and non-interactive safety behavior, proven by local acceptance evidence."
+    },
+    {
+      "id": "local-release-acceptance",
+      "requirement": "A local release plan and GoReleaser snapshot have been inspected for all six target archives, checksum output, embedded build metadata, and installation smoke behavior."
+    }
+  ]
+}

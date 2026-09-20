@@ -1,0 +1,46 @@
+version: 2
+project_name: kaneo-cli
+
+builds:
+  - id: kaneo-cli
+    main: ./cmd/kaneo-cli
+    binary: kaneo-cli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/foae/kaneo-cli/internal/buildinfo.Version={{ .Version }} -X github.com/foae/kaneo-cli/internal/buildinfo.Commit={{ .Commit }} -X github.com/foae/kaneo-cli/internal/buildinfo.Date={{ .Date }}
+
+archives:
+  - id: default
+    ids:
+      - kaneo-cli
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    files:
+      - LICENSE
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+source:
+  enabled: false
+
+release:
+  github:
+    owner: foae
+    name: kaneo-cli

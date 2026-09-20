@@ -1,0 +1,33 @@
+# Typed: false
+# This file is generated from published release checksums. Do not edit by hand.
+# Tap: https://github.com/foae/kaneo-cli
+class KaneoCli < Formula
+  desc "Command-line client for Kaneo"
+  homepage "https://github.com/foae/kaneo-cli"
+  version "{{VERSION}}"
+  license "MIT"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "{{DARWIN_ARM64_URL}}"
+      sha256 "{{DARWIN_ARM64_SHA256}}"
+    else
+      url "{{DARWIN_AMD64_URL}}"
+      sha256 "{{DARWIN_AMD64_SHA256}}"
+    end
+  end
+
+  on_linux do
+    if Hardware::CPU.arm?
+      url "{{LINUX_ARM64_URL}}"
+      sha256 "{{LINUX_ARM64_SHA256}}"
+    else
+      url "{{LINUX_AMD64_URL}}"
+      sha256 "{{LINUX_AMD64_SHA256}}"
+    end
+  end
+
+  def install
+    bin.install "kaneo-cli"
+  end
+end
