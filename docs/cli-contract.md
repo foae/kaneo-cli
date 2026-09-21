@@ -23,7 +23,7 @@ No implicit prompts, even on a TTY. Device login is an explicit interactive acti
 - Diagnostics and one structured error object go to stderr: `{"error":{"code":"invalid_arguments","message":"..."}}`. The foundation uses `unknown_command`, `invalid_arguments` and `process_failure`; add stable API error codes plus safe HTTP status or operation ID when relevant, never raw credentials/server dumps.
 - `version` and `--version` return the same JSON object with `version`, `commit`, `date`. Help remains human-readable.
 
-For automation, avoid progress bars, ANSI escapes, timestamps, and unsolicited stdout. Future human formatting must be explicit, leaving JSON the default. Preserve the documented output contract throughout 0.x; breaking changes still require release notes and the configured breaking bump.
+For automation, avoid progress bars, ANSI escapes, timestamps, and unsolicited stdout. Future human formatting must be explicit, leaving JSON the default. Preserve the documented CLI output contract throughout 1.x; breaking changes require release notes and a major version bump. Upstream API response shapes remain governed by the pinned API baseline and documented compatibility limitations.
 
 ## Exit codes
 

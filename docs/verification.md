@@ -226,6 +226,25 @@ The panel agreed most strongly on unsafe upload path construction. Independently
 
 These observations do not establish expired/revoked credential handling, native macOS/Windows credential storage or external-service integration acceptance. Publication remains disabled.
 
+## v1.0.0 acceptance (2026-09-21)
+
+The maintainer approved releasing with external-provider live acceptance explicitly deferred. GitHub, Gitea, Slack, Discord, Mattermost and Telegram integrations remain implemented and fixture-tested, **not live-provider verified**. This supersedes the earlier requirement to provision external services before publication; it does not reinterpret fixture evidence as live evidence.
+
+Credential lifecycle exercised through the built Linux amd64 CLI against a fresh disposable server using the unchanged API hash and Kaneo 2.25.0 image digest recorded above:
+
+- A synthetic user created an API key; `org list` returned `[]` with exit 0.
+- Deleting that key through the real API made the same command return exit 3, empty stdout and structured HTTP 401 `authentication_failed`.
+- A synthetic invalid key returned exit 3, empty stdout and HTTP 403 `authorization_failed`.
+- A second working key was expired by setting only its disposable database row's `expires_at` to one minute before the server time. The same command returned exit 3, empty stdout and HTTP 401 `authentication_failed` (`API Key has expired`). This exercises real server expiry enforcement, not waiting through a production expiry interval.
+- Synthetic credentials stayed in process memory/environment; no credential values were included in evidence.
+
+Release preparation checks:
+
+- Stable release planner returned `v1.0.0` with publication still disabled. Regression checks cover real Git NUL/newline separators, subject-only release signals and breaking-change precedence.
+- `just check`, `actionlint` and `just snapshot` passed on Linux amd64. All six snapshot archives passed SHA-256 and LICENSE/executable-content checks; the extracted Linux amd64 binary returned linked version, commit and build date. Cross-built archives are not native runtime evidence.
+- The native keyring lifecycle test calls the OS backend directly, without plaintext fallback. Run `KANEO_NATIVE_KEYRING_TEST=1 go test ./internal/auth -run TestNativeKeyring -count=1 -v` in an unlocked credential-store session (PowerShell: set `$env:KANEO_NATIVE_KEYRING_TEST='1'` first). This workstation has no Secret Service provider, so its native run failed as expected; no local native-keyring success is claimed.
+- Main-only CI now exercises the native keyring on Linux with an isolated D-Bus session and unlocked GNOME Keyring, macOS Keychain and Windows Credential Manager. Successful hosted results must be linked before release activation.
+
 ## Foundation evidence (2026-09-20)
 
 Verified locally on Linux amd64 with Go 1.27.1:

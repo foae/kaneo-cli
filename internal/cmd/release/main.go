@@ -33,10 +33,13 @@ type plan struct {
 	EvidenceSize int    `json:"requiredEvidenceCount"`
 }
 
-var versionPattern = regexp.MustCompile(`^v([0-9]+)\.([0-9]+)\.([0-9]+)$`)
-var breakingPattern = regexp.MustCompile(`(?mi)^.*(BREAKING[ -]CHANGE:|[[:alnum:]]+(\([^\n)]*\))?!:).*$`)
-var featurePattern = regexp.MustCompile(`(?mi)^feat(\([^\n)]*\))?:`)
-var fixPattern = regexp.MustCompile(`(?mi)^fix(\([^\n)]*\))?:`)
+var (
+	versionPattern       = regexp.MustCompile(`^v([0-9]+)\.([0-9]+)\.([0-9]+)$`)
+	breakingBodyPattern  = regexp.MustCompile(`(?mi).*BREAKING[ -]CHANGE:.*`)
+	breakingTitlePattern = regexp.MustCompile(`(?im).*(\w+)(\(.*\))?!:.*`)
+	featureTitlePattern  = regexp.MustCompile(`(?im).*feat(\(.*\))?:.*`)
+	fixTitlePattern      = regexp.MustCompile(`(?im).*fix(\(.*\))?:.*`)
+)
 
 func main() {
 	if len(os.Args) < 2 || os.Args[1] != "plan" {
@@ -125,39 +128,58 @@ func makePlan(ready readiness, current string) (plan, error) {
 		entry.Reason = "no feat, fix, or breaking Conventional Commit since the current tag"
 		return entry, nil
 	}
+	nextTag, err := nextTag(current, kind)
+	if err != nil {
+		return plan{}, err
+	}
+	entry.NextTag = nextTag
+	entry.Release = true
 	if current == "" {
-		entry.NextTag = "v0.1.0"
-		entry.Release = true
-		entry.Reason = "first releasable change; policy fixes the first release at v0.1.0"
+		entry.Reason = "first releasable change; policy fixes the first release at v1.0.0"
 		return entry, nil
 	}
-	currentVersion, ok := parseSemver(current)
-	if !ok {
-		return plan{}, fmt.Errorf("invalid current tag: %s", current)
-	}
-	switch kind {
-	case "patch":
-		currentVersion.patch++
-	case "minor":
-		currentVersion.minor++
-		currentVersion.patch = 0
-	default:
-		return plan{}, fmt.Errorf("unknown release kind: %s", kind)
-	}
-	entry.NextTag = currentVersion.String()
-	entry.Release = true
-	entry.Reason = kind + " release under the 0.x policy"
+	entry.Reason = kind + " release under the stable policy"
 	return entry, nil
 }
 
 func releaseKind(log string) string {
-	if breakingPattern.MatchString(log) || featurePattern.MatchString(log) {
-		return "minor"
+	kind := ""
+	for _, commit := range strings.Split(log, "\x00") {
+		title, body, _ := strings.Cut(strings.TrimPrefix(commit, "\n"), "\n")
+		switch {
+		case breakingBodyPattern.MatchString(body), breakingTitlePattern.MatchString(title):
+			return "major"
+		case featureTitlePattern.MatchString(title):
+			kind = "minor"
+		case fixTitlePattern.MatchString(title) && kind == "":
+			kind = "patch"
+		}
 	}
-	if fixPattern.MatchString(log) {
-		return "patch"
+	return kind
+}
+
+func nextTag(current, kind string) (string, error) {
+	if current == "" {
+		return "v1.0.0", nil
 	}
-	return ""
+	currentVersion, ok := parseSemver(current)
+	if !ok {
+		return "", fmt.Errorf("invalid current tag: %s", current)
+	}
+	switch kind {
+	case "major":
+		currentVersion.major++
+		currentVersion.minor = 0
+		currentVersion.patch = 0
+	case "minor":
+		currentVersion.minor++
+		currentVersion.patch = 0
+	case "patch":
+		currentVersion.patch++
+	default:
+		return "", fmt.Errorf("unknown release kind: %s", kind)
+	}
+	return currentVersion.String(), nil
 }
 
 type semver struct {

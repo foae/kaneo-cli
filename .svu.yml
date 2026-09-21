@@ -1,4 +1,4 @@
-# svu v3.3.0 release policy. The workflow also compares `svu next` with `svu next --v0`.
+# svu v3.3.0 stable release policy.
 tag.prefix: v
 always: false
-v0: true
+v0: false

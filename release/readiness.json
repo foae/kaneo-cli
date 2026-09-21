@@ -7,7 +7,7 @@
   "requiredEvidence": [
     {
       "id": "public-api",
-      "requirement": "The complete documented public API is implemented, generated inventory coverage is current, and every documented operation has exercised local acceptance evidence."
+      "requirement": "All 162 canonical API mappings are implemented and inventory coverage is current. Local contract and disposable-server acceptance is recorded; external-provider live acceptance is explicitly deferred for v1.0.0."
     },
     {
       "id": "authentication",
