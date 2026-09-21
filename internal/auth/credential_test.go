@@ -145,7 +145,7 @@ func TestKeyringUnavailableFallsBackWithWarning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if mode := info.Mode().Perm(); mode != 0o600 {
+	if mode := info.Mode().Perm(); runtime.GOOS != "windows" && mode != 0o600 {
 		t.Fatalf("credential file mode = %o, want 600", mode)
 	}
 }
