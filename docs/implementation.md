@@ -1,6 +1,6 @@
 # Implementation work packets
 
-These packets define the dependency order and acceptance criteria, not a claim that all criteria have passed. Packets 1–4 have implementation and local evidence recorded in [verification](verification.md): all 55 non-browser reads, 103 JSON mutations and the avatar/presigned transfer flows cover 160 of 162 pinned operations. The two browser-navigation operations are being added with a URL-handoff contract; expired/revoked credential, native, and external acceptance still block full readiness. Complete prerequisites before dependent work; within a packet, disjoint command groups may be parallelized after shared contracts are settled.
+These packets define the dependency order and acceptance criteria, not a claim that all criteria have passed. Packets 1–4 and follow-up work have evidence recorded in [verification](verification.md): all 162 pinned mappings are implemented, including the two browser-navigation URL handoffs. The v1.0.0 release decision explicitly defers external-provider live acceptance; see [releases](releases.md) for the approved boundary. Complete prerequisites before dependent work; within a packet, disjoint command groups may be parallelized after shared contracts are settled.
 
 ## 1. Runtime, configuration and auth
 
@@ -18,13 +18,13 @@ Acceptance: operation-level requests match the wire contract and consumer-visibl
 
 Inputs: packets 1–2 and operation-specific evidence. Implement remaining operations, including deletion/revocation safeguards, JSON body presence, multipart and presigned transfer flows. `--yes` checks run before requests. Uploaded bytes and downloaded files are streamed and verified. Never send API credentials to object storage.
 
-Acceptance: isolated create/read/update/delete lifecycles, permissions failures, invalid inputs, cancellation and partial-failure behavior. External integrations require fixture protocol coverage plus clearly distinguished real-service evidence. Do not label mocked Slack/GitHub/etc. verification end-to-end. Browser operations use a deliberate URL handoff: print only the initial navigation URL and a diagnostic that the user must open it, without launching a browser, requesting approval, polling, or fabricating an authorization-code URL.
+Acceptance: isolated create/read/update/delete lifecycles, permissions failures, invalid inputs, cancellation and partial-failure behavior. External integrations require fixture protocol coverage; real-service evidence must be clearly distinguished and is explicitly deferred for v1.0.0. Do not label mocked Slack/GitHub/etc. verification end-to-end. Browser operations use a deliberate URL handoff: print only the initial navigation URL and a diagnostic that the user must open it, without launching a browser, requesting approval, polling, or fabricating an authorization-code URL.
 
 ## 4. Full acceptance and release readiness
 
 Inputs: all earlier packets, release readiness checklist, [verification](verification.md). Reconcile every operation against the pinned baseline: no duplicates, omissions or 'implemented' rows backed only by a stub. Run disposable instance acceptance with the pinned image digest and record actual server version separately. Verify both auth modes, named profiles, destructive safety, six-target builds, native OS credential handling and installation/version provenance.
 
-Acceptance: maintainers can reproduce all evidence; discrepancies are resolved or explicitly approved contract changes, not silently waived endpoints. Only then propose release activation for v0.1.0 through reviewed configuration. Do not activate publication or treat command registration, help, or version output as compatibility evidence.
+Acceptance: maintainers can reproduce all evidence; discrepancies are resolved or explicitly approved contract changes, not silently waived endpoints. Only then propose release activation for v1.0.0 through reviewed configuration. Do not activate publication or treat command registration, help, or version output as compatibility evidence.
 
 ## Every packet handoff
 

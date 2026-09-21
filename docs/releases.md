@@ -6,11 +6,13 @@ Releases are deliberately disabled. `release/readiness.json` is the mechanical g
 
 Activation is a reviewed pull request that changes only the reviewed readiness decision after linking local acceptance evidence for every entry in `release/readiness.json`:
 
-1. complete documented public API and current generated operation inventory;
+1. all canonical API mappings and current generated operation inventory, with documented local acceptance and explicit compatibility limitations;
 2. every authentication flow, including invalid, expired, and revoked credentials;
 3. profile selection, persistence, isolation, and migration;
 4. destructive/sensitive-operation confirmations, error behavior, redaction, and non-interactive safety; and
 5. a local release-plan and six-archive snapshot inspection, including checksums, embedded build information, and installation smoke behavior.
+
+For v1.0.0, the maintainer explicitly approved deferring live external-provider acceptance. GitHub, Gitea, Slack, Discord, Mattermost and Telegram integrations are implemented and fixture-tested, but not live-verified against those providers. This does not waive authentication, credential isolation, safety, native credential-store checks or packaging checks. Operation coverage is not a claim of compatibility with every deployment.
 
 A maintainer must also review the repository prerequisites below. There is no manual dispatch and no tag, `workflow_run`, or `pull_request_target` trigger: trusted `main` CI calls the reusable workflow only after its exact-SHA `verify` and `cross` jobs succeed. The release workflow checks out that SHA and asserts it again before a remote mutation. Releases are serialized with a non-cancelling `kaneo-cli-release` concurrency group.
 
@@ -18,7 +20,7 @@ A maintainer must also review the repository prerequisites below. There is no ma
 
 Before enabling releases, configure the `foae/kaneo-cli` repository to:
 
-- allow GitHub Actions `GITHUB_TOKEN` read/write workflow permissions;
+- permit the workflow's explicit `GITHUB_TOKEN` write permissions (the repository default may remain read-only);
 - allow Actions to create pull requests;
 - retain `contents: write`, `pull-requests: write`, `id-token: write`, and `attestations: write` on the trusted CI release caller;
 - permit the repository's public-attestation plan, or explicitly accept that GitHub will reject the attestation step on an unsupported private/internal plan; and
@@ -28,7 +30,7 @@ The workflow has no secret other than the caller's `GITHUB_TOKEN`; do not add lo
 
 ## Version policy
 
-The first releasable Conventional Commit creates `v0.1.0`. `fix:` creates a patch release; `feat:` and a `BREAKING CHANGE:` footer or `!` create a minor release while major is zero. `docs:`, `chore:`, and commits without one of those release signals do not release. `.svu.yml` sets `always: false` and `v0: true`; the workflow compares `svu next` with `svu next --v0` before accepting a non-first version. Automatic releases never create `v1.0.0`.
+The first releasable Conventional Commit creates `v1.0.0`. Thereafter `fix:` creates a patch release, `feat:` a minor release, and a `BREAKING CHANGE:` footer or `!` a major release. `docs:`, `chore:`, and commits without one of those release signals do not release. `.svu.yml` sets `always: false` and `v0: false`; subsequent versions must agree with pinned `svu next`.
 
 Inspect a checkout without changing GitHub state:
 
@@ -38,9 +40,8 @@ go run ./internal/cmd/release plan --json
 ```
 
 A local package-only check is:
-
 ```sh
-goreleaser release --snapshot --clean --config .goreleaser.yaml
+just snapshot
 ```
 
 Snapshot mode produces no uploads or releases. `/dist/` is ignored so snapshot output does not create an untracked-file dirty failure. The configured release produces six static (`CGO_ENABLED=0`) archives: Linux and macOS `amd64`/`arm64` tarballs and Windows `amd64`/`arm64` zip files, each carrying `LICENSE`, plus a SHA-256 checksum manifest. `Version`, `Commit`, and `Date` are injected into `internal/buildinfo` with ldflags.

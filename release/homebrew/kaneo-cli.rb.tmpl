@@ -1,4 +1,4 @@
-# Typed: false
+# typed: false
 # This file is generated from published release checksums. Do not edit by hand.
 # Tap: https://github.com/foae/kaneo-cli
 class KaneoCli < Formula
@@ -29,5 +29,9 @@ class KaneoCli < Formula
 
   def install
     bin.install "kaneo-cli"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/kaneo-cli version")
   end
 end

@@ -36,6 +36,25 @@ jobs:
           just-version: '1.58.0'
       - name: Run shared checks
         run: just check
+      - name: Prepare Linux Secret Service
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y gnome-keyring dbus-x11
+      - name: Exercise native credential storage on Linux
+        if: runner.os == 'Linux'
+        env:
+          KANEO_NATIVE_KEYRING_TEST: '1'
+        run: |
+          dbus-run-session -- bash -e <<'KEYRING'
+            GNOME_KEYRING_CONTROL=$(mktemp -d)
+            export GNOME_KEYRING_CONTROL
+            printf "%s" synthetic-ci-unlock | gnome-keyring-daemon --unlock --components=secrets
+            go test ./internal/auth -run TestNativeKeyring -count=1 -v
+          KEYRING
+      - name: Exercise native credential storage on macOS and Windows
+        if: runner.os != 'Linux'
+        env:
+          KANEO_NATIVE_KEYRING_TEST: '1'
+        run: go test ./internal/auth -run TestNativeKeyring -count=1 -v
 
   cross:
     name: Cross-build release targets
