@@ -59,7 +59,7 @@ For an ambiguous partial publication, stop automatic retries. A maintainer must 
 
 After a fresh release, `release/formula.sh` downloads the already-published immutable checksum manifest and renders `Formula/kaneo-cli.rb` for macOS and Linux `amd64`/`arm64`. The workflow pushes that generated file to a new `chore/homebrew-vX.Y.Z` branch and opens a normal PR against `main`; it does not update the protected branch directly. The tap URL is `https://github.com/foae/kaneo-cli`, and, after the Formula PR merges, installation is:
 
-GitHub suppresses new workflow runs for events created with `GITHUB_TOKEN`. A maintainer must close and reopen this bot-created PR using their own GitHub account to trigger ordinary PR CI before merging; do not bypass required checks. This keeps publication free of long-lived credentials.
+Review the bot-created Formula PR and run local checks before merging. CI runs after the merge to `main`, not on PR creation or reopening. Do not configure these post-merge jobs as required PR checks; they cannot report on PR heads. Publication needs no long-lived credentials.
 
 ```sh
 brew tap foae/kaneo-cli https://github.com/foae/kaneo-cli

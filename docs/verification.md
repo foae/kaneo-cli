@@ -19,7 +19,7 @@ just snapshot  # pinned GoReleaser, never publishes
 just hooks     # explicitly opt in to Git hooks
 ```
 
-The justfile is a convenience interface, not a second implementation of verification. CI's Linux/macOS/Windows verification matrix invokes `just check`; race, vulnerability, cross-build and snapshot jobs use the corresponding recipes. Hooks call Go directly so installed hooks do not require just. Changes to recipes must preserve native Windows compatibility and nonzero failure propagation. Keep lifecycle logic and tool versions in Go, and update the documented just version alongside its CI pin.
+The justfile is a convenience interface, not a second implementation of verification. CI runs only on pushes to `main`, not on pull requests: its Linux/macOS/Windows verification matrix invokes `just check`, followed by `just cross`. Release preparation uses `just snapshot`. Race detection and vulnerability scanning remain optional local commands (`just race` and `just vuln`), not hosted jobs. Run local checks before requesting review or merging. Hooks call Go directly so installed hooks do not require just. Changes to recipes must preserve native Windows compatibility and nonzero failure propagation. Keep lifecycle logic and tool versions in Go, and update the documented just version alongside its CI pin.
 
 `just test-end2end` is intentionally absent: the disposable environment below is not an automated CLI acceptance suite. Add that recipe only when shared checks and real built-CLI scenarios can run with automated bootstrap, bounded readiness, isolated credentials, owned resources and cleanup on failure/cancellation. Fixed ports require rejecting concurrent runs or a deliberate networking redesign.
 

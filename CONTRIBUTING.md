@@ -10,4 +10,4 @@ Keep changes focused. Include the operation IDs affected, behavior evidence, any
 
 Use Conventional Commit squash titles: `feat:`, `fix:`, `perf:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:`, `chore:`. Mark breaking changes with `!` or a `BREAKING CHANGE:` footer. These drive automatic releases after activation; see [release rules](docs/releases.md). Do not manually update a version string or move a published tag.
 
-Local hooks are opt-in with `just hooks`; CI remains authoritative. Formatting is explicit (`just fmt`); CI checks formatting without silently changing files. Maintainers must configure branch protection and required checks in GitHub separately; adding workflow files does not activate those settings.
+Local hooks are opt-in with `just hooks`. Run `just check` and `just cross` before merging; hosted CI runs only after pushes to `main`, not on PRs. `just race` and `just vuln` remain available locally but are not CI jobs. Formatting is explicit (`just fmt`); CI checks formatting without silently changing files. Maintainers configure branch protection in GitHub separately; do not require post-merge CI jobs as PR checks.
