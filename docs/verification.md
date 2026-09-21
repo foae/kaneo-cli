@@ -121,7 +121,7 @@ Post-review hardening (same date), after a seven-seat cross-model panel: non-tim
 
 ## Packet 2 evidence (2026-09-21)
 
-Implemented all 52 remaining read-only GET operations (57 GET operations total; `auth get-session`, `config get` and `instance get-status` came from packet 1). Coverage statuses are marked `implemented` in `api/commands.json` and regenerated into the inventory. `read_ops_test.go` cross-checks the command table against `api/operations.json`, failing if any GET operation is uncovered or any command/path/parameter/security classification drifts from the pinned inventory.
+Commit `8341d6d`. Implemented all 52 remaining read-only GET operations (57 GET operations total; `auth get-session`, `config get` and `instance get-status` came from packet 1). Coverage statuses are marked `implemented` in `api/commands.json` and regenerated into the inventory. `read_ops_test.go` cross-checks the command table against `api/operations.json`, failing if any GET operation is uncovered or any command/path/parameter/security classification drifts from the pinned inventory.
 
 Environment: Linux amd64, Go 1.27.1, just 1.58.0. API snapshot SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`. Disposable Kaneo image `ghcr.io/usekaneo/kaneo@sha256:a85a23996c36166cfcebcb4ee161b40cc62c7b924faf06353684a84d5e84162c`; observed server version `2.25.0`; stack torn down with volumes after testing.
 
@@ -138,7 +138,7 @@ Real disposable-instance reads. The instance was bootstrapped over HTTP (Better 
 
 Upstream discrepancy (recorded, not silently resolved): `getOrganizationRole` (`org get-role`, `GET /auth/organization/get-role`) documents zero parameters in the pinned snapshot, but the server requires a `roleId` or `roleName` query parameter. Supplying either changes the response from `[query] Invalid input` to `Role not found`/success, confirming the requirement. The command keeps the documented (empty) parameter set and returns the server's `invalid_request`; the missing parameter is **not** invented. A contract decision is needed before this command can be used successfully.
 
-Pending evidence, not claimed: successful `asset download` of a real task asset; `org list-user-invitations` real success (the server returns HTTP 403 until the account's email is verified, which the disposable environment cannot do without SMTP); the two deferred browser-navigation endpoints (`auth get-device-authorization-page`, `mcp start-authorization`), whose correct contract is a deliberate browser interaction rather than a JSON wrapper; and the packet-2 commit hash.
+Pending evidence, not claimed: successful `asset download` of a real task asset; `org list-user-invitations` real success (the server returns HTTP 403 until the account's email is verified, which the disposable environment cannot do without SMTP); the two deferred browser-navigation endpoints (`auth get-device-authorization-page`, `mcp start-authorization`), whose correct contract is a deliberate browser interaction rather than a JSON wrapper.
 
 ## Foundation evidence (2026-09-20)
 
