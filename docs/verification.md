@@ -268,6 +268,13 @@ Local Linux amd64 checks for the distribution-introduction change:
 
 The CLI/API behavior and pinned API baseline are unchanged. Hosted package publication, anonymous image pulls, published-artifact attestations and the new release's installation checks must be recorded after publication; local builds do not establish them.
 
+## Installer acceptance (2026-09-21)
+
+- On Linux amd64, `INSTALL_DIR=<temporary absolute path with spaces> sh install.sh` resolved and checksum-verified the published v1.2.0 binary. The installed binary returned version `1.2.0`, commit `44fce133b2409c503926f44bb88d136a99397a3c`, and successful public Cloud instance status.
+- Disposable download/OS fixtures exercised Linux/macOS amd64/arm64 selection and replacement of an existing binary. Unsupported OS/architecture, relative destinations, network failure, prerelease resolution, missing/duplicate checksum entries and checksum mismatch were rejected; failed installs preserved the existing binary.
+- `shellcheck --shell=sh install.sh` and `just check` passed. README and installation-guide local links and section anchors resolved. Temporary binaries and fixtures were removed.
+- No native macOS or ARM installer execution is claimed. This change does not alter the pinned API baseline; no container was used for these checks. The README's hosted installer URL becomes available only after the script reaches `main`.
+
 ## Foundation evidence (2026-09-20)
 
 Verified locally on Linux amd64 with Go 1.27.1:
