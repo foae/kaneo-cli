@@ -2,7 +2,19 @@
 
 Unofficial, JSON-first Go CLI for [Kaneo](https://kaneo.app). Not affiliated with the Kaneo project.
 
-**Status: v1.0.0 release activation.** All 162 pinned operations have command mappings, including browser-navigation URL handoffs. Runtime profiles, credential storage (OS keyring first, warned plaintext fallback), API-key input, device login, JSON operations and file transfers are implemented. Coverage is not full compatibility: external integrations are fixture-tested but not live-provider verified; live-provider acceptance is explicitly deferred for v1.0.0. See [acceptance evidence](docs/verification.md).
+**Status: [v1.0.0 released](https://github.com/foae/kaneo-cli/releases/tag/v1.0.0).** All 162 pinned operations have command mappings, including browser-navigation URL handoffs. Runtime profiles, credential storage (OS keyring first, warned plaintext fallback), API-key input, device login, JSON operations and file transfers are implemented. Coverage is not full compatibility: external integrations are fixture-tested but not live-provider verified; live-provider acceptance is explicitly deferred for v1.0.0. See [acceptance evidence](docs/verification.md).
+
+## Install
+
+On Linux or macOS with Homebrew:
+
+```sh
+brew tap foae/kaneo-cli https://github.com/foae/kaneo-cli
+brew install foae/kaneo-cli/kaneo-cli
+kaneo-cli version
+```
+
+Alternatively, download a matching Linux, macOS or Windows amd64/arm64 archive from the [release page](https://github.com/foae/kaneo-cli/releases/latest). Verify it against the published SHA-256 manifest; the archives and manifest have GitHub build attestations.
 
 ## Run from source
 
@@ -26,7 +38,7 @@ kaneo-cli org accept-invitation
 kaneo-cli task update-status
 ```
 
-Commands such as `task get`, `project list`, `task create` and `task update-status` are executable today. Releases will target Linux, macOS and Windows on amd64 and arm64, with Homebrew for Linux/macOS.
+Commands such as `task get`, `project list`, `task create` and `task update-status` are executable today. Release archives cover Linux, macOS and Windows on amd64 and arm64, with Homebrew for Linux/macOS.
 
 ## Start here
 
