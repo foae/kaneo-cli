@@ -22,19 +22,19 @@ func checkPermissions(_ os.FileInfo, _ string) error { return nil }
 // only the current user full control, protecting the token without relying on
 // chmod semantics. Native Windows evidence is still required to confirm it.
 func secureSecretFile(path string) error {
-	return applyCurrentUserDACL(path)
+	return applyCurrentUserDACL(path, windows.NO_INHERITANCE)
 }
 
 // secureDir restricts the credential directory to the current user.
 func secureDir(path string) error {
-	return applyCurrentUserDACL(path)
+	return applyCurrentUserDACL(path, windows.SUB_CONTAINERS_AND_OBJECTS_INHERIT)
 }
 
 // checkOwner is a no-op on Windows; the DACL set by secureSecretFile is the
 // enforced protection.
 func checkOwner(_ os.FileInfo, _ string) error { return nil }
 
-func applyCurrentUserDACL(path string) error {
+func applyCurrentUserDACL(path string, inheritance uint32) error {
 	token := windows.GetCurrentProcessToken()
 	user, err := token.GetTokenUser()
 	if err != nil {
@@ -43,7 +43,7 @@ func applyCurrentUserDACL(path string) error {
 	acl, err := windows.ACLFromEntries([]windows.EXPLICIT_ACCESS{{
 		AccessPermissions: windows.GENERIC_ALL,
 		AccessMode:        windows.GRANT_ACCESS,
-		Inheritance:       windows.NO_INHERITANCE,
+		Inheritance:       inheritance,
 		Trustee: windows.TRUSTEE{
 			TrusteeForm:  windows.TRUSTEE_IS_SID,
 			TrusteeType:  windows.TRUSTEE_IS_USER,

@@ -12,19 +12,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/foae/kaneo-cli/internal/client"
 )
 
-const (
-	// maxAvatarBytes matches the documented 512 KiB avatar limit.
-	maxAvatarBytes = 512 << 10
-	// uploadTimeout bounds a storage upload independent of the API timeout.
-	uploadTimeout = 3 * time.Minute
-)
+// maxAvatarBytes matches the documented 512 KiB avatar limit.
+const maxAvatarBytes = 512 << 10
 
 // newUploadCommands returns the two operations whose requests are constructed
 // from a local file rather than passed through as a JSON body.
@@ -35,21 +30,29 @@ func (a *app) newUploadCommands() []groupedCommand {
 	}
 }
 
-// readBodyFile reads a bounded request body from a regular file.
 func readBodyFile(path string) ([]byte, error) {
-	info, err := os.Stat(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, &processError{err: err}
 	}
-	if info.IsDir() {
-		return nil, &usageError{err: fmt.Errorf("%q is a directory", path)}
+	defer func() { _ = file.Close() }()
+
+	info, err := file.Stat()
+	if err != nil {
+		return nil, &processError{err: err}
+	}
+	if !info.Mode().IsRegular() {
+		return nil, &usageError{err: fmt.Errorf("%q is not a regular file", path)}
 	}
 	if info.Size() > maxRequestBody {
 		return nil, &usageError{err: fmt.Errorf("request body exceeds %d bytes", maxRequestBody)}
 	}
-	data, err := os.ReadFile(path)
+	data, err := io.ReadAll(io.LimitReader(file, maxRequestBody+1))
 	if err != nil {
 		return nil, &processError{err: err}
+	}
+	if len(data) > maxRequestBody {
+		return nil, &usageError{err: fmt.Errorf("request body exceeds %d bytes", maxRequestBody)}
 	}
 	return data, nil
 }
@@ -96,6 +99,9 @@ func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
 	if taskID == "" {
 		return &usageError{err: errors.New("--id is required")}
 	}
+	if taskID == "." || taskID == ".." {
+		return &usageError{err: errors.New("--id must not be '.' or '..'")}
+	}
 	if filePath == "" {
 		return &usageError{err: errors.New("--file is required")}
 	}
@@ -110,6 +116,11 @@ func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
 	}
 	if contentType == "" {
 		return &usageError{err: errors.New("--content-type is required for an unknown file extension")}
+	}
+
+	apiPath, err := expandPath("/task/image-upload/{id}", map[string]string{"id": taskID})
+	if err != nil {
+		return &processError{err: err}
 	}
 
 	info, err := os.Stat(filePath)
@@ -142,7 +153,7 @@ func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
 	}
 	resp, err := apiClient.Do(ctx, client.Request{
 		Method:      "PUT",
-		Path:        "/task/image-upload/" + taskID,
+		Path:        apiPath,
 		Body:        body,
 		ContentType: "application/json",
 		OperationID: "createTaskImageUpload",
@@ -155,6 +166,9 @@ func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
 	if err != nil {
 		return &processError{err: err}
 	}
+	if len(payload) > maxRequestBody {
+		return &processError{err: fmt.Errorf("presigned upload response exceeds %d bytes", maxRequestBody)}
+	}
 
 	var upload struct {
 		Key       string            `json:"key"`
@@ -164,13 +178,24 @@ func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
 	if err := json.Unmarshal(payload, &upload); err != nil {
 		return &processError{err: fmt.Errorf("presigned upload response is not usable: %w", err)}
 	}
+	if upload.Key == "" {
+		return &processError{err: errors.New("server did not return an upload key")}
+	}
+
 	if upload.UploadURL == "" {
 		return &processError{err: errors.New("server did not return an upload URL")}
 	}
 	if err := a.putToStorage(ctx, sess, upload.UploadURL, upload.Headers, filePath, size); err != nil {
 		return err
 	}
-	return writeJSONBytes(cmd.OutOrStdout(), payload)
+	// Transfer credentials are consumed internally, never emitted to stdout.
+	result, err := json.Marshal(struct {
+		Key string `json:"key"`
+	}{Key: upload.Key})
+	if err != nil {
+		return &processError{err: err}
+	}
+	return writeJSONBytes(cmd.OutOrStdout(), result)
 }
 
 // putToStorage streams the file to the presigned URL with a client that never
@@ -195,13 +220,20 @@ func (a *app) putToStorage(ctx context.Context, sess *session, rawURL string, he
 		req.Header.Set(name, value)
 	}
 
-	timeout := sess.resolved.Timeout
-	if timeout <= 0 {
-		timeout = uploadTimeout
+	storage := &http.Client{
+		Timeout: sess.resolved.Timeout,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
-	storage := &http.Client{Timeout: timeout}
 	resp, err := storage.Do(req)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return err
+		}
+		if errors.Is(err, context.DeadlineExceeded) || client.IsTimeout(err) {
+			return &client.TimeoutError{Err: err}
+		}
 		return &client.TransportError{Err: err}
 	}
 	defer func() { _ = resp.Body.Close() }()

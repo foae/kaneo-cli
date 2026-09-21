@@ -4,8 +4,8 @@ package cli
 // api/operations.json (the pinned OpenAPI inventory). write_ops_test.go fails
 // if this table drifts from the inventory or leaves a non-GET operation
 // uncovered. Two presigned/base64 upload operations use dedicated commands and
-// are listed in writeSpecExempt; the two browser-navigation GET operations are
-// deferred with the read table.
+// are listed in fullyCoveredOperations; browser-navigation GET operations use
+// dedicated URL-handoff commands.
 
 // writeSpecs maps every implemented mutating operation to a CLI command.
 var writeSpecs = []writeSpec{

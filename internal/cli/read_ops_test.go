@@ -27,6 +27,25 @@ func inventoryOperations(t *testing.T) []inventoryOperation {
 	if err := json.Unmarshal(raw, &doc); err != nil {
 		t.Fatalf("parse inventory: %v", err)
 	}
+	// The source inventory deliberately stays faithful to OpenAPI. Apply only
+	// separately reviewed CLI parameters from provenance when checking coverage.
+	raw, err = os.ReadFile(filepath.Join("..", "..", "api", "provenance.json"))
+	if err != nil {
+		t.Fatalf("read provenance: %v", err)
+	}
+	var provenance struct {
+		Supplements map[string]inventoryOperation `json:"supplements"`
+	}
+	if err := json.Unmarshal(raw, &provenance); err != nil {
+		t.Fatalf("parse provenance: %v", err)
+	}
+	for i := range doc.Operations {
+		for _, supplement := range provenance.Supplements {
+			if supplement.OperationID == doc.Operations[i].OperationID {
+				doc.Operations[i].Parameters = append(doc.Operations[i].Parameters, supplement.Parameters...)
+			}
+		}
+	}
 	return doc.Operations
 }
 
@@ -57,8 +76,8 @@ var readSpecExempt = map[string]string{
 	"getSession":                 "packet 1: auth get-session",
 	"getConfig":                  "packet 1: config get",
 	"getInstanceStatus":          "packet 1: instance get-status",
-	"getDeviceAuthorizationPage": "browser navigation endpoint, deferred contract",
-	"authorizeMcpOAuthClient":    "browser navigation endpoint, deferred contract",
+	"getDeviceAuthorizationPage": "dedicated browser URL handoff",
+	"authorizeMcpOAuthClient":    "dedicated browser URL handoff",
 }
 
 func TestReadSpecsMatchInventory(t *testing.T) {
@@ -80,7 +99,7 @@ func TestReadSpecsMatchInventory(t *testing.T) {
 			t.Errorf("%s: method = %s, want GET", spec.operationID, op.Method)
 		}
 		if op.Path != spec.path {
-			t.Errorf("%s: path = %s, want %s", spec.operationID, spec.path, spec.path)
+			t.Errorf("%s: path = %s, want %s", spec.operationID, op.Path, spec.path)
 		}
 		if op.Command.Group != spec.group || op.Command.Action != spec.action {
 			t.Errorf("%s: command = %s %s, spec = %s %s", spec.operationID, op.Command.Group, op.Command.Action, spec.group, spec.action)
@@ -91,17 +110,19 @@ func TestReadSpecsMatchInventory(t *testing.T) {
 		if len(op.Parameters) != len(spec.params) {
 			t.Errorf("%s: %d params in spec, %d in inventory", spec.operationID, len(spec.params), len(op.Parameters))
 		}
-		byName := make(map[string]int)
+		byName := make(map[string]bool)
 		for _, param := range op.Parameters {
-			byName[param.In+":"+param.Name] = 1
+			byName[param.In+":"+param.Name] = param.Required
 		}
 		for _, param := range spec.params {
 			location := "path"
 			if param.in == paramQuery {
 				location = "query"
 			}
-			if byName[location+":"+param.name] == 0 {
+			if required, ok := byName[location+":"+param.name]; !ok {
 				t.Errorf("%s: spec param %s:%s not documented", spec.operationID, location, param.name)
+			} else if required != param.required {
+				t.Errorf("%s: required flag differs for %s:%s", spec.operationID, location, param.name)
 			}
 		}
 	}
@@ -164,6 +185,65 @@ func findCommand(parent *cobra.Command, name string) *cobra.Command {
 	return nil
 }
 
+func TestSecretReadRedaction(t *testing.T) {
+	for _, command := range []struct {
+		name  string
+		args  []string
+		field string
+	}{
+		{"oauth", []string{"oauth", "get-id-token"}, "idToken"},
+		{"gitea", []string{"gitea", "get-integration", "--project-id", "p1"}, "webhookSecret"},
+	} {
+		t.Run(command.name, func(t *testing.T) {
+			for _, test := range []struct {
+				name string
+				body string
+				want string
+			}{
+				{"secret", `{"` + command.field + `":"synthetic-secret","number":9007199254740993}`, `{"` + command.field + `":"[REDACTED]","number":9007199254740993}`},
+				{"null-field", `{"` + command.field + `":null}`, `{"` + command.field + `":null}`},
+				{"absent", `{}`, `{}`},
+				{"null-object", `null`, `null`},
+				{"malformed", `{"` + command.field + `":"synthetic-secret"`, ""},
+				{"trailing-data", `{"` + command.field + `":"synthetic-secret"} {}`, ""},
+			} {
+				t.Run(test.name, func(t *testing.T) {
+					server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						_, _ = w.Write([]byte(test.body))
+					}))
+					defer server.Close()
+					env := newTestEnv(t)
+					env.setAPIURL(server.URL + "/api")
+					env.env["KANEO_TOKEN"] = "synthetic"
+					status, stdout, stderr := env.run(command.args...)
+					if strings.Contains(stdout+stderr, "synthetic-secret") {
+						t.Fatal("secret leaked into output")
+					}
+					if test.want == "" {
+						if status == 0 || stdout != "" {
+							t.Fatalf("invalid response: status=%d stdout=%q", status, stdout)
+						}
+						return
+					}
+					var got, want map[string]json.RawMessage
+					if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+						t.Fatal(err)
+					}
+					if err := json.Unmarshal([]byte(test.want), &want); err != nil {
+						t.Fatal(err)
+					}
+					gotJSON, _ := json.Marshal(got)
+					wantJSON, _ := json.Marshal(want)
+					if status != 0 || string(gotJSON) != string(wantJSON) {
+						t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+					}
+				})
+			}
+		})
+	}
+}
+
 func TestReadRequiredAndEnumFlags(t *testing.T) {
 	env := newTestEnv(t)
 	env.setAPIURL("https://example.com/api")
@@ -205,6 +285,20 @@ func TestReadPathEscapingAndQueryOmission(t *testing.T) {
 	}
 	if gotQuery != "workspaceId=ws+1" {
 		t.Fatalf("query = %q, want only the supplied workspaceId", gotQuery)
+	}
+}
+
+func TestRoleSelectorRejectsAmbiguousOrEmptyInput(t *testing.T) {
+	env := newTestEnv(t)
+	env.setAPIURL("https://example.com/api")
+	for _, args := range [][]string{
+		{"org", "get-role"},
+		{"org", "get-role", "--role-id", "id", "--role-name", "name"},
+		{"org", "get-role", "--role-name", ""},
+	} {
+		if status, stdout, stderr := env.run(args...); status != 2 || stdout != "" {
+			t.Fatalf("%v: status=%d stdout=%q stderr=%q", args, status, stdout, stderr)
+		}
 	}
 }
 
@@ -255,7 +349,9 @@ func TestPublicReadOmitsCredentials(t *testing.T) {
 }
 
 func TestBinaryDownloadRequiresOutputAndRefusesOverwrite(t *testing.T) {
+	requests := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests++
 		w.Header().Set("Content-Type", "image/png")
 		_, _ = w.Write([]byte{0x89, 'P', 'N', 'G', 0x00, 0xff})
 	}))
@@ -266,6 +362,9 @@ func TestBinaryDownloadRequiresOutputAndRefusesOverwrite(t *testing.T) {
 
 	if status, _, stderr := env.run("user", "download-avatar", "--id", "u1"); status != 2 || !strings.Contains(stderr, "--output is required") {
 		t.Fatalf("missing output: status=%d stderr=%q", status, stderr)
+	}
+	if requests != 0 {
+		t.Fatal("missing output issued a request")
 	}
 
 	dir := t.TempDir()
@@ -279,6 +378,9 @@ func TestBinaryDownloadRequiresOutputAndRefusesOverwrite(t *testing.T) {
 	}
 	if status, _, stderr := env.run("user", "download-avatar", "--id", "u1", "--output", dest); status != 2 || !strings.Contains(stderr, "--force") {
 		t.Fatalf("overwrite: status=%d stderr=%q", status, stderr)
+	}
+	if requests != 1 {
+		t.Fatal("overwrite refusal issued a request")
 	}
 	if status, _, stderr := env.run("user", "download-avatar", "--id", "u1", "--output", dest, "--force"); status != 0 {
 		t.Fatalf("force overwrite: status=%d stderr=%q", status, stderr)
@@ -329,5 +431,29 @@ func TestBinaryDownloadToStdout(t *testing.T) {
 	}
 	if stdout != "binary-body" {
 		t.Fatalf("stdout = %q", stdout)
+	}
+}
+
+func TestJSONResponseValidationAcrossChunks(t *testing.T) {
+	for _, payload := range []string{`{"value":9007199254740993}`, `{"broken":`, `{} {}`} {
+		t.Run(payload, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(" \n"))
+				w.(http.Flusher).Flush()
+				_, _ = w.Write([]byte(payload))
+			}))
+			defer server.Close()
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			status, stdout, stderr := env.run("org", "list")
+			if json.Valid([]byte(payload)) {
+				if status != 0 || stdout != " \n"+payload+"\n" {
+					t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+				}
+			} else if status == 0 || stdout != "" {
+				t.Fatalf("invalid JSON: status=%d stdout=%q stderr=%q", status, stdout, stderr)
+			}
+		})
 	}
 }

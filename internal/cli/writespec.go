@@ -123,11 +123,51 @@ func (a *app) runWrite(cmd *cobra.Command, spec writeSpec) error {
 		Body:        body,
 		ContentType: contentTypeFor(body),
 		OperationID: spec.operationID,
+		Sensitive:   !spec.public && body != nil,
 	})
 	if err != nil {
 		return err
 	}
-	return writeJSONStream(cmd.OutOrStdout(), resp)
+	return writeMutationResult(cmd.OutOrStdout(), resp, spec.operationID)
+}
+
+// Preserve the complete server result on stdout even when a batch only partly
+// succeeds. Scripts can inspect individual outcomes while relying on exit 5.
+func writeMutationResult(out io.Writer, resp *client.Response, operation string) error {
+	switch operation {
+	case "bulkUpdateTasks", "importTasks", "importGitHubIssues", "importGiteaIssues":
+	default:
+		return writeJSONStream(out, resp)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	payload, err := io.ReadAll(resp.Body)
+	if err != nil {
+		if client.IsTimeout(err) {
+			return &client.TimeoutError{Err: err}
+		}
+		return err
+	}
+	var result struct {
+		Success *bool `json:"success"`
+		Results struct {
+			Failed int `json:"failed"`
+		} `json:"results"`
+		Errors []json.RawMessage `json:"errors"`
+	}
+	if err := json.Unmarshal(payload, &result); err != nil {
+		return errors.New("server returned an invalid batch result")
+	}
+	if err := writeJSONBytes(out, payload); err != nil {
+		return err
+	}
+	if (result.Success != nil && !*result.Success) || result.Results.Failed > 0 || len(result.Errors) > 0 {
+		return &client.Error{
+			StatusCode: resp.StatusCode, Code: "partial_failure",
+			Message:     "operation reported failed items; inspect the result on stdout",
+			OperationID: operation,
+		}
+	}
+	return nil
 }
 
 // readBody reads and validates the JSON request body before any network access.

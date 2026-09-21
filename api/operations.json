@@ -475,7 +475,7 @@
       "command": {
         "group": "auth",
         "action": "get-device-authorization-page",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -7388,7 +7388,7 @@
       "command": {
         "group": "mcp",
         "action": "start-authorization",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {

@@ -77,6 +77,10 @@ func (a *app) newReadCommand(spec readSpec) *cobra.Command {
 		}
 		cmd.Flags().String(param.flag, "", help)
 	}
+	if spec.operationID == "getOrganizationRole" {
+		cmd.MarkFlagsOneRequired("role-id", "role-name")
+		cmd.MarkFlagsMutuallyExclusive("role-id", "role-name")
+	}
 	if spec.binary {
 		cmd.Flags().String("output", "", "Destination file path, or - for stdout (required)")
 		cmd.Flags().Bool("force", false, "Overwrite an existing destination file")
@@ -87,6 +91,11 @@ func (a *app) newReadCommand(spec readSpec) *cobra.Command {
 func (a *app) runRead(cmd *cobra.Command, spec readSpec) error {
 	ctx := cmd.Context()
 
+	if spec.binary {
+		if err := validateBinaryOutput(cmd); err != nil {
+			return err
+		}
+	}
 	pathValues := make(map[string]string, len(spec.params))
 	var query url.Values
 	for _, param := range spec.params {
@@ -141,6 +150,12 @@ func (a *app) runRead(cmd *cobra.Command, spec readSpec) error {
 	if spec.binary {
 		return writeBinary(cmd, resp)
 	}
+	switch spec.operationID {
+	case "getOAuthIdToken":
+		return writeRedactedJSON(cmd.OutOrStdout(), resp, "idToken")
+	case "getGiteaIntegration":
+		return writeRedactedJSON(cmd.OutOrStdout(), resp, "webhookSecret")
+	}
 	return writeJSONStream(cmd.OutOrStdout(), resp)
 }
 
@@ -156,6 +171,9 @@ func (a *app) readClient(ctx context.Context, sess *session, public, optionalAut
 }
 
 func validateParam(param readParam, value string) error {
+	if param.in == paramPath && (value == "" || value == "." || value == "..") {
+		return fmt.Errorf("--%s must identify a nonempty path segment other than '.' or '..'", param.flag)
+	}
 	if param.minLen > 0 && len(value) < param.minLen {
 		return fmt.Errorf("--%s must be at least %d characters", param.flag, param.minLen)
 	}
@@ -199,6 +217,26 @@ func expandPath(template string, values map[string]string) (string, error) {
 	return path, nil
 }
 
+// validateBinaryOutput rejects missing destinations and known overwrite conflicts
+// before accessing credentials or issuing a request. O_EXCL still protects the
+// eventual open against a destination created after this check.
+func validateBinaryOutput(cmd *cobra.Command) error {
+	output, _ := cmd.Flags().GetString("output")
+	if output == "" {
+		return &usageError{err: errors.New("--output is required")}
+	}
+	force, _ := cmd.Flags().GetBool("force")
+	if output == "-" || force {
+		return nil
+	}
+	if _, err := os.Lstat(output); err == nil {
+		return &usageError{err: fmt.Errorf("destination %q already exists; pass --force to overwrite", output)}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return &processError{err: err}
+	}
+	return nil
+}
+
 // writeBinary streams a binary 200 response to an explicit destination. It never
 // writes to stdout unless the caller asked for "-", and it refuses to overwrite
 // an existing file without --force.
@@ -206,9 +244,6 @@ func writeBinary(cmd *cobra.Command, resp *client.Response) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	output, _ := cmd.Flags().GetString("output")
-	if output == "" {
-		return &usageError{err: errors.New("--output is required")}
-	}
 	if resp.Empty() {
 		return nil
 	}

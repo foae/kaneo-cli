@@ -1,6 +1,6 @@
 # CLI contract
 
-This is the binding contract for the command surface. Help, version, `profile` management, `auth login`/`logout`/`get-session`, all GET read operations, and all JSON mutation operations (including the presigned task-image upload and the base64 avatar upload) are implemented. Two browser-navigation endpoints, `auth get-device-authorization-page` and `mcp start-authorization`, are deliberately deferred pending a browser interaction contract.
+This is the binding contract for the command surface. Help, version, profile management, authentication, JSON API operations, file transfers and browser URL handoffs are implemented; [verification](verification.md) distinguishes real acceptance from fixture coverage and records API discrepancies.
 
 ## Names and input
 
@@ -8,17 +8,18 @@ This is the binding contract for the command surface. Help, version, `profile` m
 
 Use `--profile NAME`, `--api-url URL`, `--timeout DURATION` and `--yes` consistently once implemented. The URL is the full API base URL, including `/api`; do not append it twice. Explicitly configured HTTP is allowed for self-hosted instances, with a stderr warning before transmitting credentials; never downgrade HTTPS automatically. Validate malformed URLs before network access.
 
-Document operation-specific named flags for scalar path/query parameters. Complex bodies accept `--body-file PATH` or `--body-file -` for stdin, are validated before any network access and are passed through unchanged so unknown schema-permitted fields and numeric precision survive. Two file operations construct their request from a local file instead: `task create-image-upload` requests a presigned URL, streams the bytes to storage with a client that never carries the API credential, and prints the API response; `user upload-avatar` sends a bounded base64 body. A flag is present only when explicitly supplied: omitted, JSON null, false, zero and empty string are distinct. Reject conflicting body/field inputs rather than silently picking one. Never accept secrets in positional arguments or print shell commands containing them.
+Document operation-specific named flags for scalar path/query parameters. Complex bodies accept `--body-file PATH` or `--body-file -` for stdin, are validated before any network access and are passed through unchanged so unknown schema-permitted fields and numeric precision survive. Two file operations construct their request from a local file instead: `task create-image-upload` requests a presigned URL, streams the bytes to storage with a client that never carries the API credential, and prints only `{"key":"..."}` for the finalize operation; the presigned URL and transfer headers are never printed. `user upload-avatar` sends a bounded base64 body. A flag is present only when explicitly supplied: omitted, JSON null, false, zero and empty string are distinct. Reject conflicting body/field inputs rather than silently picking one. Never accept secrets in positional arguments or print shell commands containing them.
 
 No implicit prompts, even on a TTY. Device login is an explicit interactive action; describe its behavior on a non-TTY and provide a no-browser path. Destructive actions (deletes, revocations, removals, resets and equivalent irreversible state changes) require `--yes` before making any request, independent of terminal type. This includes local credential removal via `auth logout` and `profile delete`. Bulk mutation must report partial failure rather than successful exit for incomplete work.
 
 ## Output
 
-- Successful JSON: API response directly on stdout, no envelope; emit a trailing newline. JSON null remains `null`.
+- Successful JSON: API response directly on stdout, no envelope; emit a trailing newline. JSON null remains `null`. The task-image upload intentionally emits only the safe object key, as described above.
+- Secret-read exceptions: `oauth get-id-token` replaces a non-null `idToken` with `"[REDACTED]"`; `gitea get-integration` does the same for `webhookSecret`. Missing fields and null values remain unchanged, as do unrelated JSON values. These responses are validated before any output; their whitespace and object-key order may change.
 - No-content responses: empty stdout, not `{}` or `null`.
 - Preserve API pagination shape. No invented `--all` behavior or automatic aggregation; follow actual documented pagination parameters and links.
 - Binary downloads: require an explicit destination. Never corrupt stdout with binary bytes by default; refuse overwriting an existing file without an explicit overwrite choice.
-- Browser/HTML/redirect endpoints: document the browser or URL contract per operation; never claim their HTML is JSON. Do not print secret-bearing redirect URLs.
+- Browser URL handoffs: `auth get-device-authorization-page` prints the initial `/auth/device` URL with `ui=1`; `mcp start-authorization` prints the initial `/mcp/authorize` URL with validated authorization parameters. Both write guidance to stderr and make no HTTP request, load no credential and launch no browser. Exit zero means the URL was written, not authorization completed. Neither follows nor prints secret-bearing redirect destinations.
 - Diagnostics and one structured error object go to stderr: `{"error":{"code":"invalid_arguments","message":"..."}}`. The foundation uses `unknown_command`, `invalid_arguments` and `process_failure`; add stable API error codes plus safe HTTP status or operation ID when relevant, never raw credentials/server dumps.
 - `version` and `--version` return the same JSON object with `version`, `commit`, `date`. Help remains human-readable.
 

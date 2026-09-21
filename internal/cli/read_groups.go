@@ -243,6 +243,12 @@ var readSpecs = []readSpec{
 		short:       "Get Organization Role",
 		operationID: "getOrganizationRole",
 		path:        "/auth/organization/get-role",
+		// The pinned OpenAPI omits these; see provenance supplements.organization_role.
+		params: []readParam{
+			{name: "roleId", in: paramQuery, flag: "role-id", minLen: 1, help: "Role ID (exclusive with --role-name)"},
+			{name: "roleName", in: paramQuery, flag: "role-name", minLen: 1, help: "Role name (exclusive with --role-id)"},
+			{name: "organizationId", in: paramQuery, flag: "organization-id", minLen: 1, help: "Organization ID; defaults to the active organization"},
+		},
 	},
 	{
 		group: "org", action: "list",
@@ -317,9 +323,9 @@ var readSpecs = []readSpec{
 		operationID: "globalSearch",
 		path:        "/search",
 		params: []readParam{
-			{name: "q", in: paramQuery, flag: "q", required: true},
+			{name: "q", in: paramQuery, flag: "q", required: true, minLen: 1},
 			{name: "type", in: paramQuery, flag: "type", enum: []string{"all", "tasks", "projects", "workspaces", "comments", "activities"}},
-			{name: "workspaceId", in: paramQuery, flag: "workspace-id", required: true},
+			{name: "workspaceId", in: paramQuery, flag: "workspace-id", required: true, minLen: 1},
 			{name: "projectId", in: paramQuery, flag: "project-id"},
 			{name: "limit", in: paramQuery, flag: "limit"},
 			{name: "userEmail", in: paramQuery, flag: "user-email"},

@@ -290,7 +290,7 @@
       "path": "/auth/device",
       "group": "auth",
       "action": "get-device-authorization-page",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -304,7 +304,7 @@
       "path": "/mcp/authorize",
       "group": "mcp",
       "action": "start-authorization",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",

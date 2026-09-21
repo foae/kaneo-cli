@@ -38,6 +38,21 @@
         "The authentication guide gives examples and polling error names but does not establish this CLI's final client ID, storage policy, browser-launch behavior, or complete machine-readable request and response schemas.",
         "The guide says all API endpoints require authentication, while individual OpenAPI operations can override inherited security; future implementation must follow the endpoint-level OpenAPI security declaration and verify live behavior."
       ]
+    },
+    "organization_role": {
+      "operation_id": "getOrganizationRole",
+      "source_url": "https://raw.githubusercontent.com/better-auth/better-auth/v1.6.26/packages/better-auth/src/plugins/organization/routes/crud-access-control.ts",
+      "source_revision": "v1.6.26",
+      "relationship": "Kaneo at ca70c72c4ed5585d0e4ffc3baf692def6f44d185 declares better-auth ^1.6.26. This source tag is evidence for the contract, not a claim about the container's exact installed patch.",
+      "scope": "CLI query supplement only. The pinned OpenAPI and generated source inventory remain unchanged.",
+      "observed_at": "2026-09-21",
+      "evidence": "Disposable pinned Kaneo v2.25.0: roleId and roleName each returned HTTP 200 and the newly created organization role when organizationId was supplied. See docs/verification.md.",
+      "constraints": "Exactly one non-empty roleId or roleName; optional non-empty organizationId, otherwise the server uses the active organization.",
+      "parameters": [
+        {"in": "query", "name": "roleId", "required": false},
+        {"in": "query", "name": "roleName", "required": false},
+        {"in": "query", "name": "organizationId", "required": false}
+      ]
     }
   }
 }

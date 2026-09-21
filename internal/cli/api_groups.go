@@ -39,6 +39,9 @@ func (a *app) newAPIGroups() []*cobra.Command {
 	for _, special := range a.newUploadCommands() {
 		add(special.group, special.cmd)
 	}
+	for _, navigation := range a.newNavigationCommands() {
+		add(navigation.group, navigation.cmd)
+	}
 
 	built := make([]*cobra.Command, 0, len(order))
 	for _, group := range order {

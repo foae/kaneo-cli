@@ -16,17 +16,8 @@ type commandStatus struct {
 	Status string `json:"status"`
 }
 
-// deferredCommands are the two browser-navigation endpoints that are not
-// implemented by design; every other planned command would be a gap.
-var deferredCommands = map[string]bool{
-	"auth get-device-authorization-page": true,
-	"mcp start-authorization":            true,
-}
-
 // TestInventoryCoverageIsHonest reconciles the reviewed mapping against the
-// registered command tree: every operation is mapped exactly once, every
-// `implemented` entry has a real command, and the only `planned` entries are
-// the deliberately deferred browser operations.
+// registered command tree. Every implemented command has a RunE.
 func TestInventoryCoverageIsHonest(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join("..", "..", "api", "commands.json"))
 	if err != nil {
@@ -52,16 +43,8 @@ func TestInventoryCoverageIsHonest(t *testing.T) {
 		}
 		seen[key] = true
 
-		// The only acceptable non-implemented mappings are the two documented
-		// browser deferrals; they deliberately have no command yet.
-		if deferredCommands[entry.Group+" "+entry.Action] {
-			if entry.Status != "planned" {
-				t.Errorf("%s %s: deferred command status = %q, want planned", entry.Method, entry.Path, entry.Status)
-			}
-			continue
-		}
 		if entry.Status != "implemented" {
-			t.Errorf("%s %s: mapped command %s %s is neither implemented nor a documented deferral (status %q)",
+			t.Errorf("%s %s: mapped command %s %s is not implemented (status %q)",
 				entry.Method, entry.Path, entry.Group, entry.Action, entry.Status)
 			continue
 		}

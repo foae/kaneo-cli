@@ -26,7 +26,7 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `auth get-device-authorization-page` | `GET` | `/auth/device` | `getDeviceAuthorizationPage` | `planned` | 2 |  | 200, 302 |
+| `auth get-device-authorization-page` | `GET` | `/auth/device` | `getDeviceAuthorizationPage` | `implemented` | 2 |  | 200, 302 |
 | `auth get-session` | `GET` | `/auth/get-session` | `getSession` | `implemented` | 0 |  | 200 |
 
 ## column
@@ -149,7 +149,7 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `mcp decide-authorization-request` | `POST` | `/mcp/authorize/request/{requestId}` | `decideMcpAuthorizationRequest` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 | `mcp get-authorization-request` | `GET` | `/mcp/authorize/request/{requestId}` | `getMcpAuthorizationRequest` | `implemented` | 1 |  | 200, 400, 404 |
 | `mcp register-oauth-client` | `POST` | `/mcp/register` | `registerMcpOAuthClient` | `implemented` | 0 | yes | 200, 400 |
-| `mcp start-authorization` | `GET` | `/mcp/authorize` | `authorizeMcpOAuthClient` | `planned` | 6 |  | 302, 400 |
+| `mcp start-authorization` | `GET` | `/mcp/authorize` | `authorizeMcpOAuthClient` | `implemented` | 6 |  | 302, 400 |
 
 ## notification
 

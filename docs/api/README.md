@@ -37,5 +37,5 @@ Never fetch upstream during ordinary generation, checks or builds.
 3. Resolve the upstream source commit and compare exact bytes with the official spec. Recheck the documentation configuration/source relationship and upstream license; do not claim a source revision without matching evidence.
 4. Replace reviewed snapshots and update their SHA-256, retrieval timestamps, source URLs/commits and complete attribution in `api/provenance.json`.
 5. Update `api/commands.json` for every changed operation. Review public command naming explicitly; do not silently rename existing commands or treat a new operation as implemented.
-6. Run the generator, inspect the generated inventory/reference diff, then run `go run ./internal/cmd/dev check`. Commit inputs and derived outputs together.
+6. Run the generator, inspect the generated inventory/reference diff, then run `just check`. Commit inputs and derived outputs together.
 7. Reconcile affected implementation packets, compatibility evidence and release readiness. Updating the spec alone does not prove server compatibility.

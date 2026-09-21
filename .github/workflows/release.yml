@@ -4,12 +4,12 @@ on:
   workflow_call:
     inputs:
       verified_sha:
-        description: Exact SHA that the caller verified and cross-built.
+        description: Exact SHA that the caller verified, race-tested, vulnerability-scanned, and cross-built.
         required: true
         type: string
 
 # The caller grants these permissions explicitly. This workflow is only called
-# from trusted main CI after verify and cross complete for the exact SHA.
+# from trusted main CI after verify, race, vuln, and cross complete for the exact SHA.
 permissions:
   contents: write
   pull-requests: write

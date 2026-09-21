@@ -53,8 +53,12 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+      - name: Set up just
+        uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3
+        with:
+          just-version: '1.58.0'
       - name: Run race detector
-        run: go run ./internal/cmd/dev race
+        run: just race
 
   vuln:
     name: Vulnerability scan
@@ -71,8 +75,12 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+      - name: Set up just
+        uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3
+        with:
+          just-version: '1.58.0'
       - name: Run pinned govulncheck
-        run: go run ./internal/cmd/dev vuln
+        run: just vuln
 
   cross:
     name: Cross-build release targets
@@ -92,13 +100,19 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+      - name: Set up just
+        uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3
+        with:
+          just-version: '1.58.0'
       - name: Build all release targets
-        run: go run ./internal/cmd/dev cross
+        run: just cross
 
   release:
     name: Release
     needs:
       - verify
+      - race
+      - vuln
       - cross
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/release.yml

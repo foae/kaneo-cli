@@ -34,7 +34,7 @@ func (a *app) newAuthCommand() *cobra.Command {
 			return help(cmd)
 		},
 	}
-	group.AddCommand(a.newAuthLoginCommand(), a.newAuthLogoutCommand(), a.newAuthGetSessionCommand())
+	group.AddCommand(a.newAuthLoginCommand(), a.newAuthLogoutCommand(), a.newAuthGetSessionCommand(), a.newAuthDeviceAuthorizationPageCommand())
 	return group
 }
 
@@ -48,12 +48,7 @@ func (a *app) newAuthLoginCommand() *cobra.Command {
 		Args:  noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx := cmd.Context()
-			// Logging in to a named profile is how that profile is created; an
-			// explicit profile that does not exist yet must not block login.
-			if err := a.ensureLoginProfile(ctx); err != nil {
-				return err
-			}
-			sess, err := a.session(ctx)
+			sess, err := a.loginSession(ctx)
 			if err != nil {
 				return err
 			}
@@ -102,39 +97,41 @@ func (a *app) newAuthLoginCommand() *cobra.Command {
 	return cmd
 }
 
-// ensureLoginProfile creates an explicitly requested profile before login so a
-// first login to a new named profile works without a separate `profile set`.
-func (a *app) ensureLoginProfile(ctx context.Context) error {
-	name := a.flags.profile
-	if name == "" {
-		name = a.env("KANEO_PROFILE")
-	}
-	if name == "" {
-		return nil
-	}
+// loginSession resolves an explicitly requested, not-yet-persisted profile in
+// memory. Credential saving persists it only after authentication succeeds.
+func (a *app) loginSession(ctx context.Context) (*session, error) {
 	dir, err := a.configDir()
 	if err != nil {
-		return &processError{err: err}
+		return nil, err
 	}
 	store := config.NewStore(dir)
 	cfg, err := store.Load(ctx)
 	if err != nil {
-		return &processError{err: err}
+		return nil, err
 	}
-	if _, ok := cfg.Profile(name); ok {
-		return nil
+
+	name := a.flags.profile
+	if name == "" {
+		name = a.env("KANEO_PROFILE")
 	}
-	if err := store.Update(ctx, func(cfg *config.Config) error {
-		profile := cfg.EnsureProfile(name)
-		cfg.PutProfile(name, *profile)
-		if cfg.DefaultProfile == "" {
-			cfg.DefaultProfile = name
+	if name != "" {
+		if _, ok := cfg.Profile(name); !ok {
+			profile := cfg.EnsureProfile(name)
+			cfg.PutProfile(name, *profile)
 		}
-		return nil
-	}); err != nil {
-		return &processError{err: err}
 	}
-	return nil
+
+	resolved, err := a.resolver(cfg).Resolve()
+	if err != nil {
+		return nil, &usageError{err: err}
+	}
+	return &session{
+		app:      a,
+		store:    store,
+		cfg:      cfg,
+		resolved: resolved,
+		creds:    a.credentialStore(store, a.streams.errOut),
+	}, nil
 }
 
 func (a *app) newAuthLogoutCommand() *cobra.Command {

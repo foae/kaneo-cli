@@ -13,14 +13,14 @@ import (
 )
 
 // fullyCoveredOperations names the operations outside the generic write table
-// that are nonetheless implemented or deliberately deferred, so the coverage
+// that are nonetheless implemented, so the coverage
 // check can account for every pinned operation.
 var fullyCoveredOperations = map[string]string{
 	"getSession":                 "packet 1",
 	"getConfig":                  "packet 1",
 	"getInstanceStatus":          "packet 1",
-	"getDeviceAuthorizationPage": "deferred browser contract",
-	"authorizeMcpOAuthClient":    "deferred browser contract",
+	"getDeviceAuthorizationPage": "dedicated browser URL handoff",
+	"authorizeMcpOAuthClient":    "dedicated browser URL handoff",
 	"createTaskImageUpload":      "dedicated task create-image-upload",
 	"uploadUserAvatar":           "dedicated user upload-avatar",
 }
@@ -54,6 +54,21 @@ func TestWriteSpecsMatchInventory(t *testing.T) {
 		}
 		if len(op.Parameters) != len(spec.params) {
 			t.Errorf("%s: %d params in spec, %d in inventory", spec.operationID, len(spec.params), len(op.Parameters))
+		}
+		byName := make(map[string]bool)
+		for _, param := range op.Parameters {
+			byName[param.In+":"+param.Name] = param.Required
+		}
+		for _, param := range spec.params {
+			location := "path"
+			if param.in == paramQuery {
+				location = "query"
+			}
+			if required, ok := byName[location+":"+param.name]; !ok {
+				t.Errorf("%s: spec param %s:%s not documented", spec.operationID, location, param.name)
+			} else if required != param.required {
+				t.Errorf("%s: required flag differs for %s:%s", spec.operationID, location, param.name)
+			}
 		}
 		if spec.method == "DELETE" && !spec.destructive {
 			t.Errorf("%s: DELETE method must be destructive", spec.operationID)
@@ -244,6 +259,9 @@ func TestTaskImageUploadStreamsToStorageWithoutCredential(t *testing.T) {
 	if string(storageBody) != string(imageBytes) {
 		t.Fatalf("storage body = %v", storageBody)
 	}
+	if strings.Contains(stdout+stderr, "signature=abc") || strings.Contains(stdout, "uploadUrl") || strings.Contains(stdout, "headers") {
+		t.Fatal("upload output exposed presigned transfer credentials")
+	}
 	if !strings.Contains(stdout, "tasks/t1/img.png") {
 		t.Fatalf("stdout = %q", stdout)
 	}
@@ -287,5 +305,52 @@ func TestUploadAvatarEncodesFile(t *testing.T) {
 	}
 	if status, _, stderr := env.run("user", "upload-avatar", "--file", avatarPath, "--content-type", "text/plain"); status != 2 {
 		t.Fatalf("bad content type: status=%d stderr=%q", status, stderr)
+	}
+}
+
+func TestBatchPartialFailurePreservesResult(t *testing.T) {
+	cases := []struct {
+		name    string
+		args    []string
+		payload string
+	}{
+		{"bulk", []string{"task", "bulk-update", "--yes"}, `{"success":false,"updatedCount":1}`},
+		{"tasks", []string{"task", "import", "--project-id", "p1"}, `{"results":{"total":2,"successful":1,"failed":1,"tasks":[]}}`},
+		{"github", []string{"github", "import-issues"}, `{"imported":1,"skipped":1,"errors":["synthetic failure"]}`},
+		{"gitea", []string{"gitea", "import-issues"}, `{"imported":1,"updated":0,"skipped":1,"errors":["synthetic failure"]}`},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = io.WriteString(w, tt.payload)
+			}))
+			defer server.Close()
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			args := append(tt.args, "--body-file", writeBodyFile(t, `{}`))
+			status, stdout, stderr := env.run(args...)
+			if status != 5 || stdout != tt.payload+"\n" || !strings.Contains(stderr, `"code":"partial_failure"`) {
+				t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+			}
+		})
+	}
+}
+
+func TestMutationBodyCannotRedirectWithoutBearer(t *testing.T) {
+	requests := 0
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests++
+		_, _ = io.WriteString(w, `{}`)
+	}))
+	defer target.Close()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL, http.StatusTemporaryRedirect)
+	}))
+	defer server.Close()
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	status, stdout, stderr := env.run("gitea", "create-integration", "--project-id", "p1", "--body-file", writeBodyFile(t, `{"token":"synthetic-secret"}`))
+	if status != 4 || requests != 0 || stdout != "" || !strings.Contains(stderr, "cross_origin_redirect_refused") {
+		t.Fatalf("status=%d requests=%d stdout=%q stderr=%q", status, requests, stdout, stderr)
 	}
 }

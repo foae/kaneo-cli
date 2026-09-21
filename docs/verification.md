@@ -19,7 +19,7 @@ just snapshot  # pinned GoReleaser, never publishes
 just hooks     # explicitly opt in to Git hooks
 ```
 
-The justfile is a convenience interface, not a second implementation of verification. CI's Linux/macOS/Windows verification matrix invokes `just check`, exercising the wrapper without repeating the full checks; hooks and the other CI jobs continue to call Go directly. Changes to recipes must preserve native Windows compatibility and nonzero failure propagation. Keep lifecycle logic and tool versions in Go, and update the documented just version alongside its CI pin.
+The justfile is a convenience interface, not a second implementation of verification. CI's Linux/macOS/Windows verification matrix invokes `just check`; race, vulnerability, cross-build and snapshot jobs use the corresponding recipes. Hooks call Go directly so installed hooks do not require just. Changes to recipes must preserve native Windows compatibility and nonzero failure propagation. Keep lifecycle logic and tool versions in Go, and update the documented just version alongside its CI pin.
 
 `just test-end2end` is intentionally absent: the disposable environment below is not an automated CLI acceptance suite. Add that recipe only when shared checks and real built-CLI scenarios can run with automated bootstrap, bounded readiness, isolated credentials, owned resources and cleanup on failure/cancellation. Fixed ports require rejecting concurrent runs or a deliberate networking redesign.
 
@@ -47,7 +47,7 @@ The explicit rule set is correctness-first: `errcheck`, `govet`, `ineffassign`, 
 
 Fix the cause of findings. For a demonstrated false positive, use a narrowly scoped `//nolint:<linter> // concrete reason`; do not disable checks globally or discard errors merely to silence lint. Review the rule set and Go compatibility when updating the pinned tool.
 
-Git hooks are opt-in via `go run ./internal/cmd/dev hooks`; they call shared checks and are not a substitute for CI. Never silently install hooks or overwrite an existing custom hook configuration.
+Git hooks are opt-in via `just hooks`; they call shared Go checks directly and are not a substitute for CI. Never silently install hooks or overwrite an existing custom hook configuration.
 
 CI uses GitHub-hosted runners only, read-only permissions for untrusted code, pinned actions and no privileged fork-PR execution. Native runtime coverage is precisely the workflow matrix, not whatever GOOS/GOARCH values cross-compile. Race detection requires a supported native C toolchain even though distributed binaries are CGO-free. Linux/macOS/Windows keyring behavior and Windows ACLs need additional real acceptance once implemented.
 
@@ -93,7 +93,7 @@ Required scenarios:
 - Native keyring success, unavailable-keyring warning/fallback, secure Unix mode/Windows DACL, concurrency and logout cleanup.
 - Integration operations: fixture protocol coverage is distinct from real external-service acceptance. Document service credentials/prerequisites and evidence; never mark a mock as a live integration run.
 
-The foundation can prove help/version, checks, inventory consistency, packaging and environment readiness only. Full API compatibility and all platform-specific credentials remain **pending implementation**. Publishing stays disabled until their evidence meets [release readiness](releases.md).
+The packet evidence below distinguishes implemented behavior from accepted compatibility. Browser operations, recorded API discrepancies, native credential stores and live external-service scenarios still have outstanding acceptance requirements. Publishing stays disabled until the evidence meets [release readiness](releases.md).
 
 ## Packet 1 evidence (2026-09-20)
 
@@ -193,6 +193,36 @@ Readiness assessment against `release/readiness.json` — publication is **not**
 - `local-release-acceptance`: snapshot, checksums, embedded metadata and plan done; installation smoke is Linux-only.
 
 Blockers before activation, recorded rather than waived: implement or obtain a decision for the two browser-navigation endpoints; resolve the `getOrganizationRole` missing-parameter discrepancy; resolve the `detachLabelFromTask` 400; obtain real device approval/denial and expired/revoked-credential evidence; obtain native macOS/Windows keyring and DACL execution; and complete real external-service integration acceptance.
+
+## Packet follow-up evidence (2026-09-21)
+
+This follow-up supersedes the role, label-detachment and real device approval/denial blockers above. Environment: Linux amd64; unchanged API SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`, disposable image `ghcr.io/usekaneo/kaneo@sha256:a85a23996c36166cfcebcb4ee161b40cc62c7b924faf06353684a84d5e84162c` (server 2.25.0).
+
+- `org get-role --role-id ID` and `--role-name NAME`, each with `--organization-id ID`, returned the created role through the built CLI. Parameters are an explicitly approved source-backed supplement in `api/provenance.json`, not a modification of the pinned OpenAPI. Exactly one nonempty role selector is required; organization ID is optional. Missing, conflicting and empty selectors produce usage exit 2.
+- `label attach-to-task` returns a new attached-label ID, different from the original workspace-label ID. Passing the **returned ID** to `label detach-from-task --label-id ID --yes` succeeds; `label list-task` then returns an empty list. The earlier 400 was an acceptance-input error, not an upstream defect.
+- Real browser approval issued a bearer token successfully used for API operations. Real browser denial produced HTTP 400 `access_denied` from device polling. Credentials remained in memory, not acceptance logs.
+- Successful task-asset upload/finalize/download was already recorded in packet 3 above; packet 2's pending asset-download note is superseded.
+- Both browser-navigation mappings are now implemented as explicit URL handoffs: `auth get-device-authorization-page` forces `ui=1`; `mcp start-authorization` encodes the documented OAuth query. Built-binary smoke checks emitted the expected URLs and stderr guidance without making HTTP requests or claiming completed authorization. All 162 mappings are now marked implemented; this is coverage, not full compatibility.
+- Follow-up verification passed: `just check`, `just cross`, `just race`, and `just vuln` (no vulnerabilities found). The six cross-builds are build evidence only, not native runtime acceptance.
+
+### Six-commit review
+
+The Pro panel reviewed `9bdf000..9c048d6` before follow-up edits (review run `20260921-072012`). All six non-self seats completed: Fable, GLM, Opus 5, Kimi, Sol and Terra. Raw reviewer reports remain local review artifacts; the reconciled outcomes are recorded below.
+
+Confirmed findings addressed in the follow-up include upload path escaping, bounded file/presign reads, storage redirect refusal and timeout classification, secret-bearing response output, mutation redirect isolation, partial-failure exit status, failed-login profile atomicity, binary-output preflight, query minimum lengths, complete JSON validation, inventory parameter checks and stale documentation/diagnostics. Regression checks cover the security and behavioral paths.
+
+Review dispositions not requiring a code change:
+
+- Optional-auth downloads fail closed when the configured credential backend errors; silently falling back to anonymous access is not the contract.
+- Presigned storage headers are server-defined signing requirements, not the CLI's Kaneo bearer token; filtering `Authorization` without an upstream contract could invalidate signatures.
+- Search `limit` is a string in the pinned schema, with no numeric constraint; the requested numeric validation would invent a restriction.
+- OS failures opening body files retain process-error semantics; malformed readable inputs remain usage errors.
+- A failed storage upload emits no success key. Empty group help was hypothetical: no missing registered group description was identified.
+- The panel's required-parameter test gap was real, including Kimi's multi-anchor entry omitted by automated parsing; the manual reconciliation includes it.
+
+The panel agreed most strongly on unsafe upload path construction. Independently raised findings were checked against the implementation rather than accepted by vote; fixes after the snapshot do not make an original finding invalid.
+
+These observations do not establish expired/revoked credential handling, native macOS/Windows credential storage or external-service integration acceptance. Publication remains disabled.
 
 ## Foundation evidence (2026-09-20)
 

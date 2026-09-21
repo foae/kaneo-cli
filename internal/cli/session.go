@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -126,59 +125,50 @@ func writeJSONStream(out io.Writer, resp *client.Response) error {
 	if resp.Empty() {
 		return nil
 	}
-	reader := bufio.NewReader(resp.Body)
-	buffer := make([]byte, 32*1024)
-	last := byte(0)
-	wrote := false
-	checked := false
-	for {
-		n, readErr := reader.Read(buffer)
-		if n > 0 {
-			if !checked {
-				if !looksLikeJSON(buffer[:n]) {
-					return errors.New("server returned a non-JSON success body")
-				}
-				checked = true
-			}
-			last = buffer[n-1]
-			wrote = true
-			if _, writeErr := out.Write(buffer[:n]); writeErr != nil {
-				return &processError{err: writeErr}
-			}
+	payload, err := io.ReadAll(resp.Body)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return err
 		}
-		switch {
-		case readErr == io.EOF:
-			if wrote && last != '\n' {
-				if _, writeErr := io.WriteString(out, "\n"); writeErr != nil {
-					return &processError{err: writeErr}
-				}
-			}
-			return nil
-		case readErr != nil:
-			if errors.Is(readErr, context.Canceled) {
-				return readErr
-			}
-			if client.IsTimeout(readErr) {
-				return &client.TimeoutError{Err: readErr}
-			}
-			return &processError{err: readErr}
+		if client.IsTimeout(err) {
+			return &client.TimeoutError{Err: err}
 		}
+		return &processError{err: err}
 	}
+	if !json.Valid(payload) {
+		return errors.New("server returned an invalid JSON success body")
+	}
+	return writeJSONBytes(out, payload)
 }
 
-// looksLikeJSON reports whether the first non-space byte can begin a JSON value.
-func looksLikeJSON(chunk []byte) bool {
-	for _, b := range chunk {
-		switch b {
-		case ' ', '\t', '\r', '\n':
-			continue
-		case '{', '[', '"', '-', 't', 'f', 'n':
-			return true
-		default:
-			return b >= '0' && b <= '9'
-		}
+// writeRedactedJSON buffers before writing so malformed responses cannot leak
+// secrets. RawMessage preserves unrelated values, including precise numbers.
+func writeRedactedJSON(out io.Writer, resp *client.Response, field string) error {
+	defer func() { _ = resp.Body.Close() }()
+	if resp.Empty() {
+		return nil
 	}
-	return false
+	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return err
+		}
+		if client.IsTimeout(err) {
+			return &client.TimeoutError{Err: err}
+		}
+		return &processError{err: errors.New("could not read secret-bearing response")}
+	}
+	if len(payload) > maxRequestBody {
+		return errors.New("secret-bearing response exceeds size limit")
+	}
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(payload, &object); err != nil {
+		return errors.New("server returned an invalid JSON object")
+	}
+	if value, ok := object[field]; ok && string(value) != "null" {
+		object[field] = json.RawMessage(`"[REDACTED]"`)
+	}
+	return writeJSONValue(out, object)
 }
 
 // writeJSONBytes copies already-validated JSON bytes to stdout with a trailing
