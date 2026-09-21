@@ -68,4 +68,4 @@ brew tap foae/kaneo-cli https://github.com/foae/kaneo-cli
 brew install foae/kaneo-cli/kaneo-cli
 ```
 
-There is deliberately no checked-in Formula before an immutable release exists.
+`Formula/kaneo-cli.rb` is generated from the published immutable release. Its v1.0.0 installation and test passed on Linux amd64; this does not claim native macOS Homebrew or ARM installation acceptance.

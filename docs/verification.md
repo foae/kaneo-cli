@@ -245,7 +245,13 @@ Release preparation checks:
 - The native keyring lifecycle test calls the OS backend directly, without plaintext fallback. Run `KANEO_NATIVE_KEYRING_TEST=1 go test ./internal/auth -run TestNativeKeyring -count=1 -v` in an unlocked credential-store session (PowerShell: set `$env:KANEO_NATIVE_KEYRING_TEST='1'` first). This workstation has no Secret Service provider, so its native run failed as expected; no local native-keyring success is claimed.
 - Hosted native credential acceptance passed on revision `ad42403454ac2fd15cef64468cba1af0c85d4128`: [CI run 35590087700](https://github.com/foae/kaneo-cli/actions/runs/35590087700). All three Verify jobs passed, including the real store/get/delete lifecycle on Linux Secret Service (isolated D-Bus session and unlocked GNOME Keyring), macOS Keychain and Windows Credential Manager. These are native hosted runner checks, not claims of ARM runtime execution.
 
-Release activation links these observations from `release/readiness.json`. External-provider live acceptance remains explicitly deferred. GitHub immutable releases are enabled; publication and Homebrew installation evidence will be recorded after those operations actually succeed.
+Release activation links these observations from `release/readiness.json`. External-provider live acceptance remains explicitly deferred. GitHub immutable releases are enabled.
+
+Publication and installation acceptance:
+- [CI run 35590594298](https://github.com/foae/kaneo-cli/actions/runs/35590594298) passed every job, publishing [v1.0.0](https://github.com/foae/kaneo-cli/releases/tag/v1.0.0) at `93bfbe2b7085986aad3a625c473af4f9e7d39f9e` and attesting the six archives plus checksum manifest. GitHub reports `immutable: true`, `draft: false`, `prerelease: false`.
+- Downloaded all seven assets using `gh release download`; `sha256sum --check kaneo-cli_1.0.0_checksums.txt` passed for all six archives. `gh attestation verify kaneo-cli_1.0.0_checksums.txt --repo foae/kaneo-cli --signer-workflow foae/kaneo-cli/.github/workflows/release.yml --source-digest 93bfbe2b7085986aad3a625c473af4f9e7d39f9e --deny-self-hosted-runners` succeeded.
+- Generated [Formula PR #9](https://github.com/foae/kaneo-cli/pull/9) matched a fresh rendering from the published checksums byte-for-byte. `just check` passed before merge.
+- On Linux amd64 with Homebrew 7.0.4, `brew tap foae/kaneo-cli https://github.com/foae/kaneo-cli`, `brew install foae/kaneo-cli/kaneo-cli` and `brew test foae/kaneo-cli/kaneo-cli` passed. The installed `kaneo-cli version` returned version `1.0.0`, commit `93bfbe2b7085986aad3a625c473af4f9e7d39f9e` and date `2026-09-21T10:52:20Z`; `kaneo-cli instance get-status` returned `{"hasUsers":true,"hasAdmin":false}`. No native macOS Homebrew or ARM installation claim is made.
 
 ## Foundation evidence (2026-09-20)
 
