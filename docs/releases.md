@@ -1,6 +1,6 @@
 # Releases
 
-Releases are deliberately disabled. `release/readiness.json` is the mechanical gate; while `enabled` is `false`, the reusable release workflow's `publish` job cannot create a tag, publish assets, attest artifacts, or open a Formula pull request.
+Publication is enabled by the reviewed v1.0.0 readiness decision in `release/readiness.json`; each criterion links its acceptance evidence. Setting `enabled` to `false` disables the reusable workflow's `publish` job: it cannot create a tag, publish assets, attest artifacts, or open a Formula pull request.
 
 ## Activation
 
@@ -23,6 +23,7 @@ Before enabling releases, configure the `foae/kaneo-cli` repository to:
 - permit the workflow's explicit `GITHUB_TOKEN` write permissions (the repository default may remain read-only);
 - allow Actions to create pull requests;
 - retain `contents: write`, `pull-requests: write`, `id-token: write`, and `attestations: write` on the trusted CI release caller;
+- enable GitHub immutable releases so published assets and their tags cannot be replaced;
 - permit the repository's public-attestation plan, or explicitly accept that GitHub will reject the attestation step on an unsupported private/internal plan; and
 - keep `main` branch protection in force. The Formula update is a normal `chore(homebrew)` pull request and must not bypass review or required checks.
 

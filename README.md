@@ -2,7 +2,7 @@
 
 Unofficial, JSON-first Go CLI for [Kaneo](https://kaneo.app). Not affiliated with the Kaneo project.
 
-**Status: v1.0.0 release preparation.** All 162 pinned operations have command mappings, including browser-navigation URL handoffs. Runtime profiles, credential storage (OS keyring first, warned plaintext fallback), API-key input, device login, JSON operations and file transfers are implemented. Coverage is not full compatibility: external integrations are fixture-tested but not live-provider verified. Publication remains gated on release acceptance. See [acceptance evidence](docs/verification.md).
+**Status: v1.0.0 release activation.** All 162 pinned operations have command mappings, including browser-navigation URL handoffs. Runtime profiles, credential storage (OS keyring first, warned plaintext fallback), API-key input, device login, JSON operations and file transfers are implemented. Coverage is not full compatibility: external integrations are fixture-tested but not live-provider verified; live-provider acceptance is explicitly deferred for v1.0.0. See [acceptance evidence](docs/verification.md).
 
 ## Run from source
 
