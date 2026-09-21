@@ -129,6 +129,7 @@ func TestTaskImageUploadRejectsUnsafePresignResponses(t *testing.T) {
 	tests := []struct {
 		name     string
 		response func(http.ResponseWriter, string)
+		wantHint bool
 	}{
 		{
 			name: "missing key",
@@ -144,8 +145,14 @@ func TestTaskImageUploadRejectsUnsafePresignResponses(t *testing.T) {
 				_, _ = w.Write(make([]byte, maxRequestBody+1))
 			},
 		},
+		{
+			name: "invalid JSON",
+			response: func(w http.ResponseWriter, _ string) {
+				_, _ = w.Write([]byte("<html>presign-secret</html>"))
+			},
+			wantHint: true,
+		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var storageRequests atomic.Int32
@@ -177,6 +184,9 @@ func TestTaskImageUploadRejectsUnsafePresignResponses(t *testing.T) {
 			}
 			if got := storageRequests.Load(); got != 0 {
 				t.Fatalf("storage requests = %d, want 0", got)
+			}
+			if tt.wantHint && !strings.Contains(stderr, "dashboard or proxy") {
+				t.Fatalf("stderr missing invalid-JSON guidance: %q", stderr)
 			}
 			if strings.Contains(stderr, "presign-secret") {
 				t.Fatalf("stderr exposed presigned URL secret: %q", stderr)

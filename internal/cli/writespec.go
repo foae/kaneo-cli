@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -45,6 +46,9 @@ func (a *app) newWriteCommand(spec writeSpec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return a.runWrite(cmd, spec)
 		},
+	}
+	if bodyHelp := generatedBodyHelp[spec.operationID]; bodyHelp != "" {
+		cmd.Long = spec.short + "\n\n" + bodyHelp
 	}
 	for _, param := range spec.params {
 		help := param.help
@@ -140,12 +144,18 @@ func writeMutationResult(out io.Writer, resp *client.Response, operation string)
 		return writeJSONStream(out, resp)
 	}
 	defer func() { _ = resp.Body.Close() }()
-	payload, err := io.ReadAll(resp.Body)
+	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return err
+		}
 		if client.IsTimeout(err) {
 			return &client.TimeoutError{Err: err}
 		}
-		return err
+		return &processError{err: err}
+	}
+	if len(payload) > maxRequestBody {
+		return &processError{err: errors.New("response exceeds size limit")}
 	}
 	var result struct {
 		Success *bool `json:"success"`
@@ -155,7 +165,7 @@ func writeMutationResult(out io.Writer, resp *client.Response, operation string)
 		Errors []json.RawMessage `json:"errors"`
 	}
 	if err := json.Unmarshal(payload, &result); err != nil {
-		return errors.New("server returned an invalid batch result")
+		return client.ErrInvalidJSONResponse
 	}
 	if err := writeJSONBytes(out, payload); err != nil {
 		return err

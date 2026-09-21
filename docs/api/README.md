@@ -14,13 +14,13 @@ Generate the derived inventory and this reference with:
 go run ./internal/cmd/specinventory
 ```
 
-Check that both generated files are current without network access:
+Check that all generated files are current without network access:
 
 ```sh
 go run ./internal/cmd/specinventory --check
 ```
 
-[`operations.md`](operations.md) provides the per-operation table. [`api/operations.json`](../../api/operations.json) contains the full discoverable reference for each operation: source method/path and ID, command mapping/status, inherited or local security, query/path parameters, request-body schemas, and responses. JSON Schema `$ref` values resolve against the pinned OpenAPI snapshot.
+[`operations.md`](operations.md) provides the per-operation table and generated request sections. [`api/operations.json`](../../api/operations.json) contains the full discoverable reference for each operation: source method/path and ID, command mapping/status, inherited or local security, query/path parameters, request-body schemas, and responses. [`internal/cli/body_help_generated.go`](../../internal/cli/body_help_generated.go) is generated from the same pinned schemas and supplies the static JSON-body help for CLI mutations; schema references resolve during generation, never at command runtime.
 
 ## Device authorization supplement
 

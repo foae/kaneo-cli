@@ -42,9 +42,9 @@ type Resolved struct {
 	Sources       map[string]string
 }
 
-// Resolve applies documented precedence: flags, then environment, then the
-// selected profile, then defaults.
-func (r Resolver) Resolve() (Resolved, error) {
+// ResolveProfile applies profile selection without resolving request settings.
+// Local configuration and credential management do not need an API destination.
+func (r Resolver) ResolveProfile() (Resolved, error) {
 	result := Resolved{Sources: map[string]string{}}
 
 	switch {
@@ -71,6 +71,16 @@ func (r Resolver) Resolve() (Resolved, error) {
 			// silently fall back to another URL.
 			return Resolved{}, fmt.Errorf("profile %q does not exist", result.ProfileName)
 		}
+	}
+	return result, nil
+}
+
+// Resolve applies documented precedence: flags, then environment, then the
+// selected profile, then defaults.
+func (r Resolver) Resolve() (Resolved, error) {
+	result, err := r.ResolveProfile()
+	if err != nil {
+		return Resolved{}, err
 	}
 
 	apiURL := r.FlagAPIURL

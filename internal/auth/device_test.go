@@ -355,3 +355,41 @@ func TestLoginDeviceRejectsUnsafeVerificationURL(t *testing.T) {
 		t.Fatalf("instructions leaked an unsafe URL: %q", instructions.String())
 	}
 }
+
+func TestDecodeBoundedRejectsInvalidAndOversizedBodiesSafely(t *testing.T) {
+	tests := []struct {
+		name            string
+		body            string
+		wantInvalidJSON bool
+	}{
+		{name: "trailing garbage", body: `{"ok":true} trailing`, wantInvalidJSON: true},
+		{name: "multiple values", body: `{"ok":true} {"extra":true}`, wantInvalidJSON: true},
+		{name: "oversized", body: strings.Repeat("device-routing-secret", maxDeviceBody/len("device-routing-secret")+1)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var target map[string]any
+			err := decodeBounded(strings.NewReader(tt.body), &target)
+			if tt.wantInvalidJSON {
+				if !errors.Is(err, client.ErrInvalidJSONResponse) {
+					t.Fatalf("error = %v, want invalid JSON response", err)
+				}
+			} else if err == nil || !strings.Contains(err.Error(), "exceeds") {
+				t.Fatalf("error = %v, want size error", err)
+			}
+			if strings.Contains(err.Error(), "device-routing-secret") {
+				t.Fatalf("error leaked response body: %q", err)
+			}
+		})
+	}
+}
+
+func TestDecodeBoundedAcceptsSingleJSONValue(t *testing.T) {
+	var target map[string]any
+	if err := decodeBounded(strings.NewReader(`{"ok":true}`), &target); err != nil {
+		t.Fatalf("decodeBounded() error: %v", err)
+	}
+	if target["ok"] != true {
+		t.Fatalf("decoded target = %#v", target)
+	}
+}

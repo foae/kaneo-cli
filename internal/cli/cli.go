@@ -73,11 +73,12 @@ type app struct {
 	streams streams
 	flags   globalFlags
 
-	configDir       func() (string, error)
-	credentialStore func(*config.Store, io.Writer) *auth.Store
-	deviceLogin     func(context.Context, auth.DeviceOptions) (auth.DeviceToken, error)
-	getenv          func(string) string
-	updateClient    *http.Client
+	configDir        func() (string, error)
+	credentialStore  func(*config.Store, io.Writer) *auth.Store
+	deviceLogin      func(context.Context, auth.DeviceOptions) (auth.DeviceToken, error)
+	getenv           func(string) string
+	updateClient     *http.Client
+	warnedDefaultAPI bool
 }
 
 func defaultApp(info buildinfo.Info, in io.Reader, out, errOut io.Writer) *app {
@@ -105,6 +106,7 @@ func execute(application *app, args []string) int {
 }
 
 func executeContext(ctx context.Context, application *app, args []string) int {
+	application.warnedDefaultAPI = false
 	// contextcheck cannot see that Cobra propagates this ctx to every RunE via
 	// cmd.Context(); command construction deliberately takes no context.
 	root := application.newRootCommand() //nolint:contextcheck // RunE reads cmd.Context() set by ExecuteContext.

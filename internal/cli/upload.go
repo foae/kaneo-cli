@@ -176,7 +176,7 @@ func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
 		Headers   map[string]string `json:"headers"`
 	}
 	if err := json.Unmarshal(payload, &upload); err != nil {
-		return &processError{err: fmt.Errorf("presigned upload response is not usable: %w", err)}
+		return &processError{err: client.ErrInvalidJSONResponse}
 	}
 	if upload.Key == "" {
 		return &processError{err: errors.New("server did not return an upload key")}

@@ -153,7 +153,7 @@ var readSpecs = []readSpec{
 		operationID: "getLabel",
 		path:        "/label/{id}",
 		params: []readParam{
-			{name: "id", in: paramPath, flag: "id", required: true},
+			{name: "id", in: paramPath, flag: "id", required: true, help: "Label ID"},
 		},
 	},
 	{
@@ -470,7 +470,7 @@ var groupShorts = map[string]string{
 	"notification":            "Notifications",
 	"notification-preference": "Notification preferences",
 	"oauth":                   "OAuth",
-	"org":                     "Organization management",
+	"org":                     "Organization management; list workspace IDs",
 	"project":                 "Projects",
 	"search":                  "Search",
 	"slack":                   "Slack integration",
@@ -481,5 +481,5 @@ var groupShorts = map[string]string{
 	"user":                    "User",
 	"webhook":                 "Generic webhook integration",
 	"workflow-rule":           "Workflow rules",
-	"workspace":               "Workspace",
+	"workspace":               "Workspace; use org list to find workspace IDs",
 }

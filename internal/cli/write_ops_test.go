@@ -336,6 +336,23 @@ func TestBatchPartialFailurePreservesResult(t *testing.T) {
 	}
 }
 
+func TestBatchInvalidJSONUsesSafeGuidance(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("<html>batch-routing-secret</html>"))
+	}))
+	defer server.Close()
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	status, stdout, stderr := env.run("task", "bulk-update", "--yes", "--body-file", writeBodyFile(t, `{}`))
+	if status != 1 || stdout != "" {
+		t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+	}
+	if !strings.Contains(stderr, "dashboard or proxy") || strings.Contains(stderr, "batch-routing-secret") {
+		t.Fatalf("stderr = %q", stderr)
+	}
+}
+
 func TestMutationBodyCannotRedirectWithoutBearer(t *testing.T) {
 	requests := 0
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

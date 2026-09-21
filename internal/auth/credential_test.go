@@ -282,21 +282,56 @@ func TestClassifyKeyringError(t *testing.T) {
 	}
 }
 
-func TestLoadWarnsWhenUsingFallback(t *testing.T) {
+func TestFallbackWarningPersistsAcrossStores(t *testing.T) {
 	ctx := context.Background()
-	unavailable := &keyringBackend{provider: &memKeyring{err: fmt.Errorf("%w: simulated", ErrKeyringUnavailable)}}
+	provider := newMemKeyring()
+	provider.err = ErrKeyringUnavailable
+	backend := &keyringBackend{provider: provider}
 	var warn bytes.Buffer
-	store, _ := newTestStore(t, unavailable, &warn)
+	store, cfg := newTestStore(t, backend, &warn)
 	if _, err := store.Save(ctx, "work", "https://example.com/api", "synthetic-secret"); err != nil {
 		t.Fatal(err)
 	}
+	if !bytes.Contains(warn.Bytes(), []byte("unencrypted")) {
+		t.Fatalf("missing initial warning: %q", warn.String())
+	}
 	warn.Reset()
-
-	if _, ok, err := store.Load(ctx, "work", "https://example.com/api"); err != nil || !ok {
-		t.Fatalf("Load() = %v, %v", ok, err)
+	reopened := NewStoreWithKeyring(config.NewStore(cfg.Dir()), backend, &warn)
+	if secret, ok, err := reopened.Load(ctx, "work", "https://example.com/api"); err != nil || !ok || secret != "synthetic-secret" {
+		t.Fatalf("Load() failed: stored=%v err=%v", ok, err)
+	}
+	if warn.Len() != 0 {
+		t.Fatalf("repeated warning: %q", warn.String())
+	}
+	provider.err = nil
+	if _, err := reopened.Save(ctx, "work", "https://example.com/api", "synthetic-secret"); err != nil {
+		t.Fatal(err)
+	}
+	provider.err = ErrKeyringUnavailable
+	if _, err := reopened.Save(ctx, "work", "https://example.com/api", "synthetic-secret"); err != nil {
+		t.Fatal(err)
 	}
 	if !bytes.Contains(warn.Bytes(), []byte("unencrypted")) {
-		t.Fatalf("no warning when using fallback: %q", warn.String())
+		t.Fatalf("new fallback transition did not warn: %q", warn.String())
+	}
+}
+
+func TestExistingFallbackWarnsOnlyOnFirstLoad(t *testing.T) {
+	ctx := context.Background()
+	backend := &keyringBackend{provider: &memKeyring{err: ErrKeyringUnavailable}}
+	store, cfg := newTestStore(t, backend, nil)
+	if _, err := store.Save(ctx, "work", "https://example.com/api", "synthetic-secret"); err != nil {
+		t.Fatal(err)
+	}
+	for attempt := range 2 {
+		var warn bytes.Buffer
+		reopened := NewStoreWithKeyring(config.NewStore(cfg.Dir()), backend, &warn)
+		if _, ok, err := reopened.Load(ctx, "work", "https://example.com/api"); err != nil || !ok {
+			t.Fatalf("Load() failed: stored=%v err=%v", ok, err)
+		}
+		if got := bytes.Contains(warn.Bytes(), []byte("unencrypted")); got != (attempt == 0) {
+			t.Fatalf("attempt %d warning=%q", attempt, warn.String())
+		}
 	}
 }
 

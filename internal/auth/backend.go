@@ -74,6 +74,9 @@ func (s *Store) Save(ctx context.Context, profileName, apiURL, secret string) (s
 		// credential it just stored.
 		profile.APIURL = apiURL
 		profile.SetCredentialFor(apiURL, stored)
+		if stored == config.BackendKeyring {
+			delete(cfg.Warnings, "unencrypted:"+profileName+":"+apiURL)
+		}
 		cfg.PutProfile(profileName, *profile)
 		if cfg.DefaultProfile == "" {
 			cfg.DefaultProfile = profileName
@@ -88,6 +91,9 @@ func (s *Store) Save(ctx context.Context, profileName, apiURL, secret string) (s
 		}
 		return "", err
 	}
+	if backend == config.BackendFile {
+		s.warnFile(ctx, profileName, apiURL)
+	}
 	return backend, nil
 }
 
@@ -101,9 +107,6 @@ func (s *Store) storeSecret(profileName, apiURL, secret string) (string, error) 
 		}
 		return config.BackendKeyring, nil
 	case errors.Is(err, ErrKeyringUnavailable):
-		if s.warn != nil {
-			_, _ = fmt.Fprintf(s.warn, "warning: %v; storing credential unencrypted at %s\n", err, s.file.Location())
-		}
 		if fileErr := s.file.Set(profileName, apiURL, secret); fileErr != nil {
 			return "", fileErr
 		}
@@ -138,8 +141,8 @@ func (s *Store) Load(ctx context.Context, profileName, apiURL string) (string, b
 	if backend == nil {
 		return "", false, fmt.Errorf("unknown credential backend %q", ref.Backend)
 	}
-	if ref.Backend == config.BackendFile && s.warn != nil {
-		_, _ = fmt.Fprintf(s.warn, "warning: using unencrypted credential from %s\n", s.file.Location())
+	if ref.Backend == config.BackendFile {
+		s.warnFile(ctx, profileName, apiURL)
 	}
 	secret, err := backend.Get(profileName, apiURL)
 	if errors.Is(err, ErrNotStored) {
@@ -185,6 +188,7 @@ func (s *Store) Delete(ctx context.Context, profileName, apiURL string) error {
 		if profile, ok := cfg.Profile(profileName); ok {
 			profile.DeleteCredentialFor(apiURL)
 			cfg.PutProfile(profileName, profile)
+			delete(cfg.Warnings, "unencrypted:"+profileName+":"+apiURL)
 		}
 		return nil
 	})
@@ -199,4 +203,12 @@ func (s *Store) backendFor(name string) Backend {
 	default:
 		return nil
 	}
+}
+
+func (s *Store) warnFile(ctx context.Context, profileName, apiURL string) {
+	if s.warn == nil {
+		return
+	}
+	writer := s.cfg.WarningWriter(ctx, "unencrypted:"+profileName+":"+apiURL, s.warn)
+	_, _ = fmt.Fprintf(writer, "warning: credential stored unencrypted at %s; use an OS keyring to protect it at rest.\n", s.file.Location())
 }

@@ -16,8 +16,6 @@ import (
 
 const defaultTimeout = 30 * time.Second
 
-type sensitiveContextKey struct{}
-
 // Options configures a Client.
 type Options struct {
 	// BaseURL is the validated API base URL.
@@ -74,9 +72,7 @@ func New(opts Options) (*Client, error) {
 		if len(via) >= 10 {
 			return errors.New("stopped after 10 redirects")
 		}
-		// A bearer token or a sensitive request body (for example a device
-		// code, which Go replays on 307/308) must never cross origins.
-		if len(via) > 0 && originOf(req.URL) != originOf(via[0].URL) && requestIsSensitive(via[0]) {
+		if len(via) > 0 && originOf(req.URL) != originOf(via[0].URL) {
 			return &RedirectError{From: originOf(via[0].URL), To: originOf(req.URL)}
 		}
 		return existing(req, via)
@@ -107,8 +103,7 @@ type Request struct {
 	ContentType string
 	OperationID string
 	// Sensitive marks a body that carries a credential even though the request
-	// has no Authorization header, so it is protected from cross-origin
-	// redirects and triggers the plain-HTTP warning.
+	// has no Authorization header, so it triggers the plain-HTTP warning.
 	Sensitive bool
 }
 
@@ -126,8 +121,7 @@ func (r *Response) Empty() bool {
 }
 
 // Do executes the request, returning a Response for 2xx statuses and a typed
-// error otherwise. Redirects that would forward credentials across origins are
-// refused.
+// error otherwise. Redirects to another origin are refused.
 func (c *Client) Do(ctx context.Context, req Request) (*Response, error) {
 	target, err := c.base.Join(req.Path)
 	if err != nil {
@@ -144,12 +138,6 @@ func (c *Client) Do(ctx context.Context, req Request) (*Response, error) {
 	httpReq, err := http.NewRequestWithContext(ctx, req.Method, target.String(), body)
 	if err != nil {
 		return nil, err
-	}
-	if req.Sensitive {
-		// The derived context only carries a marker value; it preserves the
-		// request's cancellation and deadline unchanged.
-		marked := context.WithValue(httpReq.Context(), sensitiveContextKey{}, true)
-		httpReq = httpReq.WithContext(marked) //nolint:contextcheck // marker-only value; cancellation is inherited unchanged.
 	}
 	httpReq.Header.Set("Accept", "application/json")
 	if req.ContentType != "" {
@@ -186,14 +174,6 @@ func (c *Client) warnPlainHTTP(sensitive bool) {
 	_, _ = fmt.Fprintf(c.warn, "warning: sending credentials over plain HTTP to %s\n", c.base.Origin())
 }
 
-func requestIsSensitive(req *http.Request) bool {
-	if req.Header.Get("Authorization") != "" {
-		return true
-	}
-	sensitive, _ := req.Context().Value(sensitiveContextKey{}).(bool)
-	return sensitive
-}
-
 // originOf normalizes a URL to scheme://host[:port], omitting default ports so
 // same-origin redirects with an explicit default port are not misjudged.
 func originOf(u *url.URL) string {
@@ -219,7 +199,7 @@ func translateTransportError(err error) error {
 	}
 	var redirect *RedirectError
 	if errors.As(err, &redirect) {
-		return err
+		return redirect
 	}
 	if errors.Is(err, context.DeadlineExceeded) || IsTimeout(err) {
 		return &TimeoutError{Err: err}

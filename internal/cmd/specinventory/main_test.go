@@ -32,3 +32,73 @@ func TestCollectOperationsRejectsMissingMapping(t *testing.T) {
 		t.Fatalf("collectOperations() error = %v, want missing mapping error", err)
 	}
 }
+
+func TestRenderBodyHelpResolvesReferencesAndNestedRequirements(t *testing.T) {
+	renderer := bodyHelpRenderer{
+		document: map[string]any{
+			"components": map[string]any{
+				"schemas": map[string]any{
+					"CreateTask": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"items": map[string]any{
+								"type": "array",
+								"items": map[string]any{
+									"type": "object",
+									"properties": map[string]any{
+										"priority": map[string]any{"type": "string", "enum": []any{"low", "high"}},
+										"title":    map[string]any{"type": "string", "description": "Visible task title"},
+									},
+									"required": []any{"title"},
+								},
+							},
+						},
+						"required": []any{"items"},
+					},
+				},
+			},
+		},
+		resolving: make(map[string]bool),
+	}
+
+	help, err := renderer.renderBodyHelp(map[string]any{"$ref": "#/components/schemas/CreateTask"}, true)
+	if err != nil {
+		t.Fatalf("renderBodyHelp() error = %v", err)
+	}
+	for _, expected := range []string{
+		"items (required): array<object>",
+		"items: object",
+		"title (required): string — Visible task title",
+		"priority (optional): string (one of: \"low\", \"high\")",
+	} {
+		if !strings.Contains(help, expected) {
+			t.Errorf("rendered help does not contain %q:\n%s", expected, help)
+		}
+	}
+}
+
+func TestRenderBodyHelpShowsAllOfAlternatives(t *testing.T) {
+	renderer := bodyHelpRenderer{resolving: make(map[string]bool)}
+	help, err := renderer.renderBodyHelp(map[string]any{
+		"allOf": []any{
+			map[string]any{
+				"type":       "object",
+				"properties": map[string]any{"organizationId": map[string]any{"type": "string"}},
+			},
+			map[string]any{
+				"anyOf": []any{
+					map[string]any{"type": "object", "properties": map[string]any{"roleId": map[string]any{"type": "string"}}, "required": []any{"roleId"}},
+					map[string]any{"type": "object", "properties": map[string]any{"roleName": map[string]any{"type": "string"}}, "required": []any{"roleName"}},
+				},
+			},
+		},
+	}, true)
+	if err != nil {
+		t.Fatalf("renderBodyHelp() error = %v", err)
+	}
+	for _, expected := range []string{"organizationId (optional): string", "one of:", "option 1:", "roleId (required): string", "option 2:", "roleName (required): string"} {
+		if !strings.Contains(help, expected) {
+			t.Errorf("rendered help does not contain %q:\n%s", expected, help)
+		}
+	}
+}

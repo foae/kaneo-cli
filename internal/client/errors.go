@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,12 @@ import (
 
 // maxErrorBody bounds how much of a failed response is read and retained.
 const maxErrorBody = 64 << 10
+
+// ErrInvalidJSONResponse gives safe, actionable guidance when an endpoint
+// expected to return JSON instead returns another document or shape. It intentionally
+// excludes the response body and parser details, either of which may expose
+// secrets.
+var ErrInvalidJSONResponse = errors.New("server returned invalid JSON or an unexpected JSON shape; check server compatibility. If the response is a dashboard or proxy page, verify the API base URL (normally including /api) with `kaneo-cli profile get`, --api-url, and KANEO_API_URL")
 
 // Error is a non-2xx API response translated into stable, safe output.
 type Error struct {
@@ -105,9 +112,18 @@ func newError(resp *http.Response, operationID string) *Error {
 	if err != nil || len(body) == 0 {
 		return apiErr
 	}
+	if beginsWithHTML(body) {
+		apiErr.Message = fmt.Sprintf("request failed with HTTP status %d; %s", resp.StatusCode, ErrInvalidJSONResponse)
+		return apiErr
+	}
 	apiErr.Message = extractMessage(body)
 	apiErr.ServerCode = extractServerCode(body)
 	return apiErr
+}
+
+func beginsWithHTML(body []byte) bool {
+	trimmed := bytes.TrimSpace(bytes.TrimPrefix(bytes.TrimSpace(body), []byte("\xef\xbb\xbf")))
+	return len(trimmed) > 0 && trimmed[0] == '<'
 }
 
 // extractMessage pulls a message from the documented error shapes. Only known

@@ -16,6 +16,40 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `activity list-task` | `GET` | `/activity/{taskId}` | `getActivities` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `activity update-comment` | `PUT` | `/activity/comment` | `updateComment` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
 
+### `activity create` request
+
+```text
+JSON body (required):
+  eventData (optional): object or null — Type-specific payload stored alongside the event.
+    additional properties: any value
+  message (required): string or null — Free-text body. Null for events whose meaning is in eventData.
+  taskId (required): string
+  type (required): string — The event kind, e.g. status_changed or assignee_changed.
+```
+
+### `activity create-comment` request
+
+```text
+JSON body (required):
+  comment (required): string
+  taskId (required): string
+```
+
+### `activity delete-comment` request
+
+```text
+JSON body (required):
+  activityId (required): string
+```
+
+### `activity update-comment` request
+
+```text
+JSON body (required):
+  activityId (required): string
+  comment (required): string
+```
+
 ## asset
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -39,6 +73,45 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `column reorder` | `PUT` | `/column/reorder/{projectId}` | `reorderColumns` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `column update` | `PUT` | `/column/{id}` | `updateColumn` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
+### `column create` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  color (optional): string
+  icon (optional): string
+  isFinal (optional): boolean
+  name (required): string
+```
+
+### `column reorder` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  columns (required): array<object> — Every column keeps its new position. Columns from another project are rejected.
+    items: object
+      id (required): string
+      position (required): number
+```
+
+### `column update` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  color (optional): string or null
+  icon (optional): string or null
+  isFinal (optional): boolean
+  name (optional): string
+```
+
 ## comment
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -47,6 +120,28 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `comment delete` | `DELETE` | `/comment/{id}` | `deleteTaskComment` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `comment list-task` | `GET` | `/comment/{taskId}` | `getTaskComments` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `comment update` | `PUT` | `/comment/{id}` | `updateTaskComment` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+
+### `comment create-task` request
+
+Path parameters (not JSON body fields):
+- `taskId` (required): string
+
+```text
+JSON body (required):
+  content (required): string
+  externalSource (optional): string (one of: "planka", "trello", "jira") — The tool the comment was imported from.
+  externalUserName (optional): string — Attribution for an imported comment. Ignored unless externalSource is also given.
+```
+
+### `comment update` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  content (required): string
+```
 
 ## config
 
@@ -67,6 +162,41 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `custom-field reorder-project` | `PUT` | `/custom-field/reorder/{projectId}` | `reorderCustomFields` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `custom-field set-value` | `PUT` | `/custom-field/value` | `setCustomFieldValue` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 
+### `custom-field create` request
+
+```text
+JSON body (required):
+  defaultValue (optional): string
+  name (required): string
+  options (optional): array<string>
+    items: string
+  projectId (required): string
+  required (optional): boolean (default: false)
+  type (required): string (one of: "text", "number", "date", "dropdown", "boolean")
+```
+
+### `custom-field reorder-project` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  fields (required): array<object>
+    items: object
+      id (required): string
+      position (required): number
+```
+
+### `custom-field set-value` request
+
+```text
+JSON body (required):
+  fieldId (required): string
+  taskId (required): string
+  value (required): string
+```
+
 ## discord
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -75,6 +205,43 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `discord delete-integration` | `DELETE` | `/discord-integration/project/{projectId}` | `deleteDiscordIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `discord get-integration` | `GET` | `/discord-integration/project/{projectId}` | `getDiscordIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `discord update-integration` | `PATCH` | `/discord-integration/project/{projectId}` | `updateDiscordIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+
+### `discord create-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  channelName (optional): string
+  events (optional): object
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+  webhookUrl (required): string
+```
+
+### `discord update-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  channelName (optional): string or null
+  events (optional): object
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+  isActive (optional): boolean
+  webhookUrl (optional): string
+```
 
 ## external-link
 
@@ -94,6 +261,57 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `gitea update-integration` | `PATCH` | `/gitea-integration/project/{projectId}` | `updateGiteaIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 | `gitea verify-access` | `POST` | `/gitea-integration/verify` | `verifyGiteaAccess` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 
+### `gitea create-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  accessToken (optional): string — Omit to keep the token already stored for this project.
+  baseUrl (required): string
+  repositoryName (required): string
+  repositoryOwner (required): string
+```
+
+### `gitea import-issues` request
+
+```text
+JSON body (required):
+  projectId (required): string
+```
+
+### `gitea list-repositories` request
+
+```text
+JSON body (required):
+  accessToken (required): string
+  baseUrl (required): string (format: uri)
+  projectId (required): string
+```
+
+### `gitea update-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  commentTaskLinkOnGiteaIssue (optional): boolean
+  isActive (optional): boolean
+```
+
+### `gitea verify-access` request
+
+```text
+JSON body (required):
+  accessToken (required): string
+  baseUrl (required): string (format: uri)
+  projectId (required): string
+  repositoryName (required): string
+  repositoryOwner (required): string
+```
+
 ## github
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -106,6 +324,44 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `github list-repositories` | `GET` | `/github-integration/repositories/{projectId}` | `listGitHubRepositories` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `github update-integration` | `PATCH` | `/github-integration/project/{projectId}` | `updateGitHubIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 | `github verify-installation` | `POST` | `/github-integration/verify` | `verifyGitHubInstallation` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+
+### `github create-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  repositoryName (required): string
+  repositoryOwner (required): string
+```
+
+### `github import-issues` request
+
+```text
+JSON body (required):
+  projectId (required): string
+```
+
+### `github update-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  commentTaskLinkOnGitHubIssue (optional): boolean
+  isActive (optional): boolean
+```
+
+### `github verify-installation` request
+
+```text
+JSON body (required):
+  projectId (required): string
+  repositoryName (required): string
+  repositoryOwner (required): string
+```
 
 ## instance
 
@@ -133,6 +389,37 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `label list-workspace` | `GET` | `/label/workspace/{workspaceId}` | `getWorkspaceLabels` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `label update` | `PUT` | `/label/{id}` | `updateLabel` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
+### `label attach-task` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  taskId (required): string
+```
+
+### `label create` request
+
+```text
+JSON body (required):
+  color (required): string
+  name (required): string
+  taskId (optional): string
+  workspaceId (required): string
+```
+
+### `label update` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  color (required): string
+  name (required): string
+```
+
 ## mattermost
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -142,6 +429,43 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `mattermost get-integration` | `GET` | `/mattermost-integration/project/{projectId}` | `getMattermostIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `mattermost update-integration` | `PATCH` | `/mattermost-integration/project/{projectId}` | `updateMattermostIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 
+### `mattermost create-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  channelName (optional): string
+  events (optional): object
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+  webhookUrl (required): string
+```
+
+### `mattermost update-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  channelName (optional): string or null
+  events (optional): object
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+  isActive (optional): boolean
+  webhookUrl (optional): string
+```
+
 ## mcp
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -150,6 +474,30 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `mcp get-authorization-request` | `GET` | `/mcp/authorize/request/{requestId}` | `getMcpAuthorizationRequest` | `implemented` | 1 |  | 200, 400, 404 |
 | `mcp register-oauth-client` | `POST` | `/mcp/register` | `registerMcpOAuthClient` | `implemented` | 0 | yes | 200, 400 |
 | `mcp start-authorization` | `GET` | `/mcp/authorize` | `authorizeMcpOAuthClient` | `implemented` | 6 |  | 302, 400 |
+
+### `mcp decide-authorization-request` request
+
+Path parameters (not JSON body fields):
+- `requestId` (required): string
+
+```text
+JSON body (required):
+  approved (required): boolean
+```
+
+### `mcp register-oauth-client` request
+
+```text
+JSON body (required):
+  client_name (optional): string
+  grant_types (optional): array<string (one of: "authorization_code", "refresh_token")>
+    items: string (one of: "authorization_code", "refresh_token")
+  redirect_uris (required): array<string>
+    items: string
+  response_types (optional): array<string (one of: "code")>
+    items: string (one of: "code")
+  token_endpoint_auth_method (optional): string (one of: "none")
+```
 
 ## notification
 
@@ -161,6 +509,19 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `notification mark-all-read` | `PATCH` | `/notification/read-all` | `markAllNotificationsAsRead` | `implemented` | 0 |  | 200, 401 |
 | `notification mark-read` | `PATCH` | `/notification/{id}/read` | `markNotificationAsRead` | `implemented` | 1 |  | 200, 401, 404 |
 
+### `notification create` request
+
+```text
+JSON body (required):
+  eventData (optional): object or null
+    additional properties: any value
+  message (optional): string or null — Stored as the notification's content.
+  relatedEntityId (optional): string — Stored as resourceId: the task or workspace being pointed at.
+  relatedEntityType (optional): string — Stored as resourceType: `task` or `workspace`.
+  title (optional): string or null
+  type (required): string
+```
+
 ## notification-preference
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -169,6 +530,45 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `notification-preference get` | `GET` | `/notification-preferences` | `getNotificationPreferences` | `implemented` | 0 |  | 200, 401 |
 | `notification-preference update` | `PUT` | `/notification-preferences` | `updateNotificationPreferences` | `implemented` | 0 | yes | 200, 400, 401 |
 | `notification-preference upsert-workspace-rule` | `PUT` | `/notification-preferences/workspaces/{workspaceId}` | `upsertNotificationPreferenceWorkspaceRule` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+
+### `notification-preference update` request
+
+```text
+JSON body (required):
+  dueDateReminderEnabled (optional): boolean
+  dueDateReminderLeadTimeMinutes (optional): integer — Between 5 minutes and 30 days.
+  emailEnabled (optional): boolean
+  gotifyEnabled (optional): boolean
+  gotifyServerUrl (optional): string or null
+  gotifyToken (optional): string or null
+  ntfyEnabled (optional): boolean
+  ntfyServerUrl (optional): string or null
+  ntfyToken (optional): string or null
+  ntfyTopic (optional): string or null
+  taskAssignmentEnabled (optional): boolean
+  taskCommentEnabled (optional): boolean
+  taskStatusChangeEnabled (optional): boolean
+  webhookEnabled (optional): boolean
+  webhookSecret (optional): string or null
+  webhookUrl (optional): string or null
+```
+
+### `notification-preference upsert-workspace-rule` request
+
+Path parameters (not JSON body fields):
+- `workspaceId` (required): string
+
+```text
+JSON body (required):
+  emailEnabled (required): boolean
+  gotifyEnabled (required): boolean
+  isActive (required): boolean
+  ntfyEnabled (required): boolean
+  projectMode (required): string (one of: "all", "selected")
+  selectedProjectIds (optional): array<string> — Required in practice when projectMode is `selected`.
+    items: string
+  webhookEnabled (required): boolean
+```
 
 ## oauth
 
@@ -216,6 +616,216 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `org update-role` | `POST` | `/auth/organization/update-role` | `updateOrganizationRole` | `implemented` | 0 | yes | 200, 401 |
 | `org update-team` | `POST` | `/auth/organization/update-team` | `updateOrganizationTeam` | `implemented` | 0 | yes | 200, 401 |
 
+### `org accept-invitation` request
+
+```text
+JSON body (required):
+  invitationId (required): string — The ID of the invitation to accept
+```
+
+### `org add-team-member` request
+
+```text
+JSON body (required):
+  organizationId (optional): string — The organization ID which the team falls under. If not provided, it will default to the user's active organization.
+  teamId (required): string — The team the user should be a member of.
+  userId (required): string — The user Id which represents the user to be added as a member.
+```
+
+### `org cancel-invitation` request
+
+```text
+JSON body (required):
+  invitationId (required): string — The ID of the invitation to cancel
+```
+
+### `org check-permission` request
+
+```text
+JSON body (required):
+  permission (optional): object — The permission to check
+    additional properties: any value
+  permissions (required): object — The permission to check
+    additional properties: any value
+```
+
+### `org check-slug` request
+
+```text
+JSON body (required):
+  slug (required): string — The organization slug to check. Eg: "my-org"
+```
+
+### `org create` request
+
+```text
+JSON body (required):
+  description (optional): string or null
+  keepCurrentActiveOrganization (optional): boolean — Whether to keep the current active organization active after creating a new one. Eg: true
+  logo (optional): string or null — The logo of the organization
+  metadata (optional): object — The metadata of the organization
+    additional properties: any value
+  name (required): string — The name of the organization
+  slug (required): string — The slug of the organization
+  userId (optional): string — The user id of the organization creator. If not provided, the current user will be used. Should only be used by admins or when called by the server. server-only. Eg: "user-id"
+```
+
+### `org create-role` request
+
+```text
+JSON body (required):
+  additionalFields (optional): object
+    additional properties: any value
+  organizationId (optional): string
+  permission (required): object — The permission to assign to the role
+    additional properties: array<string>
+  role (required): string — The name of the role to create
+```
+
+### `org create-team` request
+
+```text
+JSON body (required):
+  name (required): string — The name of the team. Eg: "my-team"
+  organizationId (optional): string — The organization ID which the team will be created in. Defaults to the active organization. Eg: "organization-id"
+```
+
+### `org delete` request
+
+```text
+JSON body (required):
+  organizationId (required): string — The organization id to delete
+```
+
+### `org delete-role` request
+
+```text
+JSON body (required):
+  organizationId (optional): string
+  one of:
+    option 1:
+      roleName (required): string — The name of the role to delete
+    option 2:
+      roleId (required): string — The id of the role to delete
+```
+
+### `org invite-member` request
+
+```text
+JSON body (required):
+  email (required): string — The email address of the user to invite
+  organizationId (optional): string — The organization ID to invite the user to
+  resend (optional): boolean — Resend the invitation email, if the user is already invited. Eg: true
+  role (required): one of: string | array<string> — The role(s) to assign to the user. It can be `admin`, `member`, owner. Eg: "member"
+  teamId (optional): one of: string | array<string>
+```
+
+### `org leave` request
+
+```text
+JSON body (required):
+  organizationId (required): string — The organization Id for the member to leave. Eg: "organization-id"
+```
+
+### `org reject-invitation` request
+
+```text
+JSON body (required):
+  invitationId (required): string — The ID of the invitation to reject
+```
+
+### `org remove-member` request
+
+```text
+JSON body (required):
+  memberIdOrEmail (required): string — The ID or email of the member to remove
+  organizationId (optional): string — The ID of the organization to remove the member from. If not provided, the active organization will be used. Eg: "org-id"
+```
+
+### `org remove-team` request
+
+```text
+JSON body (required):
+  organizationId (optional): string — The organization ID which the team falls under. If not provided, it will default to the user's active organization. Eg: "organization-id"
+  teamId (required): string — The team ID of the team to remove. Eg: "team-id"
+```
+
+### `org remove-team-member` request
+
+```text
+JSON body (required):
+  organizationId (optional): string — The organization ID which the team falls under. If not provided, it will default to the user's active organization.
+  teamId (required): string — The team the user should be removed from.
+  userId (required): string — The user which should be removed from the team.
+```
+
+### `org set-active` request
+
+```text
+JSON body (required):
+  organizationId (optional): string or null — The organization id to set as active. It can be null to unset the active organization. Eg: "org-id"
+  organizationSlug (optional): string — The organization slug to set as active. It can be null to unset the active organization if organizationId is not provided. Eg: "org-slug"
+```
+
+### `org set-active-team` request
+
+```text
+JSON body (required):
+  teamId (optional): string or null — The team id to set as active. It can be null to unset the active team
+```
+
+### `org update` request
+
+```text
+JSON body (required):
+  data (required): object
+    description (optional): string or null
+    logo (optional): string or null — The logo of the organization
+    metadata (optional): object — The metadata of the organization
+      additional properties: any value
+    name (optional): string — The name of the organization
+    slug (optional): string — The slug of the organization
+  organizationId (optional): string — The organization ID. Eg: "org-id"
+```
+
+### `org update-member-role` request
+
+```text
+JSON body (required):
+  memberId (required): string — The member id to apply the role update to. Eg: "member-id"
+  organizationId (optional): string — An optional organization ID which the member is a part of to apply the role update. If not provided, you must provide session headers to get the active organization. Eg: "organization-id"
+  role (required): one of: string | array<string> — The new role to be applied. This can be a string or array of strings representing the roles. Eg: ["admin", "sale"]
+```
+
+### `org update-role` request
+
+```text
+JSON body (required):
+  data (required): object
+    permission (optional): object
+      additional properties: array<string>
+    roleName (optional): string
+  organizationId (optional): string
+  one of:
+    option 1:
+      roleName (required): string — The name of the role to update
+    option 2:
+      roleId (required): string — The id of the role to update
+```
+
+### `org update-team` request
+
+```text
+JSON body (required):
+  data (required): object
+    createdAt (optional): string
+    id (optional): string
+    name (optional): string
+    organizationId (optional): string
+    updatedAt (optional): string
+  teamId (required): string — The ID of the team to be updated. Eg: "team-id"
+```
+
 ## project
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -228,6 +838,40 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `project reorder` | `PUT` | `/project/reorder` | `reorderProjects` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `project unarchive` | `PUT` | `/project/{id}/unarchive` | `unarchiveProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `project update` | `PUT` | `/project/{id}` | `updateProject` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+
+### `project create` request
+
+```text
+JSON body (required):
+  icon (required): string
+  name (required): string
+  slug (required): string
+  workspaceId (required): string
+```
+
+### `project reorder` request
+
+```text
+JSON body (required):
+  projects (required): array<object>
+    items: object
+      id (required): string
+      position (required): integer
+```
+
+### `project update` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  description (required): string
+  icon (required): string
+  isPublic (required): boolean
+  name (required): string
+  slug (required): string
+```
 
 ## search
 
@@ -243,6 +887,43 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `slack delete-integration` | `DELETE` | `/slack-integration/project/{projectId}` | `deleteSlackIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `slack get-integration` | `GET` | `/slack-integration/project/{projectId}` | `getSlackIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `slack update-integration` | `PATCH` | `/slack-integration/project/{projectId}` | `updateSlackIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+
+### `slack create-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  channelName (optional): string
+  events (optional): object
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+  webhookUrl (required): string
+```
+
+### `slack update-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  channelName (optional): string or null
+  events (optional): object
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+  isActive (optional): boolean
+  webhookUrl (optional): string
+```
 
 ## task
 
@@ -266,6 +947,161 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `task update-status` | `PUT` | `/task/status/{id}` | `updateTaskStatus` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `task update-title` | `PUT` | `/task/title/{id}` | `updateTaskTitle` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
+### `task bulk-update` request
+
+```text
+JSON body (required):
+  operation (required): string (one of: "updateStatus", "updatePriority", "updateAssignee", "delete", "addLabel", "removeLabel", "updateDueDate")
+  taskIds (required): array<string>
+    items: string
+  value (optional): string or null — The new value for the chosen operation. Unused by `delete`; null clears an assignee or due date.
+```
+
+### `task create` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  customFields (optional): array<object>
+    items: object
+      fieldId (required): string
+      value (required): string
+  description (required): string
+  dueDate (optional): string
+  priority (required): string (one of: "no-priority", "low", "medium", "high", "urgent")
+  startDate (optional): string
+  status (required): string — The target column's slug.
+  title (required): string
+  userId (optional): string — Assignee, if any.
+```
+
+### `task create-image-upload` request
+
+Dedicated upload contract: pass the local image with `--file`; the CLI obtains a presigned storage destination, uploads the file without API credentials, and finalizes the image against the task.
+
+### `task finalize-image-upload` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  contentType (required): string
+  filename (required): string
+  key (required): string — The key returned when the URL was issued.
+  size (required): number
+  surface (required): string (one of: "description", "comment") — Where the image is used, which decides how it is scoped.
+```
+
+### `task import` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  tasks (required): array<object>
+    items: object
+      description (optional): string
+      dueDate (optional): string or null
+      priority (optional): string
+      startDate (optional): string or null
+      status (required): string
+      title (required): string
+      userId (optional): string or null
+```
+
+### `task move` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  destinationProjectId (required): string
+  destinationStatus (optional): string — Defaults to the destination project's first column.
+```
+
+### `task update` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  description (required): string
+  dueDate (optional): string
+  position (required): number
+  priority (required): string (one of: "no-priority", "low", "medium", "high", "urgent")
+  projectId (required): string
+  startDate (optional): string
+  status (required): string
+  title (required): string
+  userId (optional): string
+```
+
+### `task update-assignee` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  userId (required): string or null — Null unassigns.
+```
+
+### `task update-description` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  description (required): string
+```
+
+### `task update-due-date` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  dueDate (optional): string
+```
+
+### `task update-priority` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  priority (required): string (one of: "no-priority", "low", "medium", "high", "urgent")
+```
+
+### `task update-status` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  status (required): string
+```
+
+### `task update-title` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  title (required): string
+```
+
 ## task-relation
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -273,6 +1109,15 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `task-relation create` | `POST` | `/task-relation` | `createTaskRelation` | `implemented` | 0 | yes | 200, 400, 401, 403, 404, 409 |
 | `task-relation delete` | `DELETE` | `/task-relation/{id}` | `deleteTaskRelation` | `implemented` | 1 |  | 200, 401, 403, 404 |
 | `task-relation list-task` | `GET` | `/task-relation/{taskId}` | `getTaskRelations` | `implemented` | 1 |  | 200, 400, 401, 403 |
+
+### `task-relation create` request
+
+```text
+JSON body (required):
+  relationType (required): string (one of: "subtask", "blocks", "related")
+  sourceTaskId (required): string
+  targetTaskId (required): string
+```
 
 ## telegram
 
@@ -283,6 +1128,47 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `telegram get-integration` | `GET` | `/telegram-integration/project/{projectId}` | `getTelegramIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `telegram update-integration` | `PATCH` | `/telegram-integration/project/{projectId}` | `updateTelegramIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 
+### `telegram create-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  botToken (required): string — A Telegram bot token, in the form 123456789:AA...
+  chatId (required): string
+  chatLabel (optional): string
+  events (optional): object
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+  threadId (optional): number
+```
+
+### `telegram update-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  botToken (optional): string
+  chatId (optional): string
+  chatLabel (optional): string or null
+  events (optional): object
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+  isActive (optional): boolean
+  threadId (optional): number or null
+```
+
 ## time-entry
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -292,6 +1178,28 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `time-entry list-task` | `GET` | `/time-entry/task/{taskId}` | `getTaskTimeEntries` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `time-entry update` | `PUT` | `/time-entry/{id}` | `updateTimeEntry` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
+### `time-entry create` request
+
+```text
+JSON body (required):
+  description (optional): string
+  endTime (optional): string (format: date-time) — Omit to start an open-ended entry that is still running.
+  startTime (required): string (format: date-time)
+  taskId (required): string
+```
+
+### `time-entry update` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  description (optional): string
+  endTime (optional): string (format: date-time)
+  startTime (required): string (format: date-time)
+```
+
 ## user
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -299,6 +1207,10 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `user delete-avatar` | `DELETE` | `/user/avatar` | `deleteUserAvatar` | `implemented` | 0 |  | 200, 401 |
 | `user download-avatar` | `GET` | `/user/avatar/{id}` | `getUserAvatar` | `implemented` | 1 |  | 200, 304, 404 |
 | `user upload-avatar` | `PUT` | `/user/avatar` | `uploadUserAvatar` | `implemented` | 0 | yes | 200, 400, 401 |
+
+### `user upload-avatar` request
+
+Dedicated upload contract: pass the local avatar with `--file`; the CLI reads the local file and sends its detected content type and base64 data as the documented avatar request.
 
 ## webhook
 
@@ -309,6 +1221,57 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `webhook get-integration` | `GET` | `/generic-webhook-integration/project/{projectId}` | `getGenericWebhookIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `webhook update-integration` | `PATCH` | `/generic-webhook-integration/project/{projectId}` | `updateGenericWebhookIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 
+### `webhook create-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  dueDateReminderLeadTimeMinutes (optional): integer — Between 5 minutes and 30 days.
+  events (optional): object
+    dueDateReminder (optional): boolean
+    taskAssigneeChanged (optional): boolean
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDeleted (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskDueDateChanged (optional): boolean
+    taskMoved (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+    taskUnassigned (optional): boolean
+  secret (optional): string — Optional HMAC secret used to sign outgoing deliveries.
+  webhookUrl (required): string
+```
+
+### `webhook update-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  dueDateReminderLeadTimeMinutes (optional): integer — Between 5 minutes and 30 days.
+  events (optional): object
+    dueDateReminder (optional): boolean
+    taskAssigneeChanged (optional): boolean
+    taskCommentCreated (optional): boolean
+    taskCreated (optional): boolean
+    taskDeleted (optional): boolean
+    taskDescriptionChanged (optional): boolean
+    taskDueDateChanged (optional): boolean
+    taskMoved (optional): boolean
+    taskPriorityChanged (optional): boolean
+    taskStatusChanged (optional): boolean
+    taskTitleChanged (optional): boolean
+    taskUnassigned (optional): boolean
+  isActive (optional): boolean
+  secret (optional): string or null — Send null to remove the signing secret.
+  webhookUrl (optional): string
+```
+
 ## workflow-rule
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
@@ -316,6 +1279,18 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `workflow-rule delete` | `DELETE` | `/workflow-rule/{id}` | `deleteWorkflowRule` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `workflow-rule list-project` | `GET` | `/workflow-rule/{projectId}` | `getWorkflowRules` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `workflow-rule upsert-project` | `PUT` | `/workflow-rule/{projectId}` | `upsertWorkflowRule` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+
+### `workflow-rule upsert-project` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  columnId (required): string
+  eventType (required): string
+  integrationType (required): string
+```
 
 ## workspace
 
