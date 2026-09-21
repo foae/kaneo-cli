@@ -204,6 +204,8 @@ This follow-up supersedes the role, label-detachment and real device approval/de
 - Successful task-asset upload/finalize/download was already recorded in packet 3 above; packet 2's pending asset-download note is superseded.
 - Both browser-navigation mappings are now implemented as explicit URL handoffs: `auth get-device-authorization-page` forces `ui=1`; `mcp start-authorization` encodes the documented OAuth query. Built-binary smoke checks emitted the expected URLs and stderr guidance without making HTTP requests or claiming completed authorization. All 162 mappings are now marked implemented; this is coverage, not full compatibility.
 - Follow-up verification passed: `just check`, `just cross`, `just race`, and `just vuln` (no vulnerabilities found). The six cross-builds are build evidence only, not native runtime acceptance.
+- Hosted [follow-up CI](https://github.com/foae/kaneo-cli/actions/runs/35576268169) passed shared checks on Linux, macOS and Windows, including the Windows owner-only DACL and lock-reopen regression. Race, vulnerability and cross-build jobs also passed on that pre-policy-change revision. This does not establish native keyring integration.
+- The subsequent CI cost-policy change removes PR triggers and hosted race/vulnerability jobs; main pushes retain the three-OS shared checks, cross-build and disabled release gate. Reviewed dependency upgrades target Node.js 24. The integrated revision passed local `actionlint`, workflow trigger/dependency assertions, `just check` and `just cross` on Linux amd64; no additional hosted run was requested.
 
 ### Six-commit review
 
