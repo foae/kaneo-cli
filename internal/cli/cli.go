@@ -77,6 +77,7 @@ type app struct {
 	credentialStore func(*config.Store, io.Writer) *auth.Store
 	deviceLogin     func(context.Context, auth.DeviceOptions) (auth.DeviceToken, error)
 	getenv          func(string) string
+	updateClient    *http.Client
 }
 
 func defaultApp(info buildinfo.Info, in io.Reader, out, errOut io.Writer) *app {
@@ -87,6 +88,7 @@ func defaultApp(info buildinfo.Info, in io.Reader, out, errOut io.Writer) *app {
 		credentialStore: auth.NewStore,
 		deviceLogin:     auth.LoginDevice,
 		getenv:          os.Getenv,
+		updateClient:    newUpdateClient(),
 	}
 }
 
@@ -141,7 +143,7 @@ func (a *app) newRootCommand() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if showVersion {
-				return writeVersion(cmd.OutOrStdout(), a.info)
+				return a.showVersion(cmd)
 			}
 			return help(cmd)
 		},
@@ -154,8 +156,13 @@ func (a *app) newRootCommand() *cobra.Command {
 	root.PersistentFlags().StringVar(&a.flags.timeout, "timeout", "", "Request timeout (for example 30s)")
 	root.PersistentFlags().BoolVar(&a.flags.yes, "yes", false, "Confirm destructive operations without prompting")
 	root.Flags().BoolVar(&showVersion, "version", false, "Print version information as JSON")
+	defaultHelp := root.HelpFunc()
+	root.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		defaultHelp(cmd, args)
+		a.notifyUpdate(cmd.Context(), cmd.ErrOrStderr())
+	})
 
-	root.AddCommand(newVersionCommand(a.info))
+	root.AddCommand(a.newVersionCommand())
 	root.AddCommand(a.newProfileCommand())
 	root.AddCommand(a.newAuthCommand())
 	root.AddCommand(a.newInstanceCommand())
@@ -165,15 +172,23 @@ func (a *app) newRootCommand() *cobra.Command {
 	return root
 }
 
-func newVersionCommand(info buildinfo.Info) *cobra.Command {
+func (a *app) newVersionCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Print version information as JSON",
 		Args:  noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return writeVersion(cmd.OutOrStdout(), info)
+			return a.showVersion(cmd)
 		},
 	}
+}
+
+func (a *app) showVersion(cmd *cobra.Command) error {
+	if err := writeVersion(cmd.OutOrStdout(), a.info); err != nil {
+		return err
+	}
+	a.notifyUpdate(cmd.Context(), cmd.ErrOrStderr())
+	return nil
 }
 
 func help(cmd *cobra.Command) error {

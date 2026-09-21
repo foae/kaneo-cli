@@ -96,6 +96,7 @@ func newTestEnv(t *testing.T) *testEnv {
 	}
 	information := buildinfo.Info{Version: "v9.9.9", Commit: "abc", Date: "2026-09-20T00:00:00Z"}
 	application := defaultApp(information, stdin, &stdout, &stderr)
+	application.updateClient = nil
 	application.configDir = func() (string, error) { return env.dir, nil }
 	application.getenv = func(key string) string { return env.env[key] }
 	application.credentialStore = func(cfg *config.Store, warn io.Writer) *auth.Store {
