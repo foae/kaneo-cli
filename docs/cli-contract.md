@@ -1,6 +1,6 @@
 # CLI contract
 
-This is the binding contract for the command surface. Help, version, `profile` management, `auth login`/`logout`/`get-session`, `instance get-status` and `config get` are implemented; every other documented operation is a **future implementation contract**.
+This is the binding contract for the command surface. Help, version, `profile` management, `auth login`/`logout`/`get-session`, `instance get-status`, `config get` and every GET read operation are implemented; the remaining (mutating, upload and integration) operations are **future implementation contracts**. Two GET browser-navigation endpoints, `auth get-device-authorization-page` and `mcp start-authorization`, are deliberately deferred pending a browser interaction contract.
 
 ## Names and input
 

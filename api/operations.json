@@ -359,7 +359,7 @@
       "command": {
         "group": "activity",
         "action": "list-task",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -427,7 +427,7 @@
       "command": {
         "group": "asset",
         "action": "download",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -1154,7 +1154,7 @@
       "command": {
         "group": "org",
         "action": "get-active-member",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1209,7 +1209,7 @@
       "command": {
         "group": "org",
         "action": "get-active-member-role",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1237,7 +1237,7 @@
       "command": {
         "group": "org",
         "action": "get-full",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1270,7 +1270,7 @@
       "command": {
         "group": "org",
         "action": "get-invitation",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -1359,7 +1359,7 @@
       "command": {
         "group": "org",
         "action": "get-role",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1631,7 +1631,7 @@
       "command": {
         "group": "org",
         "action": "list",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1667,7 +1667,7 @@
       "command": {
         "group": "org",
         "action": "list-invitations",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1695,7 +1695,7 @@
       "command": {
         "group": "org",
         "action": "list-members",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1723,7 +1723,7 @@
       "command": {
         "group": "org",
         "action": "list-roles",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1751,7 +1751,7 @@
       "command": {
         "group": "org",
         "action": "list-team-members",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1813,7 +1813,7 @@
       "command": {
         "group": "org",
         "action": "list-teams",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1880,7 +1880,7 @@
       "command": {
         "group": "org",
         "action": "list-user-invitations",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -1966,7 +1966,7 @@
       "command": {
         "group": "org",
         "action": "list-user-teams",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -3063,7 +3063,7 @@
       "command": {
         "group": "column",
         "action": "list",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3402,7 +3402,7 @@
       "command": {
         "group": "comment",
         "action": "list-task",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3697,7 +3697,7 @@
       "command": {
         "group": "custom-field",
         "action": "list-project",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3765,7 +3765,7 @@
       "command": {
         "group": "custom-field",
         "action": "list-project-filter-values",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3833,7 +3833,7 @@
       "command": {
         "group": "custom-field",
         "action": "list-project-values",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3999,7 +3999,7 @@
       "command": {
         "group": "custom-field",
         "action": "list-task-values",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4296,7 +4296,7 @@
       "command": {
         "group": "discord",
         "action": "get-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4593,7 +4593,7 @@
       "command": {
         "group": "external-link",
         "action": "list-task",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4744,7 +4744,7 @@
       "command": {
         "group": "webhook",
         "action": "get-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -5249,7 +5249,7 @@
       "command": {
         "group": "gitea",
         "action": "get-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -5683,7 +5683,7 @@
       "command": {
         "group": "github",
         "action": "get-app-info",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -5876,7 +5876,7 @@
       "command": {
         "group": "github",
         "action": "get-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6123,7 +6123,7 @@
       "command": {
         "group": "github",
         "action": "list-repositories",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6300,7 +6300,7 @@
       "command": {
         "group": "invitation",
         "action": "list-pending",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -6338,7 +6338,7 @@
       "command": {
         "group": "invitation",
         "action": "get",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6477,7 +6477,7 @@
       "command": {
         "group": "label",
         "action": "list-task",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6545,7 +6545,7 @@
       "command": {
         "group": "label",
         "action": "list-workspace",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6688,7 +6688,7 @@
       "command": {
         "group": "label",
         "action": "get",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -7091,7 +7091,7 @@
       "command": {
         "group": "mattermost",
         "action": "get-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -7479,7 +7479,7 @@
       "command": {
         "group": "mcp",
         "action": "get-authorization-request",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -7728,7 +7728,7 @@
       "command": {
         "group": "notification",
         "action": "list",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -7867,7 +7867,7 @@
       "command": {
         "group": "notification-preference",
         "action": "get",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -8335,7 +8335,7 @@
       "command": {
         "group": "oauth",
         "action": "get-id-token",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -8370,7 +8370,7 @@
       "command": {
         "group": "project",
         "action": "list",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -8701,7 +8701,7 @@
       "command": {
         "group": "project",
         "action": "get",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -8995,7 +8995,7 @@
       "command": {
         "group": "search",
         "action": "global",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -9196,7 +9196,7 @@
       "command": {
         "group": "slack",
         "action": "get-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -9664,7 +9664,7 @@
       "command": {
         "group": "task-relation",
         "action": "list-task",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10099,7 +10099,7 @@
       "command": {
         "group": "task",
         "action": "export",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10791,7 +10791,7 @@
       "command": {
         "group": "task",
         "action": "list",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11090,7 +11090,7 @@
       "command": {
         "group": "task",
         "action": "get",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11488,7 +11488,7 @@
       "command": {
         "group": "telegram",
         "action": "get-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11891,7 +11891,7 @@
       "command": {
         "group": "time-entry",
         "action": "list-task",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11959,7 +11959,7 @@
       "command": {
         "group": "time-entry",
         "action": "get",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -12222,7 +12222,7 @@
       "command": {
         "group": "user",
         "action": "download-avatar",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -12332,7 +12332,7 @@
       "command": {
         "group": "workflow-rule",
         "action": "list-project",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -12491,7 +12491,7 @@
       "command": {
         "group": "workspace",
         "action": "list-members",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {

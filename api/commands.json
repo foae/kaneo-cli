@@ -24,14 +24,14 @@
       "path": "/asset/{id}",
       "group": "asset",
       "action": "download",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/user/avatar/{id}",
       "group": "user",
       "action": "download-avatar",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
@@ -108,35 +108,35 @@
       "path": "/auth/organization/get-active-member",
       "group": "org",
       "action": "get-active-member",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/get-active-member-role",
       "group": "org",
       "action": "get-active-member-role",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/get-full-organization",
       "group": "org",
       "action": "get-full",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/get-invitation",
       "group": "org",
       "action": "get-invitation",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/get-role",
       "group": "org",
       "action": "get-role",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -164,56 +164,56 @@
       "path": "/auth/organization/list",
       "group": "org",
       "action": "list",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/list-invitations",
       "group": "org",
       "action": "list-invitations",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/list-members",
       "group": "org",
       "action": "list-members",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/list-roles",
       "group": "org",
       "action": "list-roles",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/list-team-members",
       "group": "org",
       "action": "list-team-members",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/list-teams",
       "group": "org",
       "action": "list-teams",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/list-user-invitations",
       "group": "org",
       "action": "list-user-invitations",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/organization/list-user-teams",
       "group": "org",
       "action": "list-user-teams",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -311,7 +311,7 @@
       "path": "/mcp/authorize/request/{requestId}",
       "group": "mcp",
       "action": "get-authorization-request",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -325,14 +325,14 @@
       "path": "/oauth/id-token",
       "group": "oauth",
       "action": "get-id-token",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/project",
       "group": "project",
       "action": "list",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -346,7 +346,7 @@
       "path": "/project/{id}",
       "group": "project",
       "action": "get",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "PUT",
@@ -388,7 +388,7 @@
       "path": "/task/tasks/{projectId}",
       "group": "task",
       "action": "list",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "PATCH",
@@ -409,7 +409,7 @@
       "path": "/task/{id}",
       "group": "task",
       "action": "get",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "PUT",
@@ -437,7 +437,7 @@
       "path": "/task/export/{projectId}",
       "group": "task",
       "action": "export",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -507,7 +507,7 @@
       "path": "/column/{projectId}",
       "group": "column",
       "action": "list",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -542,7 +542,7 @@
       "path": "/activity/{taskId}",
       "group": "activity",
       "action": "list-task",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -577,7 +577,7 @@
       "path": "/comment/{taskId}",
       "group": "comment",
       "action": "list-task",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -605,14 +605,14 @@
       "path": "/time-entry/task/{taskId}",
       "group": "time-entry",
       "action": "list-task",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/time-entry/{id}",
       "group": "time-entry",
       "action": "get",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "PUT",
@@ -633,14 +633,14 @@
       "path": "/label/task/{taskId}",
       "group": "label",
       "action": "list-task",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/label/workspace/{workspaceId}",
       "group": "label",
       "action": "list-workspace",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -654,7 +654,7 @@
       "path": "/label/{id}",
       "group": "label",
       "action": "get",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "PUT",
@@ -689,7 +689,7 @@
       "path": "/notification",
       "group": "notification",
       "action": "list",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -724,7 +724,7 @@
       "path": "/notification-preferences",
       "group": "notification-preference",
       "action": "get",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "PUT",
@@ -752,21 +752,21 @@
       "path": "/search",
       "group": "search",
       "action": "global",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/github-integration/app-info",
       "group": "github",
       "action": "get-app-info",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/github-integration/repositories/{projectId}",
       "group": "github",
       "action": "list-repositories",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -780,7 +780,7 @@
       "path": "/github-integration/project/{projectId}",
       "group": "github",
       "action": "get-integration",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -829,7 +829,7 @@
       "path": "/gitea-integration/project/{projectId}",
       "group": "gitea",
       "action": "get-integration",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -864,7 +864,7 @@
       "path": "/generic-webhook-integration/project/{projectId}",
       "group": "webhook",
       "action": "get-integration",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -892,7 +892,7 @@
       "path": "/discord-integration/project/{projectId}",
       "group": "discord",
       "action": "get-integration",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -920,7 +920,7 @@
       "path": "/mattermost-integration/project/{projectId}",
       "group": "mattermost",
       "action": "get-integration",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -948,7 +948,7 @@
       "path": "/slack-integration/project/{projectId}",
       "group": "slack",
       "action": "get-integration",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -976,7 +976,7 @@
       "path": "/telegram-integration/project/{projectId}",
       "group": "telegram",
       "action": "get-integration",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -1004,7 +1004,7 @@
       "path": "/task-relation/{taskId}",
       "group": "task-relation",
       "action": "list-task",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
@@ -1025,14 +1025,14 @@
       "path": "/external-link/task/{taskId}",
       "group": "external-link",
       "action": "list-task",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/workflow-rule/{projectId}",
       "group": "workflow-rule",
       "action": "list-project",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "PUT",
@@ -1053,49 +1053,49 @@
       "path": "/invitation/pending",
       "group": "invitation",
       "action": "list-pending",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/invitation/{id}",
       "group": "invitation",
       "action": "get",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/workspace/{workspaceId}/members",
       "group": "workspace",
       "action": "list-members",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/custom-field/project/{projectId}",
       "group": "custom-field",
       "action": "list-project",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/custom-field/project/{projectId}/values",
       "group": "custom-field",
       "action": "list-project-values",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/custom-field/task/{taskId}",
       "group": "custom-field",
       "action": "list-task-values",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/custom-field/project/{projectId}/filter-values",
       "group": "custom-field",
       "action": "list-project-filter-values",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",
