@@ -6,7 +6,7 @@ Unofficial, JSON-first command-line client for [Kaneo](https://kaneo.app). Manag
 
 ## Install
 
-Choose **Homebrew** on macOS/Linux, **Go install** if you already use Go, or a **prebuilt archive** on any supported platform. Homebrew and archives do not require Go or just.
+Choose **Homebrew** on macOS/Linux, **Go install** if you already use Go, a **prebuilt archive** on any supported platform, or a Linux **deb/rpm package** or **container**. Only Go install requires Go; none of these installation routes require just.
 
 ### Homebrew — macOS and Linux
 
@@ -32,7 +32,7 @@ go install github.com/foae/kaneo-cli/cmd/kaneo-cli@latest
 kaneo-cli version
 ```
 
-For a pinned version, replace `@latest` with `@v1.0.0`. Run the installation command again to upgrade.
+For a pinned version, replace `@latest` with a tag from [Releases](https://github.com/foae/kaneo-cli/releases). Run the installation command again to upgrade.
 
 If `kaneo-cli` is not found, add Go's binary directory to your `PATH`. By default:
 
@@ -43,16 +43,16 @@ If you configured `GOBIN` or `GOPATH`, use your configured binary directory inst
 
 ### Prebuilt archives — no build tools required
 
-Download the archive matching your machine from [GitHub Releases](https://github.com/foae/kaneo-cli/releases/latest):
+Direct downloads for **v1.2.0** (or browse [all releases](https://github.com/foae/kaneo-cli/releases)):
 
-| Operating system | Architecture | Archive suffix | Homebrew |
+| Operating system | Architecture | Download | Homebrew |
 | --- | --- | --- | --- |
-| macOS | Apple Silicon / ARM64 | `darwin_arm64.tar.gz` | Yes |
-| macOS | Intel / x86-64 | `darwin_amd64.tar.gz` | Yes |
-| Linux | x86-64 | `linux_amd64.tar.gz` | Yes |
-| Linux | ARM64 / AArch64 | `linux_arm64.tar.gz` | Yes |
-| Windows | x86-64 | `windows_amd64.zip` | No |
-| Windows | ARM64 | `windows_arm64.zip` | No |
+| macOS | Apple Silicon / ARM64 | [tar.gz](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_darwin_arm64.tar.gz) | Yes |
+| macOS | Intel / x86-64 | [tar.gz](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_darwin_amd64.tar.gz) | Yes |
+| Linux | x86-64 | [tar.gz](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_linux_amd64.tar.gz) | Yes |
+| Linux | ARM64 / AArch64 | [tar.gz](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_linux_arm64.tar.gz) | Yes |
+| Windows | x86-64 | [zip](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_windows_amd64.zip) | No |
+| Windows | ARM64 | [zip](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_windows_arm64.zip) | No |
 
 These are the six release targets; no 32-bit binaries are published. `amd64` means x86-64, including both Intel and AMD processors.
 
@@ -63,9 +63,40 @@ These are the six release targets; no 32-bit binaries are published. `amd64` mea
 
 To upgrade a manual installation, repeat these steps with the new release and replace the executable.
 
-### Why GitHub Releases, not GitHub Packages?
+### Native Linux packages
 
-The downloadable binaries are **release assets**, not entries in the repository's Packages sidebar. [GitHub Packages](https://docs.github.com/en/packages/learn-github-packages/introduction-to-github-packages#supported-clients-and-formats) does not provide a Go module registry. `go install` resolves this repository's tagged Go module, while Homebrew downloads the release archives. No container image is currently published.
+Release assets include **deb** and **rpm** for both architectures:
+
+| Architecture | Debian / Ubuntu | Fedora / RHEL |
+| --- | --- | --- |
+| x86-64 | [deb](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_linux_amd64.deb) | [rpm](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_linux_amd64.rpm) |
+| ARM64 | [deb](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_linux_arm64.deb) | [rpm](https://github.com/foae/kaneo-cli/releases/download/v1.2.0/kaneo-cli_1.2.0_linux_arm64.rpm) |
+
+Verify the download against the release's checksum manifest, then install with `sudo apt install ./<download>.deb` or `sudo dnf install ./<download>.rpm`. Packages install `/usr/bin/kaneo-cli` and require CA certificates; they do not configure an apt/yum repository or start a service. Download and install a newer package to upgrade.
+
+### Container — Linux amd64 and arm64
+
+The versioned image is `ghcr.io/foae/kaneo-cli:v1.2.0`, linked from the repository's **Packages** sidebar. GitHub Releases holds the archives and native packages; GitHub Packages does not provide a Go module registry.
+
+```sh
+docker run --rm ghcr.io/foae/kaneo-cli:v1.2.0 version
+docker run --rm ghcr.io/foae/kaneo-cli:v1.2.0 instance get-status
+```
+
+The image runs as UID/GID `65532:65532`, includes CA certificates, and has the CLI as its entrypoint. Prefer an invocation-only `KANEO_TOKEN` injected from your secret manager (`docker run --rm -e KANEO_TOKEN …`), never a token literal. Persistent profiles require an explicitly mounted writable directory owned by UID 65532; containers generally have no OS keyring. Host `localhost` is not the container's localhost. Pin the published digest rather than a mutable registry tag when reproducibility matters. No `latest` image alias is published.
+
+### Agent skill
+
+The [Kaneo CLI skill](skills/kaneo-cli/SKILL.md) teaches agents the actual task/project/comment commands and safety rules. It does not install the executable or grant server access.
+
+For Claude Code:
+
+```text
+/plugin marketplace add foae/kaneo-cli
+/plugin install kaneo-cli@kaneo-cli
+```
+
+For other skill-capable agents, install the `skills/kaneo-cli` directory using that agent's skill mechanism. Configure the CLI separately before using the skill.
 
 ## Quick start
 

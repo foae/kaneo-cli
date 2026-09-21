@@ -1,0 +1,12 @@
+{
+  "name": "kaneo-cli",
+  "owner": {"name": "foae"},
+  "metadata": {"description": "Agent guidance for the unofficial Kaneo CLI."},
+  "plugins": [
+    {
+      "name": "kaneo-cli",
+      "source": "./",
+      "description": "Manage Kaneo work using the separately installed unofficial CLI."
+    }
+  ]
+}

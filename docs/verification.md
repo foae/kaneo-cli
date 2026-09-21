@@ -253,6 +253,21 @@ Publication and installation acceptance:
 - Generated [Formula PR #9](https://github.com/foae/kaneo-cli/pull/9) matched a fresh rendering from the published checksums byte-for-byte. `just check` passed before merge.
 - On Linux amd64 with Homebrew 7.0.4, `brew tap foae/kaneo-cli https://github.com/foae/kaneo-cli`, `brew install foae/kaneo-cli/kaneo-cli` and `brew test foae/kaneo-cli/kaneo-cli` passed. The installed `kaneo-cli version` returned version `1.0.0`, commit `93bfbe2b7085986aad3a625c473af4f9e7d39f9e` and date `2026-09-21T10:52:20Z`; `kaneo-cli instance get-status` returned `{"hasUsers":true,"hasAdmin":false}`. No native macOS Homebrew or ARM installation claim is made.
 
+## Distribution acceptance (2026-09-21)
+
+Local Linux amd64 checks for the distribution-introduction change:
+
+- GoReleaser snapshot produced six archives, four Linux deb/rpm packages, and their checksums. Debian and RPM installation/removal smoke checks used disposable native-amd64 containers; package binaries returned version metadata and successfully called the public instance-status endpoint.
+- The rebuilt Debian package also passed installation, HTTPS instance status and removal in `debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251`, including the Debian copyright path.
+- The digest-pinned distroless container executed the CLI on amd64, including HTTPS instance status. The arm64 container built successfully; this is not native arm64 execution. The base digest is recorded in `Dockerfile`.
+- `just check`, `actionlint`, and ShellCheck passed. Registry regression checks reject existing tags, auth/registry failures and digest mismatches, and enforce pull-only verification scope.
+- Recovery smoke fixtures exercised fresh, complete, legacy and CRLF notes; missing local commits, missing/duplicate digest records, registry failure and corrupt packages failed closed. The actual workflow version-step script rejected an already-tagged partial release and accepted a complete one. Ambiguous binary candidates failed before container construction.
+- Skill create/status/priority/comment examples ran against a synthetic local HTTP fixture. Read-back preserved unrelated task fields. Claude plugin metadata passed local validation. This is not live-server skill acceptance or hosted marketplace installation evidence.
+- A six-seat Pro review covered the working distribution change. Release metadata remains editable under GitHub's immutable-release contract; assets and tags do not. GHCR version tags remain a documented append-only policy, not atomic registry-enforced immutability.
+- Review scores (valid/invalid findings): Fable 4/5 (8/2), GLM 4/5 (6/0), Kimi 3/5 (5/2), Opus 4/5 (12/3), Sol 5/5 (5/0), Terra 2/5 (1/1). All six completed. Findings were validated against code and platform documentation; shared roots and duplicate version findings are not independent defects. Review telemetry: `778`.
+
+The CLI/API behavior and pinned API baseline are unchanged. Hosted package publication, anonymous image pulls, published-artifact attestations and the new release's installation checks must be recorded after publication; local builds do not establish them.
+
 ## Foundation evidence (2026-09-20)
 
 Verified locally on Linux amd64 with Go 1.27.1:

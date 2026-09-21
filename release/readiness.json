@@ -28,8 +28,8 @@
     },
     {
       "id": "local-release-acceptance",
-      "requirement": "A local release plan and GoReleaser snapshot have been inspected for all six target archives, checksum output, embedded build metadata, and installation smoke behavior.",
-      "evidence": ["docs/verification.md#v100-acceptance-2026-09-21"]
+      "requirement": "A local release plan and GoReleaser snapshot have been inspected for all six target archives, four Linux native packages, checksum output, embedded build metadata, installation smoke behavior, and the Linux container build/runtime contract.",
+      "evidence": ["docs/verification.md#v100-acceptance-2026-09-21", "docs/verification.md#distribution-acceptance-2026-09-21"]
     }
   ]
 }
