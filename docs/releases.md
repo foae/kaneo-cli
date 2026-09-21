@@ -27,7 +27,7 @@ Before enabling releases, configure the `foae/kaneo-cli` repository to:
 - permit the repository's public-attestation plan, or explicitly accept that GitHub will reject the attestation step on an unsupported private/internal plan; and
 - keep `main` branch protection in force. The Formula update is a normal `chore(homebrew)` pull request and must not bypass review or required checks.
 
-The workflow has no secret other than the caller's `GITHUB_TOKEN`; do not add long-lived publishing credentials. Action revisions are pinned in [the release workflow](../.github/workflows/release.yml). GoReleaser is fixed at v2.18.0. `svu` is installed at v3.3.0 and its committed policy is `.svu.yml`.
+The workflow has no secret other than the caller's `GITHUB_TOKEN`; do not add long-lived publishing credentials. Action revisions are pinned in [the release workflow](../.github/workflows/release.yml). GoReleaser is fixed at v2.18.2. `svu` is installed at v3.4.1 and its committed policy is `.svu.yml`.
 
 ## Version policy
 
@@ -63,7 +63,9 @@ For ambiguous partial publication, stop automatic retries. Preserve the tag and 
 
 `complete` confirms artifact integrity and container identity, not completion of attestations, anonymous access or the Formula PR. A rerun does not repair those later steps; finish them through reviewed recovery using existing verified artifacts.
 
-The agent plugin has its own version in `.claude-plugin/plugin.json`, starting at `1.0.0`; bump it when its skill or plugin metadata changes, independently of CLI tags. README download links resolve to GitHub Releases rather than a hardcoded version. The [installer](../install.sh) resolves the latest stable tag once and downloads that version's archive and checksum manifest; keep its filename contract aligned with GoReleaser.
+The portable agent skill is versioned with the CLI by the repository release tag; distribute `skills/kaneo-cli/` (including its license) from that tagged source archive. Record the tag when installing and replace the directory from a newer release to update. The optional Claude plugin deliberately omits an independent version: [Claude resolves its cache key from the source commit](https://code.claude.com/docs/en/plugins-reference#version-management). Pin the marketplace to a release tag for release-aligned installs; the unpinned marketplace tracks the default branch. No release step rewrites verified source to inject a version. CLI skill-update detection is intentionally absent; update guidance is documentation-only.
+
+README download links resolve to GitHub Releases rather than a hardcoded version. The [installer](../install.sh) resolves the latest stable tag once and downloads that version's archive and checksum manifest; keep its filename contract aligned with GoReleaser.
 
 ## Homebrew Formula
 

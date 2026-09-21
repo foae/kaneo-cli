@@ -3,7 +3,7 @@
 [![Build status](https://github.com/foae/kaneo-cli/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/foae/kaneo-cli/actions/workflows/ci.yml)
 [![Latest stable version](https://img.shields.io/github/v/release/foae/kaneo-cli)](https://github.com/foae/kaneo-cli/releases/latest)
 
-Unofficial, JSON-first command-line client for [Kaneo](https://kaneo.app). Manage workspaces, projects, tasks, comments and labels from your terminal or scripts. Not affiliated with the Kaneo project.
+Unofficial, JSON-first command-line client and [agent skill](#agent-skill) for [Kaneo](https://kaneo.app). Manage workspaces, projects, tasks, comments and labels from your terminal, scripts or AI coding agent. Not affiliated with the Kaneo project.
 
 ## Install
 
@@ -30,7 +30,15 @@ brew install foae/kaneo-cli/kaneo-cli
 | Linux | ARM64, amd64 | [Guide](docs/installation.md#linux) · [Archives, deb / rpm](https://github.com/foae/kaneo-cli/releases/latest) |
 | Windows | ARM64, amd64 | [Guide](docs/installation.md#windows) · [ZIP archives](https://github.com/foae/kaneo-cli/releases/latest) |
 
-Also available: [Go install](docs/installation.md#go-install) · [Container](docs/installation.md#container) · [Agent skill](docs/installation.md#agent-skill).
+Also available: [Go install](docs/installation.md#go-install) · [Container](docs/installation.md#container).
+
+## Agent skill
+
+Teach any skill-capable coding agent to find Kaneo work, create tasks, update status and priority, and add comments using the portable [Kaneo CLI skill](skills/kaneo-cli/SKILL.md). It is model- and harness-agnostic.
+
+**Install:** download **Source code (zip)** from the [latest release](https://github.com/foae/kaneo-cli/releases/latest), extract it, and copy `skills/kaneo-cli/` into your agent's documented skill directory. Keep the release tag with your installation record; reinstall from a newer release to update.
+
+Install the [CLI](#install) and [log in](#quick-start) separately; the skill does not install the binary or grant access. See the [skill installation guide](docs/installation.md#agent-skill) for version pinning, updates, and the optional Claude Code plugin.
 
 ## Quick start
 

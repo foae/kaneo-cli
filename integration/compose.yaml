@@ -1,14 +1,14 @@
 # Disposable acceptance environment only. Never deploy these test credentials.
-# Digests resolved 2026-09-20; image identity is not API-spec compatibility proof.
+# Pins audited 2026-09-21; image identity is not API-spec compatibility proof.
 services:
   postgres:
-    image: postgres:16-alpine@sha256:3c5c8892d184f738f4fe282d14ddaa613a38f00f4189d2d94725ebe6f2909ddb
+    image: postgres:18.6-alpine3.24@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
     environment:
       POSTGRES_DB: kaneo
       POSTGRES_USER: kaneo
       POSTGRES_PASSWORD: local-acceptance-only
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres18_data:/var/lib/postgresql
     healthcheck:
       test: [CMD-SHELL, pg_isready -U kaneo -d kaneo]
       interval: 2s
@@ -45,7 +45,9 @@ services:
       retries: 30
       start_period: 60s
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    build:
+      context: .
+      dockerfile: minio.Dockerfile
     # Share loopback so presigned localhost URLs work in both API and host clients.
     network_mode: service:kaneo
     command: server /data --address :19000 --console-address :19001
@@ -55,5 +57,5 @@ services:
     volumes:
       - minio_data:/data
 volumes:
-  postgres_data:
+  postgres18_data:
   minio_data:

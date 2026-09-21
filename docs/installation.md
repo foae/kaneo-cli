@@ -93,13 +93,31 @@ The image runs as UID/GID `65532:65532`, includes CA certificates, and uses the 
 
 ## Agent skill
 
-The [Kaneo CLI skill](../skills/kaneo-cli/SKILL.md) teaches agents commands and safety rules. It does not install the executable or grant server access.
+The portable [Kaneo CLI skill](../skills/kaneo-cli/SKILL.md) teaches commands and safety rules using the [Agent Skills format](https://agentskills.io/specification). It is model- and harness-agnostic; it does not install the executable or grant server access.
 
-For Claude Code:
+### Portable installation
+
+1. Open the [latest release](https://github.com/foae/kaneo-cli/releases/latest), record its tag, and download **Source code (zip)** from that release.
+2. Extract it and copy the complete `skills/kaneo-cli/` directory, including `SKILL.md` and `LICENSE`, into your agent's documented skill directory. There is no universal install path across agents; use its own skill installation mechanism.
+3. Install the CLI from the same release and configure authentication separately. Reload skills using your agent's documented mechanism.
+
+The repository release tag versions both the CLI and skill. Keep that tag in your installation record; an unrecorded copy has an unknown version. To update, explicitly choose a newer release and replace the whole skill directory from its source archive. Do not infer the installed skill version from `kaneo-cli version`; the CLI does not inspect or update agent skill installations.
+
+### Optional Claude Code plugin
+
+The same skill can be installed through Claude Code's plugin interface. Replace `vX.Y.Z` with the tag recorded from the release:
 
 ```text
-/plugin marketplace add foae/kaneo-cli
+/plugin marketplace add https://github.com/foae/kaneo-cli.git#vX.Y.Z
 /plugin install kaneo-cli@kaneo-cli
 ```
 
-For other skill-capable agents, install the `skills/kaneo-cli` directory through that agent's skill mechanism. Configure the CLI separately.
+The plugin has no separate version counter; Claude uses the source commit as its cache key. Removing a marketplace also uninstalls its plugins. To change a pinned release, remove the marketplace, add it again at the new tag, and reinstall the plugin:
+
+```text
+/plugin marketplace remove kaneo-cli
+/plugin marketplace add https://github.com/foae/kaneo-cli.git#vX.Y.Z
+/plugin install kaneo-cli@kaneo-cli
+```
+
+Omitting `#vX.Y.Z` tracks the repository default branch instead of releases. See [Claude marketplace installation documentation](https://code.claude.com/docs/en/discover-plugins#add-marketplaces) for ref syntax and update behavior. Configure the CLI separately in either case.

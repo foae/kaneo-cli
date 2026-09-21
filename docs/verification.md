@@ -53,13 +53,13 @@ CI uses GitHub-hosted runners only, read-only permissions for untrusted code, pi
 
 ## Disposable real Kaneo
 
-`integration/compose.yaml` pins Kaneo, PostgreSQL and MinIO by immutable image digest. This is a local test environment with deliberately public test credentials, **never a deployment template**. All exposed ports bind to loopback; PostgreSQL is not published. Use only disposable test data. Do not point these commands at an existing production Compose project.
+`integration/compose.yaml` pins Kaneo and PostgreSQL by immutable image digest. MinIO is built locally from pinned upstream source commits using digest-pinned builder/runtime images in `integration/minio.Dockerfile`; upstream's latest release is source-only. This is a local test environment with deliberately public test credentials, **never a deployment template**. All exposed ports bind to loopback; PostgreSQL is not published. Use only disposable test data.
 
-Prerequisites: Docker Engine with Compose v2, free host ports 15173/19000/19001, and registry access. Always use the same explicit project name for startup and cleanup; unique names isolate volumes but not the fixed host ports.
+Prerequisites: Docker Engine with Compose v2, free host ports 15173/19000/19001, registry access, and build-time access to GitHub and Go module downloads. Always use the same explicit project name for startup and cleanup; unique names isolate volumes but not the fixed host ports. PostgreSQL 18 uses a fresh `postgres18_data` volume mounted at `/var/lib/postgresql`; no PostgreSQL 16 data is migrated. Do not reuse an existing production Compose project.
 
 ```sh
 docker compose -p kaneo-cli-acceptance -f integration/compose.yaml config --quiet
-docker compose -p kaneo-cli-acceptance -f integration/compose.yaml up -d --wait --wait-timeout 180
+docker compose -p kaneo-cli-acceptance -f integration/compose.yaml up -d --build --wait --wait-timeout 180
 curl --fail http://localhost:15173/api/instance/status
 curl --fail http://localhost:19000/minio/health/ready
 docker compose -p kaneo-cli-acceptance -f integration/compose.yaml exec -T -e MC_HOST_acceptance=http://acceptance:local-acceptance-only@localhost:19000 minio mc mb --ignore-existing acceptance/kaneo-uploads
@@ -67,7 +67,7 @@ docker compose -p kaneo-cli-acceptance -f integration/compose.yaml exec -T -e MC
 
 On first start, instance status must report `hasUsers: false` and `hasAdmin: false`. Open `http://localhost:15173` and create a disposable account; the first signup is the instance administrator. Create a test workspace/project and an API key through Kaneo's UI. Use the configured `kaneo-cli` device client ID for device-login acceptance. No real email/social provider is configured; email/password sign-in is enabled for this isolated environment. Never record generated credentials in acceptance evidence.
 
-MinIO shares Kaneo's network namespace deliberately: `http://localhost:19000` reaches the same storage service from Kaneo and from host CLI/browser clients, so presigned URLs remain valid without rewriting signed hosts. The upstream Compose example's internal `minio:9000` endpoint is not usable by an ordinary host browser. The pinned Quay image replaces the upstream example's inaccessible Docker Hub `minio/minio:latest` reference. For browser upload tests, configure MinIO CORS to allow only the local Kaneo origin if required by the actual browser response; CLI upload tests do not exercise browser CORS.
+MinIO shares Kaneo's network namespace deliberately: `http://localhost:19000` reaches the same storage service from Kaneo and from host CLI/browser clients, so presigned URLs remain valid without rewriting signed hosts. The upstream Compose example's internal `minio:9000` endpoint is not usable by an ordinary host browser. The local image builds MinIO `RELEASE.2025-10-15T17-29-55Z` and the bucket-setup client `mc` `RELEASE.2025-08-13T08-35-41Z`, retaining both AGPL licenses; it replaces the older prebuilt MinIO image. This acceptance image is not published. For browser upload tests, configure MinIO CORS to allow only the local Kaneo origin if required by the actual browser response; CLI upload tests do not exercise browser CORS.
 
 After testing, destroy **only this disposable project's** containers and volumes:
 
@@ -274,6 +274,18 @@ The CLI/API behavior and pinned API baseline are unchanged. Hosted package publi
 - Disposable download/OS fixtures exercised Linux/macOS amd64/arm64 selection and replacement of an existing binary. Unsupported OS/architecture, relative destinations, network failure, prerelease resolution, missing/duplicate checksum entries and checksum mismatch were rejected; failed installs preserved the existing binary.
 - `shellcheck --shell=sh install.sh` and `just check` passed. README and installation-guide local links and section anchors resolved. Temporary binaries and fixtures were removed.
 - No native macOS or ARM installer execution is claimed. This change does not alter the pinned API baseline; no container was used for these checks. The README's hosted installer URL becomes available only after the script reaches `main`.
+
+## Dependency refresh acceptance (2026-09-21)
+
+Verified the dependency-update working tree based on `97db3c2019436e81df6965d6951aa00d53ac49ca` on Linux amd64 with Go 1.27.1:
+
+- `just check`, `just test`, `just cross`, `just vuln`, and `just snapshot` passed. The vulnerability scan reported none. GoReleaser 2.18.2 produced six archives and four Linux packages; cross-builds do not establish native execution on other platforms.
+- `actionlint`, ShellCheck on the installer/release scripts, and Compose configuration validation passed. `svu` 3.4.1 executed successfully. Hosted execution of the updated Docker actions remains unverified locally.
+- A fresh isolated Compose project ran PostgreSQL 18.6 and Kaneo successfully. The CLI's real instance-status response was `{"hasUsers":false,"hasAdmin":false}`. PostgreSQL and Kaneo health checks passed; MinIO readiness and the documented `mc mb` command succeeded. An object uploaded through `mc pipe` was read back byte-for-byte with `mc cat`.
+- The local acceptance image executed MinIO `RELEASE.2025-10-15T17-29-55Z` (`9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a`) and `mc` `RELEASE.2025-08-13T08-35-41Z` (`7394ce0dd2a80935aded936b09fa12cbb3cb8096`), built with Go 1.27.1. Builder digest: `sha256:69a7b9788769bec032d238959b61854e9ae87f57be9029ec04e9885fabf99195`; runtime digest: `sha256:e2e927ec666bae08560abb3c55d0659eceabb657f56b6782ab500a9fc7f555e3`.
+- PostgreSQL image: `sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873`. Kaneo image remains `sha256:a85a23996c36166cfcebcb4ee161b40cc62c7b924faf06353684a84d5e84162c`. Existing test projects were untouched: this smoke used alternate host ports 35173/39000/39001, then removed only its own containers and volumes. It did not exercise host presigned uploads, browser CORS, or a PostgreSQL data migration.
+
+The API baseline is unchanged: OpenAPI SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`.
 
 ## Foundation evidence (2026-09-20)
 

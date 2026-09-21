@@ -1,12 +1,12 @@
 module github.com/foae/kaneo-cli
 
-go 1.27.0
+go 1.27.1
 
 require (
 	github.com/gofrs/flock v0.13.1
 	github.com/spf13/cobra v1.10.2
 	github.com/zalando/go-keyring v0.2.8
-	golang.org/x/sys v0.47.0
+	golang.org/x/sys v0.48.0
 )
 
 require (
