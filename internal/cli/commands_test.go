@@ -593,6 +593,25 @@ func TestLogoutRequiresYes(t *testing.T) {
 	}
 }
 
+func TestLoginCreatesExplicitProfile(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"hasUsers":true,"hasAdmin":true}`))
+	}))
+	defer server.Close()
+
+	env := newTestEnv(t)
+	base := server.URL + "/api"
+	env.env["KANEO_API_URL"] = base
+	env.setStdin("key-a\n")
+	if status, _, stderr := env.run("auth", "login", "--api-key-file", "-", "--profile", "team"); status != 0 {
+		t.Fatalf("login: status=%d stderr=%q", status, stderr)
+	}
+	if status, stdout, stderr := env.run("instance", "get-status", "--profile", "team"); status != 0 {
+		t.Fatalf("reuse profile: status=%d stdout=%q stderr=%q", status, stdout, stderr)
+	}
+}
+
 func TestProfileCommandsWorkWhenBackendFails(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"hasUsers":true,"hasAdmin":true}`))

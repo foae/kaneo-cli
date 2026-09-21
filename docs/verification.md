@@ -140,6 +140,38 @@ Upstream discrepancy (recorded, not silently resolved): `getOrganizationRole` (`
 
 Pending evidence, not claimed: successful `asset download` of a real task asset; `org list-user-invitations` real success (the server returns HTTP 403 until the account's email is verified, which the disposable environment cannot do without SMTP); the two deferred browser-navigation endpoints (`auth get-device-authorization-page`, `mcp start-authorization`), whose correct contract is a deliberate browser interaction rather than a JSON wrapper.
 
+## Packet 3 evidence (2026-09-21)
+
+Implemented all 105 remaining non-GET operations: 103 generic JSON mutations plus dedicated `task create-image-upload` (presigned) and `user upload-avatar` (base64) commands. 160 of 162 pinned operations are now implemented; the two GET browser-navigation endpoints (`auth get-device-authorization-page`, `mcp start-authorization`) remain deferred. `write_ops_test.go` cross-checks the mutation table against `api/operations.json` and fails if any operation is uncovered or a method/path/parameter/body/security classification drifts.
+
+Design: a mutating operation reads its JSON body from `--body-file PATH` or `--body-file -`, validates it as a JSON object before any network access, and passes it through byte-for-byte so unknown fields and numeric precision survive. Mutations are never retried. A destructive operation (delete/remove/cancel/leave/reject/clear/detach, or `task bulk-update`) requires `--yes` before any credential or network work. `task create-image-upload` streams the file to the presigned URL with a client that never carries the API credential and rejects a URL with userinfo or a non-http(s) scheme.
+
+Environment: Linux amd64, Go 1.27.1, just 1.58.0. API snapshot SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`. Disposable Kaneo image `ghcr.io/usekaneo/kaneo@sha256:a85a23996c36166cfcebcb4ee161b40cc62c7b924faf06353684a84d5e84162c`; observed server version `2.25.0`; stack torn down with its volumes after testing.
+
+Checks, all passing: `just check`, `just race`, `just cross` (six CGO-free targets) and `just vuln`.
+
+Real disposable-instance lifecycles (instance bootstrapped over HTTP, resources seeded through the built CLI, with a stored API key and, for organization endpoints, a session token):
+
+- Project create/get/update/archive/unarchive/reorder/delete; column create/list/update/reorder/delete; task create/get/update/`update-title`/`update-description`/`update-priority`/`update-status`/`update-due-date`/`update-assignee`/bulk-update/move/delete.
+- Label create/update/attach/list-task/list-workspace/delete; comment create/update/delete; time-entry create/update/get/list; custom-field create/set-value/reorder/list-project-values/list-task-values/delete; activity create/`create-comment`/`update-comment`/`delete-comment`; notification create/list/mark-read/mark-all-read/clear-all.
+- Binary: `user upload-avatar` then `user download-avatar` byte-identical (SHA-256); `task create-image-upload` issued a presigned URL, streamed the bytes to MinIO with no `Authorization` header, `task finalize-image-upload` recorded the asset, and `asset download` returned the bytes identically.
+- `mcp register-oauth-client` (documented public) sent no credential.
+- Organization (`KANEO_TOKEN` session with an active organization): check-slug, create, update, get-full, list, create-team, update-team, remove-team, create-role, list-roles, add-team-member, list-team-members, remove-team-member, set-active, set-active-team, invite-member, list-invitations and delete.
+- Destructive gates: `task delete`, `org delete`/`remove-team`/`remove-member`/`remove-team-member`/`delete-role`, `notification clear-all`, `label delete`, `task-relation delete` and `task bulk-update` were refused before any request (exit 2, `invalid_arguments`) without `--yes`, and completed with it.
+- Permissions failure: a second account's stored credential listing the first account's workspace returned HTTP 403, mapped to `authorization_failed`/exit 3.
+- Invalid input: a missing `--body-file`, an invalid JSON body, a non-object body and a missing required flag all exit 2 before network access; a schema-violating body is forwarded and the server's 400 maps to `invalid_request`/exit 5.
+
+Defects fixed during acceptance: `auth login --profile NAME` failed when the profile did not exist (the resolver rejected the missing explicit profile before `Save` could create it); login now creates the explicit profile first, with a regression test. `asset download` now attaches a stored credential when one is present, so a private asset downloads while a public asset still works anonymously; also covered by a regression test.
+
+Upstream or environmental limitations observed and recorded (not CLI defects):
+
+- `detachLabelFromTask` returns HTTP 400 `Label is not assigned to a task` even immediately after a successful attach that sets the label's `taskId`; an upstream contract decision is needed.
+- `updateNotificationPreferences` and `upsertNotificationPreferenceWorkspaceRule` return HTTP 400 `Email notifications require an account email address` in this environment; the command and body mapping are correct.
+- Organization admin operations require an active organization; with API-key-only auth the session has none (HTTP 400 `No active organization`), so they were exercised with a session token after an explicit active-organization bootstrap.
+- `org list-user-invitations` returns HTTP 403 until the account email is verified; the disposable environment has no SMTP.
+
+Pending evidence, not claimed: external-service integration operations (GitHub/Gitea/Slack/Discord/Mattermost/Telegram/generic webhook create/update/delete/verify/import) — only fixture protocol coverage is claimed, never a mocked live integration; organization invitation accept/reject/cancel with real invitation tokens; the two deferred browser-navigation endpoints; native OS keyring and Windows DACL evidence.
+
 ## Foundation evidence (2026-09-20)
 
 Verified locally on Linux amd64 with Go 1.27.1:

@@ -154,7 +154,7 @@ func (a *app) newRootCommand() *cobra.Command {
 	root.AddCommand(a.newAuthCommand())
 	root.AddCommand(a.newInstanceCommand())
 	root.AddCommand(a.newConfigCommand())
-	root.AddCommand(a.newReadCommandGroups()...)
+	root.AddCommand(a.newAPIGroups()...)
 
 	return root
 }

@@ -1,6 +1,6 @@
 # CLI contract
 
-This is the binding contract for the command surface. Help, version, `profile` management, `auth login`/`logout`/`get-session`, `instance get-status`, `config get` and every GET read operation are implemented; the remaining (mutating, upload and integration) operations are **future implementation contracts**. Two GET browser-navigation endpoints, `auth get-device-authorization-page` and `mcp start-authorization`, are deliberately deferred pending a browser interaction contract.
+This is the binding contract for the command surface. Help, version, `profile` management, `auth login`/`logout`/`get-session`, all GET read operations, and all JSON mutation operations (including the presigned task-image upload and the base64 avatar upload) are implemented. Two browser-navigation endpoints, `auth get-device-authorization-page` and `mcp start-authorization`, are deliberately deferred pending a browser interaction contract.
 
 ## Names and input
 
@@ -8,7 +8,7 @@ This is the binding contract for the command surface. Help, version, `profile` m
 
 Use `--profile NAME`, `--api-url URL`, `--timeout DURATION` and `--yes` consistently once implemented. The URL is the full API base URL, including `/api`; do not append it twice. Explicitly configured HTTP is allowed for self-hosted instances, with a stderr warning before transmitting credentials; never downgrade HTTPS automatically. Validate malformed URLs before network access.
 
-Document operation-specific named flags for scalar path/query parameters. Complex bodies accept `--body-file PATH` or `--body-file -` for stdin. Decode and validate without losing unknown schema-permitted data or numeric precision. A flag is present only when explicitly supplied: omitted, JSON null, false, zero and empty string are distinct. Reject conflicting body/field inputs rather than silently picking one. Never accept secrets in positional arguments or print shell commands containing them.
+Document operation-specific named flags for scalar path/query parameters. Complex bodies accept `--body-file PATH` or `--body-file -` for stdin, are validated before any network access and are passed through unchanged so unknown schema-permitted fields and numeric precision survive. Two file operations construct their request from a local file instead: `task create-image-upload` requests a presigned URL, streams the bytes to storage with a client that never carries the API credential, and prints the API response; `user upload-avatar` sends a bounded base64 body. A flag is present only when explicitly supplied: omitted, JSON null, false, zero and empty string are distinct. Reject conflicting body/field inputs rather than silently picking one. Never accept secrets in positional arguments or print shell commands containing them.
 
 No implicit prompts, even on a TTY. Device login is an explicit interactive action; describe its behavior on a non-TTY and provide a no-browser path. Destructive actions (deletes, revocations, removals, resets and equivalent irreversible state changes) require `--yes` before making any request, independent of terminal type. This includes local credential removal via `auth logout` and `profile delete`. Bulk mutation must report partial failure rather than successful exit for incomplete work.
 

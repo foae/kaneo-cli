@@ -51,37 +51,14 @@ type readSpec struct {
 	// public marks an operation whose documented security is empty, so it must
 	// work without a credential.
 	public bool
+	// optionalAuth marks a public operation that returns more for the caller
+	// when a credential is available (for example an asset that is only public
+	// when its project is). The stored credential is attached when present but
+	// its absence is not an error.
+	optionalAuth bool
 	// binary marks an operation whose 200 response is a non-JSON stream that
 	// must be written to an explicit destination.
 	binary bool
-}
-
-func (a *app) newReadCommandGroups() []*cobra.Command {
-	order := make([]string, 0)
-	byGroup := make(map[string][]readSpec)
-	for _, spec := range readSpecs {
-		if _, seen := byGroup[spec.group]; !seen {
-			order = append(order, spec.group)
-		}
-		byGroup[spec.group] = append(byGroup[spec.group], spec)
-	}
-
-	groups := make([]*cobra.Command, 0, len(order))
-	for _, name := range order {
-		group := &cobra.Command{
-			Use:   name,
-			Short: groupShorts[name],
-			Args:  noArgs,
-			RunE: func(cmd *cobra.Command, _ []string) error {
-				return help(cmd)
-			},
-		}
-		for _, spec := range byGroup[name] {
-			group.AddCommand(a.newReadCommand(spec))
-		}
-		groups = append(groups, group)
-	}
-	return groups
 }
 
 func (a *app) newReadCommand(spec readSpec) *cobra.Command {
@@ -146,7 +123,7 @@ func (a *app) runRead(cmd *cobra.Command, spec readSpec) error {
 	if err != nil {
 		return err
 	}
-	apiClient, err := a.readClient(ctx, sess, spec.public)
+	apiClient, err := a.readClient(ctx, sess, spec.public, spec.optionalAuth)
 	if err != nil {
 		return err
 	}
@@ -168,9 +145,11 @@ func (a *app) runRead(cmd *cobra.Command, spec readSpec) error {
 }
 
 // readClient selects the unauthenticated client for public operations so they
-// never touch the credential backend, and the authenticated client otherwise.
-func (a *app) readClient(ctx context.Context, sess *session, public bool) (*client.Client, error) {
-	if public {
+// never touch the credential backend, the optional-auth client for a public
+// operation that benefits from a credential, and the authenticated client
+// otherwise.
+func (a *app) readClient(ctx context.Context, sess *session, public, optionalAuth bool) (*client.Client, error) {
+	if public && !optionalAuth {
 		return sess.newUnauthenticatedClient()
 	}
 	return sess.newClient(ctx)

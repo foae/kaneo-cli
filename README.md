@@ -2,7 +2,7 @@
 
 Unofficial, JSON-first Go CLI for [Kaneo](https://kaneo.app). Not affiliated with the Kaneo project.
 
-**Status: early implementation.** The runtime, local profiles, credential storage (OS keyring first, warned plaintext fallback), API-key input, the RFC 8628 device login flow and all read-only (GET) API operations work. Mutations, uploads and integrations remain planned; publishing is disabled until full agreed coverage passes acceptance. No release or Homebrew installation is available yet.
+**Status: early implementation.** The runtime, local profiles, credential storage (OS keyring first, warned plaintext fallback), API-key input, the RFC 8628 device login flow, all read-only (GET) API operations and every JSON mutation work, including deletion safeguards and the presigned task-image upload. External-service integrations and two browser-navigation endpoints remain; publishing is disabled until full agreed coverage passes acceptance. No release or Homebrew installation is available yet.
 
 ## Try the foundation
 
@@ -26,7 +26,7 @@ kaneo-cli org accept-invitation
 kaneo-cli task update-status
 ```
 
-Read commands such as `task get`, `project list` and `org list` are executable today; `org accept-invitation` and `task update-status` remain planned. Releases will target Linux, macOS and Windows on amd64 and arm64, with Homebrew for Linux/macOS.
+Commands such as `task get`, `project list`, `task create` and `task update-status` are executable today. Releases will target Linux, macOS and Windows on amd64 and arm64, with Homebrew for Linux/macOS.
 
 ## Start here
 

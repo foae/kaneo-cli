@@ -18,7 +18,7 @@
       "command": {
         "group": "activity",
         "action": "delete-comment",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -101,7 +101,7 @@
       "command": {
         "group": "activity",
         "action": "create-comment",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -178,7 +178,7 @@
       "command": {
         "group": "activity",
         "action": "update-comment",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -265,7 +265,7 @@
       "command": {
         "group": "activity",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -545,7 +545,7 @@
       "command": {
         "group": "org",
         "action": "accept-invitation",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -609,7 +609,7 @@
       "command": {
         "group": "org",
         "action": "add-team-member",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -696,7 +696,7 @@
       "command": {
         "group": "org",
         "action": "cancel-invitation",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -743,7 +743,7 @@
       "command": {
         "group": "org",
         "action": "check-slug",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -790,7 +790,7 @@
       "command": {
         "group": "org",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -873,7 +873,7 @@
       "command": {
         "group": "org",
         "action": "create-role",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -938,7 +938,7 @@
       "command": {
         "group": "org",
         "action": "create-team",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -1025,7 +1025,7 @@
       "command": {
         "group": "org",
         "action": "delete",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -1079,7 +1079,7 @@
       "command": {
         "group": "org",
         "action": "delete-role",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -1387,7 +1387,7 @@
       "command": {
         "group": "org",
         "action": "check-permission",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -1458,7 +1458,7 @@
       "command": {
         "group": "org",
         "action": "invite-member",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -1584,7 +1584,7 @@
       "command": {
         "group": "org",
         "action": "leave",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2002,7 +2002,7 @@
       "command": {
         "group": "org",
         "action": "reject-invitation",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2069,7 +2069,7 @@
       "command": {
         "group": "org",
         "action": "remove-member",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2155,7 +2155,7 @@
       "command": {
         "group": "org",
         "action": "remove-team",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2225,7 +2225,7 @@
       "command": {
         "group": "org",
         "action": "remove-team-member",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2300,7 +2300,7 @@
       "command": {
         "group": "org",
         "action": "set-active",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2356,7 +2356,7 @@
       "command": {
         "group": "org",
         "action": "set-active-team",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2408,7 +2408,7 @@
       "command": {
         "group": "org",
         "action": "update",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2491,7 +2491,7 @@
       "command": {
         "group": "org",
         "action": "update-member-role",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2592,7 +2592,7 @@
       "command": {
         "group": "org",
         "action": "update-role",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2687,7 +2687,7 @@
       "command": {
         "group": "org",
         "action": "update-team",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -2791,7 +2791,7 @@
       "command": {
         "group": "column",
         "action": "reorder",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -2893,7 +2893,7 @@
       "command": {
         "group": "column",
         "action": "delete",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -2968,7 +2968,7 @@
       "command": {
         "group": "column",
         "action": "update",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3131,7 +3131,7 @@
       "command": {
         "group": "column",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3233,7 +3233,7 @@
       "command": {
         "group": "comment",
         "action": "delete",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3308,7 +3308,7 @@
       "command": {
         "group": "comment",
         "action": "update",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3470,7 +3470,7 @@
       "command": {
         "group": "comment",
         "action": "create-task",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -3596,7 +3596,7 @@
       "command": {
         "group": "custom-field",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -3901,7 +3901,7 @@
       "command": {
         "group": "custom-field",
         "action": "reorder-project",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4067,7 +4067,7 @@
       "command": {
         "group": "custom-field",
         "action": "set-value",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -4148,7 +4148,7 @@
       "command": {
         "group": "custom-field",
         "action": "delete",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4213,7 +4213,7 @@
       "command": {
         "group": "discord",
         "action": "delete-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4361,7 +4361,7 @@
       "command": {
         "group": "discord",
         "action": "update-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4483,7 +4483,7 @@
       "command": {
         "group": "discord",
         "action": "create-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4661,7 +4661,7 @@
       "command": {
         "group": "webhook",
         "action": "delete-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4809,7 +4809,7 @@
       "command": {
         "group": "webhook",
         "action": "update-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -4956,7 +4956,7 @@
       "command": {
         "group": "webhook",
         "action": "create-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -5091,7 +5091,7 @@
       "command": {
         "group": "gitea",
         "action": "import-issues",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -5174,7 +5174,7 @@
       "command": {
         "group": "gitea",
         "action": "delete-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -5314,7 +5314,7 @@
       "command": {
         "group": "gitea",
         "action": "update-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -5407,7 +5407,7 @@
       "command": {
         "group": "gitea",
         "action": "create-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -5505,7 +5505,7 @@
       "command": {
         "group": "gitea",
         "action": "list-repositories",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -5589,7 +5589,7 @@
       "command": {
         "group": "gitea",
         "action": "verify-access",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -5718,7 +5718,7 @@
       "command": {
         "group": "github",
         "action": "import-issues",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -5801,7 +5801,7 @@
       "command": {
         "group": "github",
         "action": "delete-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -5941,7 +5941,7 @@
       "command": {
         "group": "github",
         "action": "update-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6034,7 +6034,7 @@
       "command": {
         "group": "github",
         "action": "create-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6188,7 +6188,7 @@
       "command": {
         "group": "github",
         "action": "verify-installation",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -6383,7 +6383,7 @@
       "command": {
         "group": "label",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -6613,7 +6613,7 @@
       "command": {
         "group": "label",
         "action": "delete",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6753,7 +6753,7 @@
       "command": {
         "group": "label",
         "action": "update",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6840,7 +6840,7 @@
       "command": {
         "group": "label",
         "action": "detach-task",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -6915,7 +6915,7 @@
       "command": {
         "group": "label",
         "action": "attach-task",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -7008,7 +7008,7 @@
       "command": {
         "group": "mattermost",
         "action": "delete-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -7156,7 +7156,7 @@
       "command": {
         "group": "mattermost",
         "action": "update-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -7278,7 +7278,7 @@
       "command": {
         "group": "mattermost",
         "action": "create-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -7537,7 +7537,7 @@
       "command": {
         "group": "mcp",
         "action": "decide-authorization-request",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -7637,7 +7637,7 @@
       "command": {
         "group": "mcp",
         "action": "register-oauth-client",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -7766,7 +7766,7 @@
       "command": {
         "group": "notification",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -7902,7 +7902,7 @@
       "command": {
         "group": "notification-preference",
         "action": "update",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -8031,7 +8031,7 @@
       "command": {
         "group": "notification-preference",
         "action": "delete-workspace-rule",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -8096,7 +8096,7 @@
       "command": {
         "group": "notification-preference",
         "action": "upsert-workspace-rule",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -8210,7 +8210,7 @@
       "command": {
         "group": "notification",
         "action": "clear-all",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -8245,7 +8245,7 @@
       "command": {
         "group": "notification",
         "action": "mark-all-read",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -8280,7 +8280,7 @@
       "command": {
         "group": "notification",
         "action": "mark-read",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -8448,7 +8448,7 @@
       "command": {
         "group": "project",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -8533,7 +8533,7 @@
       "command": {
         "group": "project",
         "action": "reorder",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -8636,7 +8636,7 @@
       "command": {
         "group": "project",
         "action": "delete",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -8766,7 +8766,7 @@
       "command": {
         "group": "project",
         "action": "update",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -8865,7 +8865,7 @@
       "command": {
         "group": "project",
         "action": "archive",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -8930,7 +8930,7 @@
       "command": {
         "group": "project",
         "action": "unarchive",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -9113,7 +9113,7 @@
       "command": {
         "group": "slack",
         "action": "delete-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -9261,7 +9261,7 @@
       "command": {
         "group": "slack",
         "action": "update-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -9383,7 +9383,7 @@
       "command": {
         "group": "slack",
         "action": "create-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -9493,7 +9493,7 @@
       "command": {
         "group": "task-relation",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -9599,7 +9599,7 @@
       "command": {
         "group": "task-relation",
         "action": "delete",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -9732,7 +9732,7 @@
       "command": {
         "group": "task",
         "action": "update-assignee",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -9829,7 +9829,7 @@
       "command": {
         "group": "task",
         "action": "bulk-update",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -9936,7 +9936,7 @@
       "command": {
         "group": "task",
         "action": "update-description",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10019,7 +10019,7 @@
       "command": {
         "group": "task",
         "action": "update-due-date",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10164,7 +10164,7 @@
       "command": {
         "group": "task",
         "action": "create-image-upload",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10284,7 +10284,7 @@
       "command": {
         "group": "task",
         "action": "finalize-image-upload",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10399,7 +10399,7 @@
       "command": {
         "group": "task",
         "action": "import",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10521,7 +10521,7 @@
       "command": {
         "group": "task",
         "action": "move",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10618,7 +10618,7 @@
       "command": {
         "group": "task",
         "action": "update-priority",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10708,7 +10708,7 @@
       "command": {
         "group": "task",
         "action": "update-status",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -10942,7 +10942,7 @@
       "command": {
         "group": "task",
         "action": "update-title",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11025,7 +11025,7 @@
       "command": {
         "group": "task",
         "action": "delete",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11155,7 +11155,7 @@
       "command": {
         "group": "task",
         "action": "update",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11274,7 +11274,7 @@
       "command": {
         "group": "task",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11405,7 +11405,7 @@
       "command": {
         "group": "telegram",
         "action": "delete-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11553,7 +11553,7 @@
       "command": {
         "group": "telegram",
         "action": "update-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11684,7 +11684,7 @@
       "command": {
         "group": "telegram",
         "action": "create-integration",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -11803,7 +11803,7 @@
       "command": {
         "group": "time-entry",
         "action": "create",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -12024,7 +12024,7 @@
       "command": {
         "group": "time-entry",
         "action": "update",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -12117,7 +12117,7 @@
       "command": {
         "group": "user",
         "action": "delete-avatar",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [
         {
@@ -12152,7 +12152,7 @@
       "command": {
         "group": "user",
         "action": "upload-avatar",
-        "status": "planned"
+        "status": "implemented"
       },
       "request_body": {
         "content": {
@@ -12267,7 +12267,7 @@
       "command": {
         "group": "workflow-rule",
         "action": "delete",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {
@@ -12400,7 +12400,7 @@
       "command": {
         "group": "workflow-rule",
         "action": "upsert-project",
-        "status": "planned"
+        "status": "implemented"
       },
       "parameters": [
         {

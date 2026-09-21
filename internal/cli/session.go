@@ -181,6 +181,23 @@ func looksLikeJSON(chunk []byte) bool {
 	return false
 }
 
+// writeJSONBytes copies already-validated JSON bytes to stdout with a trailing
+// newline, preserving the server's exact encoding.
+func writeJSONBytes(out io.Writer, payload []byte) error {
+	if len(payload) == 0 {
+		return nil
+	}
+	if _, err := out.Write(payload); err != nil {
+		return &processError{err: err}
+	}
+	if payload[len(payload)-1] != '\n' {
+		if _, err := io.WriteString(out, "\n"); err != nil {
+			return &processError{err: err}
+		}
+	}
+	return nil
+}
+
 // writeJSONValue emits a locally built JSON value with HTML escaping disabled so
 // URLs keep their exact characters.
 func writeJSONValue(out io.Writer, value any) error {

@@ -17,11 +17,12 @@ var readSpecs = []readSpec{
 	},
 	{
 		group: "asset", action: "download",
-		short:       "Download asset",
-		operationID: "getAsset",
-		path:        "/asset/{id}",
-		public:      true,
-		binary:      true,
+		short:        "Download asset",
+		operationID:  "getAsset",
+		path:         "/asset/{id}",
+		public:       true,
+		optionalAuth: true,
+		binary:       true,
 		params: []readParam{
 			{name: "id", in: paramPath, flag: "id", required: true},
 		},

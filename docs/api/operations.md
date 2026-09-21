@@ -10,11 +10,11 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `activity create` | `POST` | `/activity/create` | `createActivity` | `planned` | 0 | yes | 200, 400, 401, 403 |
-| `activity create-comment` | `POST` | `/activity/comment` | `createComment` | `planned` | 0 | yes | 200, 400, 401, 403 |
-| `activity delete-comment` | `DELETE` | `/activity/comment` | `deleteComment` | `planned` | 0 | yes | 200, 400, 401, 403, 404 |
+| `activity create` | `POST` | `/activity/create` | `createActivity` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+| `activity create-comment` | `POST` | `/activity/comment` | `createComment` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+| `activity delete-comment` | `DELETE` | `/activity/comment` | `deleteComment` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
 | `activity list-task` | `GET` | `/activity/{taskId}` | `getActivities` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `activity update-comment` | `PUT` | `/activity/comment` | `updateComment` | `planned` | 0 | yes | 200, 400, 401, 403, 404 |
+| `activity update-comment` | `PUT` | `/activity/comment` | `updateComment` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
 
 ## asset
 
@@ -33,20 +33,20 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `column create` | `POST` | `/column/{projectId}` | `createColumn` | `planned` | 1 | yes | 200, 400, 401, 403, 409 |
-| `column delete` | `DELETE` | `/column/{id}` | `deleteColumn` | `planned` | 1 |  | 200, 400, 401, 403, 409 |
+| `column create` | `POST` | `/column/{projectId}` | `createColumn` | `implemented` | 1 | yes | 200, 400, 401, 403, 409 |
+| `column delete` | `DELETE` | `/column/{id}` | `deleteColumn` | `implemented` | 1 |  | 200, 400, 401, 403, 409 |
 | `column list` | `GET` | `/column/{projectId}` | `getColumns` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `column reorder` | `PUT` | `/column/reorder/{projectId}` | `reorderColumns` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `column update` | `PUT` | `/column/{id}` | `updateColumn` | `planned` | 1 | yes | 200, 400, 401, 403 |
+| `column reorder` | `PUT` | `/column/reorder/{projectId}` | `reorderColumns` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `column update` | `PUT` | `/column/{id}` | `updateColumn` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
 ## comment
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `comment create-task` | `POST` | `/comment/{taskId}` | `createTaskComment` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `comment delete` | `DELETE` | `/comment/{id}` | `deleteTaskComment` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
+| `comment create-task` | `POST` | `/comment/{taskId}` | `createTaskComment` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `comment delete` | `DELETE` | `/comment/{id}` | `deleteTaskComment` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `comment list-task` | `GET` | `/comment/{taskId}` | `getTaskComments` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `comment update` | `PUT` | `/comment/{id}` | `updateTaskComment` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
+| `comment update` | `PUT` | `/comment/{id}` | `updateTaskComment` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 
 ## config
 
@@ -58,23 +58,23 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `custom-field create` | `POST` | `/custom-field` | `createCustomField` | `planned` | 0 | yes | 200, 400, 401, 403 |
-| `custom-field delete` | `DELETE` | `/custom-field/{id}` | `deleteCustomField` | `planned` | 1 |  | 200, 400, 401, 403 |
+| `custom-field create` | `POST` | `/custom-field` | `createCustomField` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+| `custom-field delete` | `DELETE` | `/custom-field/{id}` | `deleteCustomField` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `custom-field list-project` | `GET` | `/custom-field/project/{projectId}` | `getCustomFieldsByProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `custom-field list-project-filter-values` | `GET` | `/custom-field/project/{projectId}/filter-values` | `getCustomFieldFilterValues` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `custom-field list-project-values` | `GET` | `/custom-field/project/{projectId}/values` | `getCustomFieldValuesByProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `custom-field list-task-values` | `GET` | `/custom-field/task/{taskId}` | `getCustomFieldValuesByTask` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `custom-field reorder-project` | `PUT` | `/custom-field/reorder/{projectId}` | `reorderCustomFields` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `custom-field set-value` | `PUT` | `/custom-field/value` | `setCustomFieldValue` | `planned` | 0 | yes | 200, 400, 401, 403 |
+| `custom-field reorder-project` | `PUT` | `/custom-field/reorder/{projectId}` | `reorderCustomFields` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `custom-field set-value` | `PUT` | `/custom-field/value` | `setCustomFieldValue` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 
 ## discord
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `discord create-integration` | `POST` | `/discord-integration/project/{projectId}` | `createDiscordIntegration` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `discord delete-integration` | `DELETE` | `/discord-integration/project/{projectId}` | `deleteDiscordIntegration` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
+| `discord create-integration` | `POST` | `/discord-integration/project/{projectId}` | `createDiscordIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `discord delete-integration` | `DELETE` | `/discord-integration/project/{projectId}` | `deleteDiscordIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `discord get-integration` | `GET` | `/discord-integration/project/{projectId}` | `getDiscordIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `discord update-integration` | `PATCH` | `/discord-integration/project/{projectId}` | `updateDiscordIntegration` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
+| `discord update-integration` | `PATCH` | `/discord-integration/project/{projectId}` | `updateDiscordIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 
 ## external-link
 
@@ -86,26 +86,26 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `gitea create-integration` | `POST` | `/gitea-integration/project/{projectId}` | `createGiteaIntegration` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `gitea delete-integration` | `DELETE` | `/gitea-integration/project/{projectId}` | `deleteGiteaIntegration` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
+| `gitea create-integration` | `POST` | `/gitea-integration/project/{projectId}` | `createGiteaIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `gitea delete-integration` | `DELETE` | `/gitea-integration/project/{projectId}` | `deleteGiteaIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `gitea get-integration` | `GET` | `/gitea-integration/project/{projectId}` | `getGiteaIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `gitea import-issues` | `POST` | `/gitea-integration/import-issues` | `importGiteaIssues` | `planned` | 0 | yes | 200, 400, 401, 403, 404 |
-| `gitea list-repositories` | `POST` | `/gitea-integration/repositories` | `listGiteaRepositories` | `planned` | 0 | yes | 200, 400, 401, 403 |
-| `gitea update-integration` | `PATCH` | `/gitea-integration/project/{projectId}` | `updateGiteaIntegration` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
-| `gitea verify-access` | `POST` | `/gitea-integration/verify` | `verifyGiteaAccess` | `planned` | 0 | yes | 200, 400, 401, 403 |
+| `gitea import-issues` | `POST` | `/gitea-integration/import-issues` | `importGiteaIssues` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
+| `gitea list-repositories` | `POST` | `/gitea-integration/repositories` | `listGiteaRepositories` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+| `gitea update-integration` | `PATCH` | `/gitea-integration/project/{projectId}` | `updateGiteaIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `gitea verify-access` | `POST` | `/gitea-integration/verify` | `verifyGiteaAccess` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 
 ## github
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `github create-integration` | `POST` | `/github-integration/project/{projectId}` | `createGitHubIntegration` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `github delete-integration` | `DELETE` | `/github-integration/project/{projectId}` | `deleteGitHubIntegration` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
+| `github create-integration` | `POST` | `/github-integration/project/{projectId}` | `createGitHubIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `github delete-integration` | `DELETE` | `/github-integration/project/{projectId}` | `deleteGitHubIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `github get-app-info` | `GET` | `/github-integration/app-info` | `getGitHubAppInfo` | `implemented` | 0 |  | 200, 401 |
 | `github get-integration` | `GET` | `/github-integration/project/{projectId}` | `getGitHubIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `github import-issues` | `POST` | `/github-integration/import-issues` | `importGitHubIssues` | `planned` | 0 | yes | 200, 400, 401, 403, 404 |
+| `github import-issues` | `POST` | `/github-integration/import-issues` | `importGitHubIssues` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
 | `github list-repositories` | `GET` | `/github-integration/repositories/{projectId}` | `listGitHubRepositories` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `github update-integration` | `PATCH` | `/github-integration/project/{projectId}` | `updateGitHubIntegration` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
-| `github verify-installation` | `POST` | `/github-integration/verify` | `verifyGitHubInstallation` | `planned` | 0 | yes | 200, 400, 401, 403 |
+| `github update-integration` | `PATCH` | `/github-integration/project/{projectId}` | `updateGitHubIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `github verify-installation` | `POST` | `/github-integration/verify` | `verifyGitHubInstallation` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 
 ## instance
 
@@ -124,51 +124,51 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `label attach-task` | `PUT` | `/label/{id}/task` | `attachLabelToTask` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
-| `label create` | `POST` | `/label` | `createLabel` | `planned` | 0 | yes | 200, 400, 401, 403, 404 |
-| `label delete` | `DELETE` | `/label/{id}` | `deleteLabel` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
-| `label detach-task` | `DELETE` | `/label/{id}/task` | `detachLabelFromTask` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
+| `label attach-task` | `PUT` | `/label/{id}/task` | `attachLabelToTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `label create` | `POST` | `/label` | `createLabel` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
+| `label delete` | `DELETE` | `/label/{id}` | `deleteLabel` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
+| `label detach-task` | `DELETE` | `/label/{id}/task` | `detachLabelFromTask` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `label get` | `GET` | `/label/{id}` | `getLabel` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `label list-task` | `GET` | `/label/task/{taskId}` | `getTaskLabels` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `label list-workspace` | `GET` | `/label/workspace/{workspaceId}` | `getWorkspaceLabels` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `label update` | `PUT` | `/label/{id}` | `updateLabel` | `planned` | 1 | yes | 200, 400, 401, 403 |
+| `label update` | `PUT` | `/label/{id}` | `updateLabel` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
 ## mattermost
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `mattermost create-integration` | `POST` | `/mattermost-integration/project/{projectId}` | `createMattermostIntegration` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `mattermost delete-integration` | `DELETE` | `/mattermost-integration/project/{projectId}` | `deleteMattermostIntegration` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
+| `mattermost create-integration` | `POST` | `/mattermost-integration/project/{projectId}` | `createMattermostIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `mattermost delete-integration` | `DELETE` | `/mattermost-integration/project/{projectId}` | `deleteMattermostIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `mattermost get-integration` | `GET` | `/mattermost-integration/project/{projectId}` | `getMattermostIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `mattermost update-integration` | `PATCH` | `/mattermost-integration/project/{projectId}` | `updateMattermostIntegration` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
+| `mattermost update-integration` | `PATCH` | `/mattermost-integration/project/{projectId}` | `updateMattermostIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 
 ## mcp
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `mcp decide-authorization-request` | `POST` | `/mcp/authorize/request/{requestId}` | `decideMcpAuthorizationRequest` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
+| `mcp decide-authorization-request` | `POST` | `/mcp/authorize/request/{requestId}` | `decideMcpAuthorizationRequest` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 | `mcp get-authorization-request` | `GET` | `/mcp/authorize/request/{requestId}` | `getMcpAuthorizationRequest` | `implemented` | 1 |  | 200, 400, 404 |
-| `mcp register-oauth-client` | `POST` | `/mcp/register` | `registerMcpOAuthClient` | `planned` | 0 | yes | 200, 400 |
+| `mcp register-oauth-client` | `POST` | `/mcp/register` | `registerMcpOAuthClient` | `implemented` | 0 | yes | 200, 400 |
 | `mcp start-authorization` | `GET` | `/mcp/authorize` | `authorizeMcpOAuthClient` | `planned` | 6 |  | 302, 400 |
 
 ## notification
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `notification clear-all` | `DELETE` | `/notification/clear-all` | `clearAllNotifications` | `planned` | 0 |  | 200, 401 |
-| `notification create` | `POST` | `/notification` | `createNotification` | `planned` | 0 | yes | 200, 400, 401 |
+| `notification clear-all` | `DELETE` | `/notification/clear-all` | `clearAllNotifications` | `implemented` | 0 |  | 200, 401 |
+| `notification create` | `POST` | `/notification` | `createNotification` | `implemented` | 0 | yes | 200, 400, 401 |
 | `notification list` | `GET` | `/notification` | `listNotifications` | `implemented` | 0 |  | 200, 401 |
-| `notification mark-all-read` | `PATCH` | `/notification/read-all` | `markAllNotificationsAsRead` | `planned` | 0 |  | 200, 401 |
-| `notification mark-read` | `PATCH` | `/notification/{id}/read` | `markNotificationAsRead` | `planned` | 1 |  | 200, 401, 404 |
+| `notification mark-all-read` | `PATCH` | `/notification/read-all` | `markAllNotificationsAsRead` | `implemented` | 0 |  | 200, 401 |
+| `notification mark-read` | `PATCH` | `/notification/{id}/read` | `markNotificationAsRead` | `implemented` | 1 |  | 200, 401, 404 |
 
 ## notification-preference
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `notification-preference delete-workspace-rule` | `DELETE` | `/notification-preferences/workspaces/{workspaceId}` | `deleteNotificationPreferenceWorkspaceRule` | `planned` | 1 |  | 200, 401, 403, 404 |
+| `notification-preference delete-workspace-rule` | `DELETE` | `/notification-preferences/workspaces/{workspaceId}` | `deleteNotificationPreferenceWorkspaceRule` | `implemented` | 1 |  | 200, 401, 403, 404 |
 | `notification-preference get` | `GET` | `/notification-preferences` | `getNotificationPreferences` | `implemented` | 0 |  | 200, 401 |
-| `notification-preference update` | `PUT` | `/notification-preferences` | `updateNotificationPreferences` | `planned` | 0 | yes | 200, 400, 401 |
-| `notification-preference upsert-workspace-rule` | `PUT` | `/notification-preferences/workspaces/{workspaceId}` | `upsertNotificationPreferenceWorkspaceRule` | `planned` | 1 | yes | 200, 400, 401, 403 |
+| `notification-preference update` | `PUT` | `/notification-preferences` | `updateNotificationPreferences` | `implemented` | 0 | yes | 200, 400, 401 |
+| `notification-preference upsert-workspace-rule` | `PUT` | `/notification-preferences/workspaces/{workspaceId}` | `upsertNotificationPreferenceWorkspaceRule` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
 ## oauth
 
@@ -180,23 +180,23 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `org accept-invitation` | `POST` | `/auth/organization/accept-invitation` | `acceptOrganizationInvitation` | `planned` | 0 | yes | 200, 401 |
-| `org add-team-member` | `POST` | `/auth/organization/add-team-member` | `addOrganizationTeamMember` | `planned` | 0 | yes | 200, 401 |
-| `org cancel-invitation` | `POST` | `/auth/organization/cancel-invitation` | `cancelOrganizationInvitation` | `planned` | 0 | yes | 200, 401 |
-| `org check-permission` | `POST` | `/auth/organization/has-permission` | `hasOrganizationPermission` | `planned` | 0 | yes | 200, 401 |
-| `org check-slug` | `POST` | `/auth/organization/check-slug` | `checkOrganizationSlug` | `planned` | 0 | yes | 200, 401 |
-| `org create` | `POST` | `/auth/organization/create` | `createOrganization` | `planned` | 0 | yes | 200, 401 |
-| `org create-role` | `POST` | `/auth/organization/create-role` | `createOrganizationRole` | `planned` | 0 | yes | 200, 401 |
-| `org create-team` | `POST` | `/auth/organization/create-team` | `createOrganizationTeam` | `planned` | 0 | yes | 200, 401 |
-| `org delete` | `POST` | `/auth/organization/delete` | `deleteOrganization` | `planned` | 0 | yes | 200, 401 |
-| `org delete-role` | `POST` | `/auth/organization/delete-role` | `deleteOrganizationRole` | `planned` | 0 | yes | 200, 401 |
+| `org accept-invitation` | `POST` | `/auth/organization/accept-invitation` | `acceptOrganizationInvitation` | `implemented` | 0 | yes | 200, 401 |
+| `org add-team-member` | `POST` | `/auth/organization/add-team-member` | `addOrganizationTeamMember` | `implemented` | 0 | yes | 200, 401 |
+| `org cancel-invitation` | `POST` | `/auth/organization/cancel-invitation` | `cancelOrganizationInvitation` | `implemented` | 0 | yes | 200, 401 |
+| `org check-permission` | `POST` | `/auth/organization/has-permission` | `hasOrganizationPermission` | `implemented` | 0 | yes | 200, 401 |
+| `org check-slug` | `POST` | `/auth/organization/check-slug` | `checkOrganizationSlug` | `implemented` | 0 | yes | 200, 401 |
+| `org create` | `POST` | `/auth/organization/create` | `createOrganization` | `implemented` | 0 | yes | 200, 401 |
+| `org create-role` | `POST` | `/auth/organization/create-role` | `createOrganizationRole` | `implemented` | 0 | yes | 200, 401 |
+| `org create-team` | `POST` | `/auth/organization/create-team` | `createOrganizationTeam` | `implemented` | 0 | yes | 200, 401 |
+| `org delete` | `POST` | `/auth/organization/delete` | `deleteOrganization` | `implemented` | 0 | yes | 200, 401 |
+| `org delete-role` | `POST` | `/auth/organization/delete-role` | `deleteOrganizationRole` | `implemented` | 0 | yes | 200, 401 |
 | `org get-active-member` | `GET` | `/auth/organization/get-active-member` | `getOrganizationActiveMember` | `implemented` | 0 |  | 200, 401 |
 | `org get-active-member-role` | `GET` | `/auth/organization/get-active-member-role` | `getOrganizationActiveMemberRole` | `implemented` | 0 |  | 200, 401 |
 | `org get-full` | `GET` | `/auth/organization/get-full-organization` | `getOrganizationFullOrganization` | `implemented` | 0 |  | 200, 401 |
 | `org get-invitation` | `GET` | `/auth/organization/get-invitation` | `getOrganizationInvitation` | `implemented` | 1 |  | 200, 401 |
 | `org get-role` | `GET` | `/auth/organization/get-role` | `getOrganizationRole` | `implemented` | 0 |  | 200, 401 |
-| `org invite-member` | `POST` | `/auth/organization/invite-member` | `inviteOrganizationMember` | `planned` | 0 | yes | 200, 401 |
-| `org leave` | `POST` | `/auth/organization/leave` | `leaveOrganization` | `planned` | 0 | yes | 200, 401 |
+| `org invite-member` | `POST` | `/auth/organization/invite-member` | `inviteOrganizationMember` | `implemented` | 0 | yes | 200, 401 |
+| `org leave` | `POST` | `/auth/organization/leave` | `leaveOrganization` | `implemented` | 0 | yes | 200, 401 |
 | `org list` | `GET` | `/auth/organization/list` | `listOrganization` | `implemented` | 0 |  | 200, 401 |
 | `org list-invitations` | `GET` | `/auth/organization/list-invitations` | `listOrganizationInvitations` | `implemented` | 0 |  | 200, 401 |
 | `org list-members` | `GET` | `/auth/organization/list-members` | `listOrganizationMembers` | `implemented` | 0 |  | 200, 401 |
@@ -205,29 +205,29 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `org list-teams` | `GET` | `/auth/organization/list-teams` | `listOrganizationTeams` | `implemented` | 0 |  | 200, 401 |
 | `org list-user-invitations` | `GET` | `/auth/organization/list-user-invitations` | `listOrganizationUserInvitations` | `implemented` | 0 |  | 200, 401 |
 | `org list-user-teams` | `GET` | `/auth/organization/list-user-teams` | `listOrganizationUserTeams` | `implemented` | 0 |  | 200, 401 |
-| `org reject-invitation` | `POST` | `/auth/organization/reject-invitation` | `rejectOrganizationInvitation` | `planned` | 0 | yes | 200, 401 |
-| `org remove-member` | `POST` | `/auth/organization/remove-member` | `removeOrganizationMember` | `planned` | 0 | yes | 200, 401 |
-| `org remove-team` | `POST` | `/auth/organization/remove-team` | `removeOrganizationTeam` | `planned` | 0 | yes | 200, 401 |
-| `org remove-team-member` | `POST` | `/auth/organization/remove-team-member` | `removeOrganizationTeamMember` | `planned` | 0 | yes | 200, 401 |
-| `org set-active` | `POST` | `/auth/organization/set-active` | `setOrganizationActive` | `planned` | 0 | yes | 200, 401 |
-| `org set-active-team` | `POST` | `/auth/organization/set-active-team` | `setOrganizationActiveTeam` | `planned` | 0 | yes | 200, 401 |
-| `org update` | `POST` | `/auth/organization/update` | `updateOrganization` | `planned` | 0 | yes | 200, 401 |
-| `org update-member-role` | `POST` | `/auth/organization/update-member-role` | `updateOrganizationMemberRole` | `planned` | 0 | yes | 200, 401 |
-| `org update-role` | `POST` | `/auth/organization/update-role` | `updateOrganizationRole` | `planned` | 0 | yes | 200, 401 |
-| `org update-team` | `POST` | `/auth/organization/update-team` | `updateOrganizationTeam` | `planned` | 0 | yes | 200, 401 |
+| `org reject-invitation` | `POST` | `/auth/organization/reject-invitation` | `rejectOrganizationInvitation` | `implemented` | 0 | yes | 200, 401 |
+| `org remove-member` | `POST` | `/auth/organization/remove-member` | `removeOrganizationMember` | `implemented` | 0 | yes | 200, 401 |
+| `org remove-team` | `POST` | `/auth/organization/remove-team` | `removeOrganizationTeam` | `implemented` | 0 | yes | 200, 401 |
+| `org remove-team-member` | `POST` | `/auth/organization/remove-team-member` | `removeOrganizationTeamMember` | `implemented` | 0 | yes | 200, 401 |
+| `org set-active` | `POST` | `/auth/organization/set-active` | `setOrganizationActive` | `implemented` | 0 | yes | 200, 401 |
+| `org set-active-team` | `POST` | `/auth/organization/set-active-team` | `setOrganizationActiveTeam` | `implemented` | 0 | yes | 200, 401 |
+| `org update` | `POST` | `/auth/organization/update` | `updateOrganization` | `implemented` | 0 | yes | 200, 401 |
+| `org update-member-role` | `POST` | `/auth/organization/update-member-role` | `updateOrganizationMemberRole` | `implemented` | 0 | yes | 200, 401 |
+| `org update-role` | `POST` | `/auth/organization/update-role` | `updateOrganizationRole` | `implemented` | 0 | yes | 200, 401 |
+| `org update-team` | `POST` | `/auth/organization/update-team` | `updateOrganizationTeam` | `implemented` | 0 | yes | 200, 401 |
 
 ## project
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `project archive` | `PUT` | `/project/{id}/archive` | `archiveProject` | `planned` | 1 |  | 200, 400, 401, 403 |
-| `project create` | `POST` | `/project` | `createProject` | `planned` | 0 | yes | 200, 400, 401, 403 |
-| `project delete` | `DELETE` | `/project/{id}` | `deleteProject` | `planned` | 1 |  | 200, 400, 401, 403 |
+| `project archive` | `PUT` | `/project/{id}/archive` | `archiveProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `project create` | `POST` | `/project` | `createProject` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+| `project delete` | `DELETE` | `/project/{id}` | `deleteProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `project get` | `GET` | `/project/{id}` | `getProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `project list` | `GET` | `/project` | `listProjects` | `implemented` | 2 |  | 200, 400, 401, 403 |
-| `project reorder` | `PUT` | `/project/reorder` | `reorderProjects` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `project unarchive` | `PUT` | `/project/{id}/unarchive` | `unarchiveProject` | `planned` | 1 |  | 200, 400, 401, 403 |
-| `project update` | `PUT` | `/project/{id}` | `updateProject` | `planned` | 1 | yes | 200, 400, 401, 403 |
+| `project reorder` | `PUT` | `/project/reorder` | `reorderProjects` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `project unarchive` | `PUT` | `/project/{id}/unarchive` | `unarchiveProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `project update` | `PUT` | `/project/{id}` | `updateProject` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
 ## search
 
@@ -239,83 +239,83 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `slack create-integration` | `POST` | `/slack-integration/project/{projectId}` | `createSlackIntegration` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `slack delete-integration` | `DELETE` | `/slack-integration/project/{projectId}` | `deleteSlackIntegration` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
+| `slack create-integration` | `POST` | `/slack-integration/project/{projectId}` | `createSlackIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `slack delete-integration` | `DELETE` | `/slack-integration/project/{projectId}` | `deleteSlackIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `slack get-integration` | `GET` | `/slack-integration/project/{projectId}` | `getSlackIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `slack update-integration` | `PATCH` | `/slack-integration/project/{projectId}` | `updateSlackIntegration` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
+| `slack update-integration` | `PATCH` | `/slack-integration/project/{projectId}` | `updateSlackIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 
 ## task
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `task bulk-update` | `PATCH` | `/task/bulk` | `bulkUpdateTasks` | `planned` | 0 | yes | 200, 400, 401, 403, 404 |
-| `task create` | `POST` | `/task/{projectId}` | `createTask` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `task create-image-upload` | `PUT` | `/task/image-upload/{id}` | `createTaskImageUpload` | `planned` | 1 | yes | 200, 400, 401, 403, 404, 503 |
-| `task delete` | `DELETE` | `/task/{id}` | `deleteTask` | `planned` | 1 |  | 200, 400, 401, 403 |
+| `task bulk-update` | `PATCH` | `/task/bulk` | `bulkUpdateTasks` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
+| `task create` | `POST` | `/task/{projectId}` | `createTask` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `task create-image-upload` | `PUT` | `/task/image-upload/{id}` | `createTaskImageUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 503 |
+| `task delete` | `DELETE` | `/task/{id}` | `deleteTask` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `task export` | `GET` | `/task/export/{projectId}` | `exportTasks` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `task finalize-image-upload` | `POST` | `/task/image-upload/{id}/finalize` | `finalizeTaskImageUpload` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
+| `task finalize-image-upload` | `POST` | `/task/image-upload/{id}/finalize` | `finalizeTaskImageUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 | `task get` | `GET` | `/task/{id}` | `getTask` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `task import` | `POST` | `/task/import/{projectId}` | `importTasks` | `planned` | 1 | yes | 200, 400, 401, 403 |
+| `task import` | `POST` | `/task/import/{projectId}` | `importTasks` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `task list` | `GET` | `/task/tasks/{projectId}` | `listTasks` | `implemented` | 10 |  | 200, 400, 401, 403 |
-| `task move` | `PUT` | `/task/move/{id}` | `moveTask` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
-| `task update` | `PUT` | `/task/{id}` | `updateTask` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `task update-assignee` | `PUT` | `/task/assignee/{id}` | `updateTaskAssignee` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
-| `task update-description` | `PUT` | `/task/description/{id}` | `updateTaskDescription` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `task update-due-date` | `PUT` | `/task/due-date/{id}` | `updateTaskDueDate` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `task update-priority` | `PUT` | `/task/priority/{id}` | `updateTaskPriority` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `task update-status` | `PUT` | `/task/status/{id}` | `updateTaskStatus` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `task update-title` | `PUT` | `/task/title/{id}` | `updateTaskTitle` | `planned` | 1 | yes | 200, 400, 401, 403 |
+| `task move` | `PUT` | `/task/move/{id}` | `moveTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `task update` | `PUT` | `/task/{id}` | `updateTask` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `task update-assignee` | `PUT` | `/task/assignee/{id}` | `updateTaskAssignee` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `task update-description` | `PUT` | `/task/description/{id}` | `updateTaskDescription` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `task update-due-date` | `PUT` | `/task/due-date/{id}` | `updateTaskDueDate` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `task update-priority` | `PUT` | `/task/priority/{id}` | `updateTaskPriority` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `task update-status` | `PUT` | `/task/status/{id}` | `updateTaskStatus` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `task update-title` | `PUT` | `/task/title/{id}` | `updateTaskTitle` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
 ## task-relation
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `task-relation create` | `POST` | `/task-relation` | `createTaskRelation` | `planned` | 0 | yes | 200, 400, 401, 403, 404, 409 |
-| `task-relation delete` | `DELETE` | `/task-relation/{id}` | `deleteTaskRelation` | `planned` | 1 |  | 200, 401, 403, 404 |
+| `task-relation create` | `POST` | `/task-relation` | `createTaskRelation` | `implemented` | 0 | yes | 200, 400, 401, 403, 404, 409 |
+| `task-relation delete` | `DELETE` | `/task-relation/{id}` | `deleteTaskRelation` | `implemented` | 1 |  | 200, 401, 403, 404 |
 | `task-relation list-task` | `GET` | `/task-relation/{taskId}` | `getTaskRelations` | `implemented` | 1 |  | 200, 400, 401, 403 |
 
 ## telegram
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `telegram create-integration` | `POST` | `/telegram-integration/project/{projectId}` | `createTelegramIntegration` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `telegram delete-integration` | `DELETE` | `/telegram-integration/project/{projectId}` | `deleteTelegramIntegration` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
+| `telegram create-integration` | `POST` | `/telegram-integration/project/{projectId}` | `createTelegramIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `telegram delete-integration` | `DELETE` | `/telegram-integration/project/{projectId}` | `deleteTelegramIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `telegram get-integration` | `GET` | `/telegram-integration/project/{projectId}` | `getTelegramIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `telegram update-integration` | `PATCH` | `/telegram-integration/project/{projectId}` | `updateTelegramIntegration` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
+| `telegram update-integration` | `PATCH` | `/telegram-integration/project/{projectId}` | `updateTelegramIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 
 ## time-entry
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `time-entry create` | `POST` | `/time-entry` | `createTimeEntry` | `planned` | 0 | yes | 200, 400, 401, 403 |
+| `time-entry create` | `POST` | `/time-entry` | `createTimeEntry` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 | `time-entry get` | `GET` | `/time-entry/{id}` | `getTimeEntry` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `time-entry list-task` | `GET` | `/time-entry/task/{taskId}` | `getTaskTimeEntries` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `time-entry update` | `PUT` | `/time-entry/{id}` | `updateTimeEntry` | `planned` | 1 | yes | 200, 400, 401, 403 |
+| `time-entry update` | `PUT` | `/time-entry/{id}` | `updateTimeEntry` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
 ## user
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `user delete-avatar` | `DELETE` | `/user/avatar` | `deleteUserAvatar` | `planned` | 0 |  | 200, 401 |
+| `user delete-avatar` | `DELETE` | `/user/avatar` | `deleteUserAvatar` | `implemented` | 0 |  | 200, 401 |
 | `user download-avatar` | `GET` | `/user/avatar/{id}` | `getUserAvatar` | `implemented` | 1 |  | 200, 304, 404 |
-| `user upload-avatar` | `PUT` | `/user/avatar` | `uploadUserAvatar` | `planned` | 0 | yes | 200, 400, 401 |
+| `user upload-avatar` | `PUT` | `/user/avatar` | `uploadUserAvatar` | `implemented` | 0 | yes | 200, 400, 401 |
 
 ## webhook
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `webhook create-integration` | `POST` | `/generic-webhook-integration/project/{projectId}` | `createGenericWebhookIntegration` | `planned` | 1 | yes | 200, 400, 401, 403 |
-| `webhook delete-integration` | `DELETE` | `/generic-webhook-integration/project/{projectId}` | `deleteGenericWebhookIntegration` | `planned` | 1 |  | 200, 400, 401, 403, 404 |
+| `webhook create-integration` | `POST` | `/generic-webhook-integration/project/{projectId}` | `createGenericWebhookIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `webhook delete-integration` | `DELETE` | `/generic-webhook-integration/project/{projectId}` | `deleteGenericWebhookIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `webhook get-integration` | `GET` | `/generic-webhook-integration/project/{projectId}` | `getGenericWebhookIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `webhook update-integration` | `PATCH` | `/generic-webhook-integration/project/{projectId}` | `updateGenericWebhookIntegration` | `planned` | 1 | yes | 200, 400, 401, 403, 404 |
+| `webhook update-integration` | `PATCH` | `/generic-webhook-integration/project/{projectId}` | `updateGenericWebhookIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 
 ## workflow-rule
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `workflow-rule delete` | `DELETE` | `/workflow-rule/{id}` | `deleteWorkflowRule` | `planned` | 1 |  | 200, 400, 401, 403 |
+| `workflow-rule delete` | `DELETE` | `/workflow-rule/{id}` | `deleteWorkflowRule` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `workflow-rule list-project` | `GET` | `/workflow-rule/{projectId}` | `getWorkflowRules` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `workflow-rule upsert-project` | `PUT` | `/workflow-rule/{projectId}` | `upsertWorkflowRule` | `planned` | 1 | yes | 200, 400, 401, 403 |
+| `workflow-rule upsert-project` | `PUT` | `/workflow-rule/{projectId}` | `upsertWorkflowRule` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 
 ## workspace
 

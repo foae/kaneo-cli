@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/foae/kaneo-cli/internal/auth"
 	"github.com/foae/kaneo-cli/internal/client"
+	"github.com/foae/kaneo-cli/internal/config"
 )
 
 const maxAPIKeyBytes = 1 << 20
@@ -46,6 +48,11 @@ func (a *app) newAuthLoginCommand() *cobra.Command {
 		Args:  noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx := cmd.Context()
+			// Logging in to a named profile is how that profile is created; an
+			// explicit profile that does not exist yet must not block login.
+			if err := a.ensureLoginProfile(ctx); err != nil {
+				return err
+			}
 			sess, err := a.session(ctx)
 			if err != nil {
 				return err
@@ -93,6 +100,41 @@ func (a *app) newAuthLoginCommand() *cobra.Command {
 	cmd.Flags().StringVar(&apiKeyFile, "api-key-file", "", "Read an API key from this file, or - for stdin")
 	cmd.Flags().StringVar(&clientID, "client-id", "", "Device authorization client ID (default kaneo-cli)")
 	return cmd
+}
+
+// ensureLoginProfile creates an explicitly requested profile before login so a
+// first login to a new named profile works without a separate `profile set`.
+func (a *app) ensureLoginProfile(ctx context.Context) error {
+	name := a.flags.profile
+	if name == "" {
+		name = a.env("KANEO_PROFILE")
+	}
+	if name == "" {
+		return nil
+	}
+	dir, err := a.configDir()
+	if err != nil {
+		return &processError{err: err}
+	}
+	store := config.NewStore(dir)
+	cfg, err := store.Load(ctx)
+	if err != nil {
+		return &processError{err: err}
+	}
+	if _, ok := cfg.Profile(name); ok {
+		return nil
+	}
+	if err := store.Update(ctx, func(cfg *config.Config) error {
+		profile := cfg.EnsureProfile(name)
+		cfg.PutProfile(name, *profile)
+		if cfg.DefaultProfile == "" {
+			cfg.DefaultProfile = name
+		}
+		return nil
+	}); err != nil {
+		return &processError{err: err}
+	}
+	return nil
 }
 
 func (a *app) newAuthLogoutCommand() *cobra.Command {

@@ -43,8 +43,9 @@ type inventoryOperation struct {
 		Name     string `json:"name"`
 		Required bool   `json:"required"`
 	} `json:"parameters"`
-	Security  []map[string]any `json:"security"`
-	Responses map[string]struct {
+	RequestBody *json.RawMessage `json:"request_body"`
+	Security    []map[string]any `json:"security"`
+	Responses   map[string]struct {
 		Content map[string]json.RawMessage `json:"content"`
 	} `json:"responses"`
 }
@@ -281,6 +282,36 @@ func TestBinaryDownloadRequiresOutputAndRefusesOverwrite(t *testing.T) {
 	}
 	if status, _, stderr := env.run("user", "download-avatar", "--id", "u1", "--output", dest, "--force"); status != 0 {
 		t.Fatalf("force overwrite: status=%d stderr=%q", status, stderr)
+	}
+}
+
+func TestAssetDownloadSendsOptionalCredential(t *testing.T) {
+	var withAuth, withoutAuth string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := r.Header["Authorization"]; ok {
+			withAuth = r.Header.Get("Authorization")
+		}
+		withoutAuth = r.Header.Get("Authorization")
+		_, _ = w.Write([]byte("bin"))
+	}))
+	defer server.Close()
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	env.env["KANEO_TOKEN"] = "synthetic-secret"
+	if status, _, stderr := env.run("asset", "download", "--id", "a1", "--output", "-"); status != 0 {
+		t.Fatalf("credentialed: status=%d stderr=%q", status, stderr)
+	}
+	if withAuth != "Bearer synthetic-secret" {
+		t.Fatalf("asset download did not send the optional credential: %q", withAuth)
+	}
+
+	delete(env.env, "KANEO_TOKEN")
+	if status, _, stderr := env.run("asset", "download", "--id", "a1", "--output", "-"); status != 0 {
+		t.Fatalf("unauthenticated: status=%d stderr=%q", status, stderr)
+	}
+	if withoutAuth != "" {
+		t.Fatalf("anonymous asset download sent %q", withoutAuth)
 	}
 }
 
