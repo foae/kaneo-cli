@@ -36,15 +36,19 @@ Also available: [Go install](docs/installation.md#go-install) · [Container](doc
 
 Teach any skill-capable coding agent to find Kaneo work, create tasks, update status and priority, and add comments using the portable [Kaneo CLI skill](skills/kaneo-cli/SKILL.md). It is model- and harness-agnostic.
 
-**Install:** download **Source code (zip)** from the [latest release](https://github.com/foae/kaneo-cli/releases/latest), extract it, and copy `skills/kaneo-cli/` into your agent's documented skill directory. Keep the release tag with your installation record; reinstall from a newer release to update.
+Paste this prompt into your coding agent:
 
-Install the [CLI](#install) and [log in](#quick-start) separately; the skill does not install the binary or grant access. See the [skill installation guide](docs/installation.md#agent-skill) for version pinning, updates, and the optional Claude Code plugin.
+```text
+Go to the GitHub repository and install kaneo-cli if it isn't already installed, together with its agent skill: https://github.com/foae/kaneo-cli
+```
+
+Then log in using the commands below. For manual skill installation, version pinning, updates, or the optional Claude Code plugin, see the [skill installation guide](docs/installation.md#agent-skill).
 
 ## Quick start
 
 ```sh
-kaneo-cli instance get-status
 kaneo-cli auth login
+kaneo-cli instance get-status
 kaneo-cli auth get-session
 kaneo-cli --help
 ```
@@ -52,10 +56,10 @@ kaneo-cli --help
 Uses Kaneo Cloud by default; login prints browser authorization instructions. For a self-hosted instance:
 
 ```sh
-kaneo-cli --profile work --api-url https://kaneo.example.com/api auth login
+kaneo-cli --api-url https://kaneo.example.com/api auth login
 ```
 
-Keep passing `--profile work` for that instance. See [authentication and automation](docs/authentication.md) for API keys, profiles and credential storage. If the OS keyring is unavailable, credentials fall back to a warned, permission-restricted **unencrypted file**.
+Login saves the instance URL for subsequent commands. See [authentication and automation](docs/authentication.md) for API keys, multiple instances and credential storage. If the OS keyring is unavailable, credentials fall back to a warned, permission-restricted **unencrypted file**.
 
 API JSON goes to stdout; diagnostics go to stderr. Destructive commands require `--yes`. Explore `kaneo-cli <group> <action> --help` or the [command reference](docs/api/operations.md).
 
