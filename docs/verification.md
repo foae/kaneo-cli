@@ -300,3 +300,25 @@ Verified locally on Linux amd64 with Go 1.27.1:
 - Pinned OpenAPI and authentication document hashes; disposable Kaneo instance status and storage readiness/bucket creation, followed by teardown.
 
 This is not evidence of GitHub publication, remote attestation, Homebrew installation, macOS/Windows execution, ARM execution or any API command. Those remain unexercised, and publishing is still disabled.
+
+## Destination onboarding review follow-up (2026-09-21)
+
+On Linux amd64, `just test`, focused regressions, and `just check` passed after the onboarding review fixes. Regression coverage includes public cross-origin redirect refusal without disclosing destination paths or queries, exact 8 MiB JSON response acceptance and limit-plus-one rejection for ordinary and batch operations, local profile recovery with malformed request overrides, logout credential isolation, and once-per-invocation device-login warnings across denial and retry.
+
+A newly built CLI was exercised with isolated configuration and a disposable loopback HTTP fixture: local set/list/use/logout/delete succeeded with malformed inherited URL and timeout values; effective `profile get` still rejected those values; a normal public JSON response succeeded; a cross-origin public redirect failed with exit 4 and origin-only diagnostics; an oversized JSON response failed with exit 1 and empty stdout. The fixture was not a Kaneo server and the device-login regression used an injected synthetic authorization result.
+
+API baseline SHA-256: `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`. No container was used, so there is no container digest for this run. This adds no live-provider, native ARM, macOS, or Windows acceptance evidence.
+
+Security-warning follow-up: `just test`, `just check`, and `go test -race ./internal/config ./internal/auth ./internal/cli` passed. A newly built Linux amd64 CLI ran three separate authenticated processes against the disposable loopback fixture with synthetic file-backed credentials: the first emitted both storage and HTTP warnings, and the next two emitted neither. Tests also cover changed HTTP destinations, existing fallback credentials, backend transitions, concurrent warning writers, failed warning output, and unavailable warning persistence.
+
+## Agent usability acceptance (2026-09-21)
+
+On Linux amd64, `just check` passed with generated request-body help and reference sections. The generator resolves pinned schemas at development time; help performs no runtime schema loading or request-body rewriting. Renderer regressions cover referenced nested arrays and alternative required fields.
+
+A newly built CLI ran all nine shell recipes from the portable skill against a disposable loopback HTTP fixture with synthetic credentials and isolated configuration. Captured requests confirmed unpaginated discovery, exact search selection despite an earlier fuzzy match, stdin JSON with actual Markdown newlines, relation direction, label/task identifier separation, and export-to-import field filtering. Actual command help displayed required fields, enums, nested import items, and label ID guidance. This is fixture acceptance, not live Kaneo or external-provider verification.
+
+The API baseline remains SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`. No container was used for this run.
+
+Review follow-up: five panel reviewers completed and one timed out. Validated fixes cover truncated fuzzy-search results, destination status/assignee checks before import, warning-lock isolation and reset on logout/deletion, stale default-profile inspection, recursive schema rejection, inherited `allOf` requirements, dedicated-upload help exclusion, pinned schema defaults, and secret-bearing response limits. `just test`, `just check`, and `go test -race ./internal/config ./internal/auth ./internal/cli` passed on Linux amd64.
+
+All nine updated skill shell recipes passed against the disposable HTTP fixture using the rebuilt CLI. The recipe parsers rejected truncated search results, missing destination columns, and invalid destination assignees without producing an ID or import body. Built command help displayed the pinned `false` default. These checks remain fixture-only; they add no live-provider or native-platform evidence.

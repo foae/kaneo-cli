@@ -53,11 +53,13 @@ kaneo-cli auth get-session
 kaneo-cli --help
 ```
 
-Uses Kaneo Cloud by default; login prints browser authorization instructions. For a self-hosted instance:
+Uses Kaneo Cloud by default; login prints browser authorization instructions. The default is the API base `https://cloud.kaneo.app/api`, not the Cloud dashboard URL. For a self-hosted instance, supply its API base (normally ending in `/api`):
 
 ```sh
 kaneo-cli --api-url https://kaneo.example.com/api auth login
 ```
+
+The CLI validates and normalizes ordinary URL spelling (for example, case, a default port, and one trailing slash), but never discovers, probes, or appends `/api` to a dashboard or proxy URL. An implicit Cloud default emits one stderr warning before API use; logging in persists that destination, so later commands do not receive that warning. Use `kaneo-cli profile get` to inspect the effective destination and timeout offline before logging in or changing anything.
 
 Login saves the instance URL for subsequent commands. See [authentication and automation](docs/authentication.md) for API keys, multiple instances and credential storage. If the OS keyring is unavailable, credentials fall back to a warned, permission-restricted **unencrypted file**.
 

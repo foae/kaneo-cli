@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -165,6 +166,30 @@ func TestDoTranslatesHTTPErrors(t *testing.T) {
 	}
 }
 
+func TestDoPreservesHTTPErrorForHTMLResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+		_, _ = w.Write([]byte("\xef\xbb\xbf \n<html>routing-secret</html>"))
+	}))
+	defer server.Close()
+
+	c := newTestClient(t, server.URL, "")
+	_, err := c.Do(context.Background(), Request{Method: "GET", Path: "/x", OperationID: "getX"})
+	var apiErr *Error
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %v, want *Error", err)
+	}
+	if apiErr.StatusCode != http.StatusBadGateway || apiErr.Code != "server_error" || apiErr.OperationID != "getX" {
+		t.Fatalf("error = %+v", apiErr)
+	}
+	if !strings.Contains(apiErr.Message, "502") || !strings.Contains(apiErr.Message, "profile get") {
+		t.Fatalf("message = %q", apiErr.Message)
+	}
+	if strings.Contains(err.Error(), "routing-secret") {
+		t.Fatalf("error leaked response body: %q", err)
+	}
+}
+
 func TestDoEmptyResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
@@ -199,25 +224,30 @@ func TestDoRefusesCredentialedCrossOriginRedirect(t *testing.T) {
 	}
 }
 
-func TestDoFollowsUnauthenticatedCrossOriginRedirect(t *testing.T) {
+func TestDoRefusesUnauthenticatedCrossOriginRedirect(t *testing.T) {
+	targetRequests := make(chan struct{}, 1)
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(`{"ok":true}`))
+		targetRequests <- struct{}{}
+		w.WriteHeader(http.StatusOK)
 	}))
 	defer target.Close()
 	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, target.URL+"/elsewhere", http.StatusFound)
+		http.Redirect(w, r, target.URL+"/synthetic-secret-path?token=synthetic-secret-token", http.StatusFound)
 	}))
 	defer source.Close()
 
 	c := newTestClient(t, source.URL, "")
-	resp, err := c.Do(context.Background(), Request{Method: "GET", Path: "/x"})
-	if err != nil {
-		t.Fatalf("Do() error: %v", err)
+	_, err := c.Do(context.Background(), Request{Method: "GET", Path: "/x"})
+	if !IsRedirectRefusal(err) {
+		t.Fatalf("error = %v, want redirect refusal", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
-	raw, _ := io.ReadAll(resp.Body)
-	if string(raw) != `{"ok":true}` {
-		t.Fatalf("body = %s", raw)
+	if strings.Contains(err.Error(), "synthetic-secret") {
+		t.Fatalf("redirect error exposed its destination path or query: %v", err)
+	}
+	select {
+	case <-targetRequests:
+		t.Fatal("cross-origin redirect target received a request")
+	default:
 	}
 }
 

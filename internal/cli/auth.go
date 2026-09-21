@@ -80,6 +80,7 @@ func (a *app) newAuthLoginCommand() *cobra.Command {
 				secret = token.AccessToken
 			}
 
+			sess.warnDefaultAPI()
 			storage, err := sess.creds.Save(ctx, sess.resolved.ProfileName, sess.resolved.APIURL, secret)
 			if err != nil {
 				return &processError{err: err}
@@ -127,6 +128,7 @@ func (a *app) loginSession(ctx context.Context) (*session, error) {
 	}
 	return &session{
 		app:      a,
+		ctx:      ctx,
 		store:    store,
 		cfg:      cfg,
 		resolved: resolved,
@@ -144,7 +146,7 @@ func (a *app) newAuthLogoutCommand() *cobra.Command {
 			if !a.flags.yes {
 				return &usageError{err: errors.New("refusing to remove stored credentials without --yes")}
 			}
-			sess, err := a.session(ctx)
+			sess, err := a.localSession(ctx)
 			if err != nil {
 				return err
 			}
@@ -160,6 +162,12 @@ func (a *app) newAuthLogoutCommand() *cobra.Command {
 				if err := sess.creds.Delete(ctx, name, apiURL); err != nil {
 					return &processError{err: err}
 				}
+			}
+			if err := sess.store.Update(ctx, func(cfg *config.Config) error {
+				cfg.ResetWarnings(name)
+				return nil
+			}); err != nil {
+				return &processError{err: err}
 			}
 			return writeJSONValue(cmd.OutOrStdout(), map[string]any{"profile": name, "logged_out": true})
 		},

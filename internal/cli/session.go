@@ -17,6 +17,7 @@ import (
 // commands never touch the keyring or the fallback file.
 type session struct {
 	app      *app
+	ctx      context.Context
 	store    *config.Store
 	cfg      *config.Config
 	resolved config.Resolved
@@ -41,6 +42,7 @@ func (a *app) session(ctx context.Context) (*session, error) {
 	}
 	return &session{
 		app:      a,
+		ctx:      ctx,
 		store:    store,
 		cfg:      cfg,
 		resolved: resolved,
@@ -107,13 +109,22 @@ func (s *session) clientWithToken(token string) (*client.Client, error) {
 		BaseURL:    s.resolved.Base,
 		Token:      token,
 		Timeout:    s.resolved.Timeout,
-		WarnWriter: s.app.streams.errOut,
+		WarnWriter: s.store.WarningWriter(s.ctx, "plain-http:"+s.resolved.ProfileName+":"+s.resolved.Base.Origin(), s.app.streams.errOut),
 		UserAgent:  "kaneo-cli/" + s.app.info.Version,
 	})
 	if err != nil {
 		return nil, &processError{err: err}
 	}
+	s.warnDefaultAPI()
 	return created, nil
+}
+
+func (s *session) warnDefaultAPI() {
+	if s.resolved.Sources["api_url"] != "default" || s.app.warnedDefaultAPI {
+		return
+	}
+	s.app.warnedDefaultAPI = true
+	_, _ = fmt.Fprintf(s.app.streams.errOut, "warning: using the implicit Kaneo Cloud API default (%s); for self-hosted instances set --api-url or KANEO_API_URL to the full API base URL (normally ending in /api). Inspect effective settings with kaneo-cli profile get.\n", config.DefaultAPIURL)
 }
 
 // writeJSONStream copies a successful API response to stdout unchanged, adding
@@ -125,7 +136,7 @@ func writeJSONStream(out io.Writer, resp *client.Response) error {
 	if resp.Empty() {
 		return nil
 	}
-	payload, err := io.ReadAll(resp.Body)
+	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			return err
@@ -135,8 +146,11 @@ func writeJSONStream(out io.Writer, resp *client.Response) error {
 		}
 		return &processError{err: err}
 	}
+	if len(payload) > maxRequestBody {
+		return &processError{err: errors.New("response exceeds size limit")}
+	}
 	if !json.Valid(payload) {
-		return errors.New("server returned an invalid JSON success body")
+		return client.ErrInvalidJSONResponse
 	}
 	return writeJSONBytes(out, payload)
 }
@@ -159,11 +173,11 @@ func writeRedactedJSON(out io.Writer, resp *client.Response, field string) error
 		return &processError{err: errors.New("could not read secret-bearing response")}
 	}
 	if len(payload) > maxRequestBody {
-		return errors.New("secret-bearing response exceeds size limit")
+		return &processError{err: errors.New("secret-bearing response exceeds size limit")}
 	}
 	var object map[string]json.RawMessage
 	if err := json.Unmarshal(payload, &object); err != nil {
-		return errors.New("server returned an invalid JSON object")
+		return client.ErrInvalidJSONResponse
 	}
 	if value, ok := object[field]; ok && string(value) != "null" {
 		object[field] = json.RawMessage(`"[REDACTED]"`)

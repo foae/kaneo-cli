@@ -41,6 +41,7 @@ const (
 type Config struct {
 	DefaultProfile string             `json:"default_profile,omitempty"`
 	Profiles       map[string]Profile `json:"profiles,omitempty"`
+	Warnings       map[string]bool    `json:"warnings_shown,omitempty"`
 }
 
 // Profile is one named local profile bound to a normalized API base URL.
@@ -87,6 +88,7 @@ func (c *Config) DeleteProfile(name string) bool {
 		return false
 	}
 	delete(c.Profiles, name)
+	c.ResetWarnings(name)
 	if c.DefaultProfile == name {
 		c.DefaultProfile = ""
 	}

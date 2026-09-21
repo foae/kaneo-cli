@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -34,6 +35,35 @@ func (a *app) newProfileCommand() *cobra.Command {
 	return group
 }
 
+// localSession resolves only profile selection for local commands. It
+// deliberately skips API URL and timeout resolution so malformed inherited
+// request settings cannot block local profile or credential management.
+func (a *app) localSession(ctx context.Context) (*session, error) {
+	dir, err := a.configDir()
+	if err != nil {
+		return nil, err
+	}
+	store := config.NewStore(dir)
+	cfg, err := store.Load(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resolved, err := a.resolver(cfg).ResolveProfile()
+	if err != nil {
+		return nil, &usageError{err: err}
+	}
+
+	return &session{
+		ctx:      ctx,
+		app:      a,
+		store:    store,
+		cfg:      cfg,
+		resolved: resolved,
+		creds:    a.credentialStore(store, a.streams.errOut),
+	}, nil
+}
+
 func (a *app) newProfileSetCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "set [NAME]",
@@ -41,7 +71,7 @@ func (a *app) newProfileSetCommand() *cobra.Command {
 		Args:  usageArgs(cobra.MaximumNArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			sess, err := a.session(ctx)
+			sess, err := a.localSession(ctx)
 			if err != nil {
 				return err
 			}
@@ -99,7 +129,7 @@ func (a *app) newProfileUseCommand() *cobra.Command {
 		Args:  usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			sess, err := a.session(ctx)
+			sess, err := a.localSession(ctx)
 			if err != nil {
 				return err
 			}
@@ -129,7 +159,7 @@ func (a *app) newProfileListCommand() *cobra.Command {
 		Args:  noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx := cmd.Context()
-			sess, err := a.session(ctx)
+			sess, err := a.localSession(ctx)
 			if err != nil {
 				return err
 			}
@@ -149,26 +179,32 @@ func (a *app) newProfileGetCommand() *cobra.Command {
 		Short: "Show effective settings and credential backend for a profile",
 		Args:  usageArgs(cobra.MaximumNArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			sess, err := a.session(ctx)
+			dir, err := a.configDir()
 			if err != nil {
 				return err
 			}
-			name, err := profileName(args, sess.resolved.ProfileName)
+			cfg, err := config.NewStore(dir).Load(cmd.Context())
 			if err != nil {
 				return err
 			}
-			if _, ok := sess.cfg.Profile(name); !ok {
-				return &usageError{err: fmt.Errorf("profile %q does not exist", name)}
+			resolver := a.resolver(cfg)
+			if len(args) != 0 {
+				name, err := profileName(args, "")
+				if err != nil {
+					return err
+				}
+				resolver.FlagProfile = name
 			}
-			effectiveURL := sess.resolved.APIURL
-			var sources map[string]string
-			if name == sess.resolved.ProfileName {
-				sources = sess.resolved.Sources
-			} else if profile, ok := sess.cfg.Profile(name); ok {
-				effectiveURL = profile.APIURL
+			resolved, err := resolver.Resolve()
+			if err != nil {
+				return &usageError{err: err}
 			}
-			view := buildProfileView(sess.cfg, name, effectiveURL, true, sources)
+			if len(args) != 0 {
+				resolved.Sources["profile"] = "argument"
+			}
+			view := buildProfileView(cfg, resolved.ProfileName, resolved.APIURL, true, resolved.Sources)
+			view.APIURL = resolved.APIURL
+			view.Timeout = resolved.Timeout.String()
 			return writeJSONValue(cmd.OutOrStdout(), view)
 		},
 	}
@@ -184,7 +220,7 @@ func (a *app) newProfileDeleteCommand() *cobra.Command {
 			if !a.flags.yes {
 				return &usageError{err: errors.New("refusing to delete a profile without --yes")}
 			}
-			sess, err := a.session(ctx)
+			sess, err := a.localSession(ctx)
 			if err != nil {
 				return err
 			}

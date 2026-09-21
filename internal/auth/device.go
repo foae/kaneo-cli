@@ -242,8 +242,17 @@ func secondsDuration(seconds int) time.Duration {
 }
 
 func decodeBounded(reader io.Reader, target any) error {
-	decoder := json.NewDecoder(io.LimitReader(reader, maxDeviceBody))
-	return decoder.Decode(target)
+	payload, err := io.ReadAll(io.LimitReader(reader, maxDeviceBody+1))
+	if err != nil {
+		return err
+	}
+	if len(payload) > maxDeviceBody {
+		return fmt.Errorf("device response exceeds %d bytes", maxDeviceBody)
+	}
+	if err := json.Unmarshal(payload, target); err != nil {
+		return client.ErrInvalidJSONResponse
+	}
+	return nil
 }
 
 func sleepContext(ctx context.Context, d time.Duration) error {

@@ -435,10 +435,10 @@ func TestBinaryDownloadToStdout(t *testing.T) {
 }
 
 func TestJSONResponseValidationAcrossChunks(t *testing.T) {
-	for _, payload := range []string{`{"value":9007199254740993}`, `{"broken":`, `{} {}`} {
+	for _, payload := range []string{`{"value":9007199254740993}`, `{"broken":`, `{} {}`, `<html>routing-secret</html>`} {
 		t.Run(payload, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Content-Type", "text/html")
 				_, _ = w.Write([]byte(" \n"))
 				w.(http.Flusher).Flush()
 				_, _ = w.Write([]byte(payload))
@@ -451,9 +451,35 @@ func TestJSONResponseValidationAcrossChunks(t *testing.T) {
 				if status != 0 || stdout != " \n"+payload+"\n" {
 					t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
 				}
-			} else if status == 0 || stdout != "" {
+				return
+			}
+			if status != 1 || stdout != "" {
 				t.Fatalf("invalid JSON: status=%d stdout=%q stderr=%q", status, stdout, stderr)
 			}
+			if !strings.Contains(stderr, "dashboard or proxy") || !strings.Contains(stderr, "/api") || !strings.Contains(stderr, "profile get") {
+				t.Fatalf("stderr missing invalid-JSON guidance: %q", stderr)
+			}
+			if strings.Contains(stderr, "routing-secret") {
+				t.Fatalf("stderr leaked response body: %q", stderr)
+			}
 		})
+	}
+}
+
+func TestRedactedJSONResponseUsesSafeInvalidJSONGuidance(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("<html>redacted-routing-secret</html>"))
+	}))
+	defer server.Close()
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	env.env["KANEO_TOKEN"] = "synthetic"
+	status, stdout, stderr := env.run("gitea", "get-integration", "--project-id", "p1")
+	if status != 1 || stdout != "" {
+		t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+	}
+	if !strings.Contains(stderr, "dashboard or proxy") || strings.Contains(stderr, "redacted-routing-secret") {
+		t.Fatalf("stderr = %q", stderr)
 	}
 }

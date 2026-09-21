@@ -274,7 +274,7 @@ var writeSpecs = []writeSpec{
 		path: "/label/{id}/task",
 		body: true,
 		params: []readParam{
-			{name: "id", in: paramPath, flag: "id", required: true},
+			{name: "id", in: paramPath, flag: "id", required: true, help: "Label ID"},
 		},
 	},
 	{
@@ -291,7 +291,7 @@ var writeSpecs = []writeSpec{
 		path:        "/label/{id}",
 		destructive: true,
 		params: []readParam{
-			{name: "id", in: paramPath, flag: "id", required: true},
+			{name: "id", in: paramPath, flag: "id", required: true, help: "Label ID"},
 		},
 	},
 	{
@@ -301,7 +301,7 @@ var writeSpecs = []writeSpec{
 		path:        "/label/{id}/task",
 		destructive: true,
 		params: []readParam{
-			{name: "id", in: paramPath, flag: "id", required: true},
+			{name: "id", in: paramPath, flag: "id", required: true, help: "Label ID"},
 		},
 	},
 	{
@@ -311,7 +311,7 @@ var writeSpecs = []writeSpec{
 		path: "/label/{id}",
 		body: true,
 		params: []readParam{
-			{name: "id", in: paramPath, flag: "id", required: true},
+			{name: "id", in: paramPath, flag: "id", required: true, help: "Label ID"},
 		},
 	},
 	{
