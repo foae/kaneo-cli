@@ -1,10 +1,8 @@
 {
   "name": "kaneo-cli",
-  "version": "1.0.0",
   "description": "Manage Kaneo projects, tasks and comments with the unofficial Kaneo CLI.",
   "author": {"name": "foae"},
   "homepage": "https://github.com/foae/kaneo-cli",
   "repository": "https://github.com/foae/kaneo-cli",
-  "license": "MIT",
-  "skills": ["./skills/kaneo-cli"]
+  "license": "MIT"
 }
