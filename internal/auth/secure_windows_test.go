@@ -45,16 +45,18 @@ func TestSecureDirectoryPreservesOwnerAccess(t *testing.T) {
 		if err != nil || acl == nil {
 			t.Fatalf("missing restricted DACL: %v", err)
 		}
-		if acl.AceCount != 1 {
-			t.Fatalf("DACL grants %d entries, want only current user", acl.AceCount)
+		if acl.AceCount == 0 {
+			t.Fatal("DACL grants no owner access")
 		}
-		var ace *windows.ACCESS_ALLOWED_ACE
-		if err := windows.GetAce(acl, 0, &ace); err != nil {
-			t.Fatal(err)
-		}
-		sid := (*windows.SID)(unsafe.Pointer(&ace.SidStart))
-		if ace.Header.AceType != windows.ACCESS_ALLOWED_ACE_TYPE || !sid.Equals(user.User.Sid) {
-			t.Fatal("DACL does not exclusively grant current user access")
+		for index := uint32(0); index < uint32(acl.AceCount); index++ {
+			var ace *windows.ACCESS_ALLOWED_ACE
+			if err := windows.GetAce(acl, index, &ace); err != nil {
+				t.Fatal(err)
+			}
+			sid := (*windows.SID)(unsafe.Pointer(&ace.SidStart))
+			if ace.Header.AceType != windows.ACCESS_ALLOWED_ACE_TYPE || !sid.Equals(user.User.Sid) {
+				t.Fatal("DACL does not exclusively grant current user access")
+			}
 		}
 	}
 }
