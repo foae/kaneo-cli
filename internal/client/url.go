@@ -105,7 +105,10 @@ func (b BaseURL) Host() string {
 }
 
 // Join appends an API path to the base path. The path must not be empty and is
-// joined without duplicating separators.
+// joined without duplicating separators. It is treated as already
+// percent-encoded so an escaped path-parameter value containing a separator
+// cannot change the request target; the decoded form is kept alongside for the
+// URL package to re-emit exactly.
 func (b BaseURL) Join(apiPath string) (*url.URL, error) {
 	if b.url == nil {
 		return nil, errors.New("API base URL is not set")
@@ -113,8 +116,13 @@ func (b BaseURL) Join(apiPath string) (*url.URL, error) {
 	if apiPath == "" {
 		return nil, errors.New("API path is empty")
 	}
+	escaped := strings.TrimSuffix(b.url.EscapedPath(), "/") + "/" + strings.TrimPrefix(apiPath, "/")
+	decoded, err := url.PathUnescape(escaped)
+	if err != nil {
+		return nil, fmt.Errorf("API path is not valid: %w", err)
+	}
 	joined := *b.url
-	joined.Path = strings.TrimSuffix(joined.Path, "/") + "/" + strings.TrimPrefix(apiPath, "/")
-	joined.RawPath = ""
+	joined.Path = decoded
+	joined.RawPath = escaped
 	return &joined, nil
 }

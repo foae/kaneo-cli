@@ -19,7 +19,7 @@ just snapshot  # pinned GoReleaser, never publishes
 just hooks     # explicitly opt in to Git hooks
 ```
 
-The justfile is a convenience interface, not a second implementation of verification. CI's Linux/macOS/Windows verification matrix invokes `just check`, exercising the wrapper without repeating the full checks; hooks and the other CI jobs continue to call Go directly. Changes to recipes must preserve native Windows compatibility and nonzero failure propagation. Keep lifecycle logic and tool versions in Go, and update the documented just version alongside its CI pin.
+The justfile is a convenience interface, not a second implementation of verification. CI runs only on pushes to `main`, not on pull requests: its Linux/macOS/Windows verification matrix invokes `just check`, followed by `just cross`. Release preparation uses `just snapshot`. Race detection and vulnerability scanning remain optional local commands (`just race` and `just vuln`), not hosted jobs. Run local checks before requesting review or merging. Hooks call Go directly so installed hooks do not require just. Changes to recipes must preserve native Windows compatibility and nonzero failure propagation. Keep lifecycle logic and tool versions in Go, and update the documented just version alongside its CI pin.
 
 `just test-end2end` is intentionally absent: the disposable environment below is not an automated CLI acceptance suite. Add that recipe only when shared checks and real built-CLI scenarios can run with automated bootstrap, bounded readiness, isolated credentials, owned resources and cleanup on failure/cancellation. Fixed ports require rejecting concurrent runs or a deliberate networking redesign.
 
@@ -47,7 +47,7 @@ The explicit rule set is correctness-first: `errcheck`, `govet`, `ineffassign`, 
 
 Fix the cause of findings. For a demonstrated false positive, use a narrowly scoped `//nolint:<linter> // concrete reason`; do not disable checks globally or discard errors merely to silence lint. Review the rule set and Go compatibility when updating the pinned tool.
 
-Git hooks are opt-in via `go run ./internal/cmd/dev hooks`; they call shared checks and are not a substitute for CI. Never silently install hooks or overwrite an existing custom hook configuration.
+Git hooks are opt-in via `just hooks`; they call shared Go checks directly and are not a substitute for CI. Never silently install hooks or overwrite an existing custom hook configuration.
 
 CI uses GitHub-hosted runners only, read-only permissions for untrusted code, pinned actions and no privileged fork-PR execution. Native runtime coverage is precisely the workflow matrix, not whatever GOOS/GOARCH values cross-compile. Race detection requires a supported native C toolchain even though distributed binaries are CGO-free. Linux/macOS/Windows keyring behavior and Windows ACLs need additional real acceptance once implemented.
 
@@ -93,7 +93,7 @@ Required scenarios:
 - Native keyring success, unavailable-keyring warning/fallback, secure Unix mode/Windows DACL, concurrency and logout cleanup.
 - Integration operations: fixture protocol coverage is distinct from real external-service acceptance. Document service credentials/prerequisites and evidence; never mark a mock as a live integration run.
 
-The foundation can prove help/version, checks, inventory consistency, packaging and environment readiness only. Full API compatibility and all platform-specific credentials remain **pending implementation**. Publishing stays disabled until their evidence meets [release readiness](releases.md).
+The packet evidence below distinguishes implemented behavior from accepted compatibility. Browser operations, recorded API discrepancies, native credential stores and live external-service scenarios still have outstanding acceptance requirements. Publishing stays disabled until the evidence meets [release readiness](releases.md).
 
 ## Packet 1 evidence (2026-09-20)
 
@@ -118,6 +118,113 @@ Binary scenarios exercised against a local fixture server and the disposable ins
 Pending native or external evidence, not claimed: native OS keyring success and Windows DACL enforcement (this host has no reachable Secret Service, so only the warned fallback ran), macOS Keychain and native macOS/Windows execution, and real device approval/denial (fixture-verified; the disposable flow was observed for pending, rejection and interruption only).
 
 Post-review hardening (same date), after a seven-seat cross-model panel: non-timeout transport failures map to exit 4 with safe messages; device denial, expiry and invalid-client map to exit 3; unrecognized error bodies are no longer echoed; cross-origin redirects carrying a bearer token or a sensitive body (including 307/308 replays) are refused; public reads no longer load a credential and the `profile`/`logout` paths no longer depend on a reachable backend; logout requires `--yes`; the fallback credential file is permission-checked on read and restricted before any secret byte is written; device interval and expiry are bounded against overflow and hostile values; and a 2xx polling error payload continues polling. `just check`, `just race`, `just cross` and `just vuln` were re-run after these changes. Native keyring/DACL evidence remains pending.
+
+## Packet 2 evidence (2026-09-21)
+
+Commit `8341d6d`. Implemented all 52 remaining read-only GET operations (57 GET operations total; `auth get-session`, `config get` and `instance get-status` came from packet 1). Coverage statuses are marked `implemented` in `api/commands.json` and regenerated into the inventory. `read_ops_test.go` cross-checks the command table against `api/operations.json`, failing if any GET operation is uncovered or any command/path/parameter/security classification drifts from the pinned inventory.
+
+Environment: Linux amd64, Go 1.27.1, just 1.58.0. API snapshot SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`. Disposable Kaneo image `ghcr.io/usekaneo/kaneo@sha256:a85a23996c36166cfcebcb4ee161b40cc62c7b924faf06353684a84d5e84162c`; observed server version `2.25.0`; stack torn down with volumes after testing.
+
+Checks, all passing: `just check` (formatting, vet, pinned golangci-lint, tests, module tidiness, offline inventory), `just race`, `just cross` (six CGO-free targets) and `just vuln` (no vulnerabilities).
+
+Real disposable-instance reads. The instance was bootstrapped over HTTP (Better Auth sign-up, an API key created with an explicit `Origin`, then a workspace, project, columns and task seeded directly through the API). Reads were exercised with a stored API key and, for organization endpoints, with a session token passed through the invocation-only `KANEO_TOKEN`:
+
+- Public reads (`instance get-status`, `config get`, `auth get-session`, `mcp get-authorization-request`, `user download-avatar`, `asset download`) work with no credential and send no `Authorization` header; `auth get-session` returns `null` unauthenticated and a session when authenticated.
+- Authenticated JSON reads succeeded for activity, column, comment, custom-field (four), external-link, label (task/workspace), notification, notification-preference, oauth, project (get/list), search, task (get/list/export), task-relation, time-entry, workflow-rule, workspace members, and the GitHub/Gitea/Slack/Discord/Mattermost/Telegram/webhook integration reads where an integration exists.
+- Organization reads: `org list`, `org get-full`, `org list-members`, `org list-invitations`, `org list-roles`, `org list-teams`, `org get-active-member`, `org get-active-member-role`, `org list-user-teams` and `org list-team-members` succeed once the session has an active organization. Without an active organization the server returns HTTP 400 (`No active organization` / `Organization ID is required`), mapped to `invalid_request`/exit 5; with API-key-only auth that prerequisite cannot be set from a read command.
+- Absent objects (`project get`, `task get`, `label get`, `time-entry get`, `invitation get`, `activity list-task`, binary `user download-avatar`/`asset download`) return HTTP 404, mapped to `not_found`/exit 5 with the operation ID and no credentials in output.
+- An authenticated read with no bound credential returns HTTP 401, mapped to `authentication_failed`/exit 3. A missing required flag is rejected before any network access with `invalid_arguments`/exit 2.
+- Binary fidelity: a seeded PNG avatar uploaded out of band downloaded byte-for-byte identically (matching SHA-256). `--output` is required, an existing destination is refused without `--force`, and `--output -` is the only path that writes to stdout. `asset download` real success still needs an uploaded task asset and is pending the packet 3 presigned flow; its safeguards are covered by fixture tests.
+
+Upstream discrepancy (recorded, not silently resolved): `getOrganizationRole` (`org get-role`, `GET /auth/organization/get-role`) documents zero parameters in the pinned snapshot, but the server requires a `roleId` or `roleName` query parameter. Supplying either changes the response from `[query] Invalid input` to `Role not found`/success, confirming the requirement. The command keeps the documented (empty) parameter set and returns the server's `invalid_request`; the missing parameter is **not** invented. A contract decision is needed before this command can be used successfully.
+
+Pending evidence, not claimed: successful `asset download` of a real task asset; `org list-user-invitations` real success (the server returns HTTP 403 until the account's email is verified, which the disposable environment cannot do without SMTP); the two deferred browser-navigation endpoints (`auth get-device-authorization-page`, `mcp start-authorization`), whose correct contract is a deliberate browser interaction rather than a JSON wrapper.
+
+## Packet 3 evidence (2026-09-21)
+
+Commit `b4b60ca`. Implemented all 105 remaining non-GET operations: 103 generic JSON mutations plus dedicated `task create-image-upload` (presigned) and `user upload-avatar` (base64) commands. 160 of 162 pinned operations are now implemented; the two GET browser-navigation endpoints (`auth get-device-authorization-page`, `mcp start-authorization`) remain deferred. `write_ops_test.go` cross-checks the mutation table against `api/operations.json` and fails if any operation is uncovered or a method/path/parameter/body/security classification drifts.
+
+Design: a mutating operation reads its JSON body from `--body-file PATH` or `--body-file -`, validates it as a JSON object before any network access, and passes it through byte-for-byte so unknown fields and numeric precision survive. Mutations are never retried. A destructive operation (delete/remove/cancel/leave/reject/clear/detach, or `task bulk-update`) requires `--yes` before any credential or network work. `task create-image-upload` streams the file to the presigned URL with a client that never carries the API credential and rejects a URL with userinfo or a non-http(s) scheme.
+
+Environment: Linux amd64, Go 1.27.1, just 1.58.0. API snapshot SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`. Disposable Kaneo image `ghcr.io/usekaneo/kaneo@sha256:a85a23996c36166cfcebcb4ee161b40cc62c7b924faf06353684a84d5e84162c`; observed server version `2.25.0`; stack torn down with its volumes after testing.
+
+Checks, all passing: `just check`, `just race`, `just cross` (six CGO-free targets) and `just vuln`.
+
+Real disposable-instance lifecycles (instance bootstrapped over HTTP, resources seeded through the built CLI, with a stored API key and, for organization endpoints, a session token):
+
+- Project create/get/update/archive/unarchive/reorder/delete; column create/list/update/reorder/delete; task create/get/update/`update-title`/`update-description`/`update-priority`/`update-status`/`update-due-date`/`update-assignee`/bulk-update/move/delete.
+- Label create/update/attach/list-task/list-workspace/delete; comment create/update/delete; time-entry create/update/get/list; custom-field create/set-value/reorder/list-project-values/list-task-values/delete; activity create/`create-comment`/`update-comment`/`delete-comment`; notification create/list/mark-read/mark-all-read/clear-all.
+- Binary: `user upload-avatar` then `user download-avatar` byte-identical (SHA-256); `task create-image-upload` issued a presigned URL, streamed the bytes to MinIO with no `Authorization` header, `task finalize-image-upload` recorded the asset, and `asset download` returned the bytes identically.
+- `mcp register-oauth-client` (documented public) sent no credential.
+- Organization (`KANEO_TOKEN` session with an active organization): check-slug, create, update, get-full, list, create-team, update-team, remove-team, create-role, list-roles, add-team-member, list-team-members, remove-team-member, set-active, set-active-team, invite-member, list-invitations and delete.
+- Destructive gates: `task delete`, `org delete`/`remove-team`/`remove-member`/`remove-team-member`/`delete-role`, `notification clear-all`, `label delete`, `task-relation delete` and `task bulk-update` were refused before any request (exit 2, `invalid_arguments`) without `--yes`, and completed with it.
+- Permissions failure: a second account's stored credential listing the first account's workspace returned HTTP 403, mapped to `authorization_failed`/exit 3.
+- Invalid input: a missing `--body-file`, an invalid JSON body, a non-object body and a missing required flag all exit 2 before network access; a schema-violating body is forwarded and the server's 400 maps to `invalid_request`/exit 5.
+
+Defects fixed during acceptance: `auth login --profile NAME` failed when the profile did not exist (the resolver rejected the missing explicit profile before `Save` could create it); login now creates the explicit profile first, with a regression test. `asset download` now attaches a stored credential when one is present, so a private asset downloads while a public asset still works anonymously; also covered by a regression test.
+
+Upstream or environmental limitations observed and recorded (not CLI defects):
+
+- `detachLabelFromTask` returns HTTP 400 `Label is not assigned to a task` even immediately after a successful attach that sets the label's `taskId`; an upstream contract decision is needed.
+- `updateNotificationPreferences` and `upsertNotificationPreferenceWorkspaceRule` return HTTP 400 `Email notifications require an account email address` in this environment; the command and body mapping are correct.
+- Organization admin operations require an active organization; with API-key-only auth the session has none (HTTP 400 `No active organization`), so they were exercised with a session token after an explicit active-organization bootstrap.
+- `org list-user-invitations` returns HTTP 403 until the account email is verified; the disposable environment has no SMTP.
+
+Pending evidence, not claimed: external-service integration operations (GitHub/Gitea/Slack/Discord/Mattermost/Telegram/generic webhook create/update/delete/verify/import) — only fixture protocol coverage is claimed, never a mocked live integration; organization invitation accept/reject/cancel with real invitation tokens; the two deferred browser-navigation endpoints; native OS keyring and Windows DACL evidence.
+
+## Packet 4 evidence (2026-09-21)
+
+Commit `cfcd4ff`. Reconciliation and local release acceptance. Publication remains disabled; `release/readiness.json` is unchanged.
+
+Reconciliation (`just check` plus `TestInventoryCoverageIsHonest` in `internal/cli/coverage_test.go`): the pinned inventory has 162 operations and `api/commands.json` has exactly 162 entries with no duplicates, none missing and none extra. 160 are `implemented`; the only two `planned` entries are the deliberately deferred browser endpoints (`auth get-device-authorization-page`, `mcp start-authorization`). Every `implemented` mapping resolves to a registered cobra command that has a `RunE`; a `planned` mapping that is not one of the two documented deferrals fails the check, so there is no `implemented` row backed only by a stub. `go run ./internal/cmd/specinventory --check` reports the generated inventory current.
+
+Local release plan (`go run ./internal/cmd/release plan`): `enabled: false`, current tag none, next tag `v0.1.0`, reason "first releasable change; policy fixes the first release at v0.1.0", five required-evidence items.
+
+Snapshot (`just snapshot`, GoReleaser v2.18.0, snapshot mode, no uploads): six CGO-free archives — Linux and macOS `amd64`/`arm64` tarballs and Windows `amd64`/`arm64` zips — each containing `LICENSE` and the binary. The SHA-256 checksum manifest verifies all six (`OK`). Embedded build metadata is `version=0.0.0-SNAPSHOT-<commit>`, the exact commit SHA and build date; the extracted Linux amd64 binary is a statically linked ELF, `version` and `--version` return the same JSON object, and help lists 36 command groups.
+
+Reproducible checks: `just check`; `just snapshot` then `(cd dist && sha256sum -c kaneo-cli_*_checksums.txt)`; `go run ./internal/cmd/release plan`; `go test ./internal/cli -run TestInventoryCoverageIsHonest`.
+
+Readiness assessment against `release/readiness.json` — publication is **not** proposed:
+
+- `public-api`: **not met.** Two documented operations (the browser endpoints) are unimplemented, and `getOrganizationRole` has an unresolved parameter gap. The full public API is not complete.
+- `authentication`: **partially met.** API-key and device-code flows are locally accepted, but real device approval/denial and expired/revoked credential behavior remain pending.
+- `profiles`: met locally (selection, persistence, isolation, migration, precedence, concurrency); native OS keyring behavior is unverified.
+- `safety`: met locally (`--yes` before network, redaction, non-interactive behavior).
+- `local-release-acceptance`: snapshot, checksums, embedded metadata and plan done; installation smoke is Linux-only.
+
+Blockers before activation, recorded rather than waived: implement or obtain a decision for the two browser-navigation endpoints; resolve the `getOrganizationRole` missing-parameter discrepancy; resolve the `detachLabelFromTask` 400; obtain real device approval/denial and expired/revoked-credential evidence; obtain native macOS/Windows keyring and DACL execution; and complete real external-service integration acceptance.
+
+## Packet follow-up evidence (2026-09-21)
+
+This follow-up supersedes the role, label-detachment and real device approval/denial blockers above. Environment: Linux amd64; unchanged API SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`, disposable image `ghcr.io/usekaneo/kaneo@sha256:a85a23996c36166cfcebcb4ee161b40cc62c7b924faf06353684a84d5e84162c` (server 2.25.0).
+
+- `org get-role --role-id ID` and `--role-name NAME`, each with `--organization-id ID`, returned the created role through the built CLI. Parameters are an explicitly approved source-backed supplement in `api/provenance.json`, not a modification of the pinned OpenAPI. Exactly one nonempty role selector is required; organization ID is optional. Missing, conflicting and empty selectors produce usage exit 2.
+- `label attach-to-task` returns a new attached-label ID, different from the original workspace-label ID. Passing the **returned ID** to `label detach-from-task --label-id ID --yes` succeeds; `label list-task` then returns an empty list. The earlier 400 was an acceptance-input error, not an upstream defect.
+- Real browser approval issued a bearer token successfully used for API operations. Real browser denial produced HTTP 400 `access_denied` from device polling. Credentials remained in memory, not acceptance logs.
+- Successful task-asset upload/finalize/download was already recorded in packet 3 above; packet 2's pending asset-download note is superseded.
+- Both browser-navigation mappings are now implemented as explicit URL handoffs: `auth get-device-authorization-page` forces `ui=1`; `mcp start-authorization` encodes the documented OAuth query. Built-binary smoke checks emitted the expected URLs and stderr guidance without making HTTP requests or claiming completed authorization. All 162 mappings are now marked implemented; this is coverage, not full compatibility.
+- Follow-up verification passed: `just check`, `just cross`, `just race`, and `just vuln` (no vulnerabilities found). The six cross-builds are build evidence only, not native runtime acceptance.
+- Hosted [follow-up CI](https://github.com/foae/kaneo-cli/actions/runs/35576268169) passed shared checks on Linux, macOS and Windows, including the Windows owner-only DACL and lock-reopen regression. Race, vulnerability and cross-build jobs also passed on that pre-policy-change revision. This does not establish native keyring integration.
+- The subsequent CI cost-policy change removes PR triggers and hosted race/vulnerability jobs; main pushes retain the three-OS shared checks, cross-build and disabled release gate. Reviewed dependency upgrades target Node.js 24. The integrated revision passed local `actionlint`, workflow trigger/dependency assertions, `just check` and `just cross` on Linux amd64; no additional hosted run was requested.
+
+### Six-commit review
+
+The Pro panel reviewed `9bdf000..9c048d6` before follow-up edits (review run `20260921-072012`). All six non-self seats completed: Fable, GLM, Opus 5, Kimi, Sol and Terra. Raw reviewer reports remain local review artifacts; the reconciled outcomes are recorded below.
+
+Confirmed findings addressed in the follow-up include upload path escaping, bounded file/presign reads, storage redirect refusal and timeout classification, secret-bearing response output, mutation redirect isolation, partial-failure exit status, failed-login profile atomicity, binary-output preflight, query minimum lengths, complete JSON validation, inventory parameter checks and stale documentation/diagnostics. Regression checks cover the security and behavioral paths.
+
+Review dispositions not requiring a code change:
+
+- Optional-auth downloads fail closed when the configured credential backend errors; silently falling back to anonymous access is not the contract.
+- Presigned storage headers are server-defined signing requirements, not the CLI's Kaneo bearer token; filtering `Authorization` without an upstream contract could invalidate signatures.
+- Search `limit` is a string in the pinned schema, with no numeric constraint; the requested numeric validation would invent a restriction.
+- OS failures opening body files retain process-error semantics; malformed readable inputs remain usage errors.
+- A failed storage upload emits no success key. Empty group help was hypothetical: no missing registered group description was identified.
+- The panel's required-parameter test gap was real, including Kimi's multi-anchor entry omitted by automated parsing; the manual reconciliation includes it.
+
+The panel agreed most strongly on unsafe upload path construction. Independently raised findings were checked against the implementation rather than accepted by vote; fixes after the snapshot do not make an original finding invalid.
+
+These observations do not establish expired/revoked credential handling, native macOS/Windows credential storage or external-service integration acceptance. Publication remains disabled.
 
 ## Foundation evidence (2026-09-20)
 

@@ -2,21 +2,21 @@
 
 Unofficial, JSON-first Go CLI for [Kaneo](https://kaneo.app). Not affiliated with the Kaneo project.
 
-**Status: early implementation.** The runtime, local profiles, credential storage (OS keyring first, warned plaintext fallback), API-key input, the RFC 8628 device login flow and a few public/session reads work. Most API operations remain planned; publishing is disabled until full agreed coverage passes acceptance. No release or Homebrew installation is available yet.
+**Status: early implementation.** All 162 pinned operations have command mappings, including browser-navigation URL handoffs. Runtime profiles, credential storage (OS keyring first, warned plaintext fallback), API-key input, device login, JSON operations and file transfers are implemented. Coverage is not full compatibility: expired/revoked credential, native credential-store, and live external-service acceptance remain outstanding. Publishing is disabled; no release or Homebrew installation is available yet. See [acceptance evidence](docs/verification.md).
 
-## Try the foundation
+## Run from source
 
-Requires Go 1.27 or newer:
+Requires Go 1.27 or newer; the build recipe also requires [just](https://github.com/casey/just) 1.58.0:
 
 ```sh
 go run ./cmd/kaneo-cli --help
-go run ./cmd/kaneo-cli version
-go run ./internal/cmd/dev build
+go run ./cmd/kaneo-cli instance get-status
+just build
 ```
 
-For development, install [just](https://github.com/casey/just) 1.58.0 and run `just` to list tasks, `just test` for Go tests, or `just check` for full shared verification. See [verification](docs/verification.md) for prerequisites and direct Go alternatives.
+For development, install [just](https://github.com/casey/just) 1.58.0 and run `just` to list tasks. Routine verification uses `just check`, `just race`, `just vuln`, and `just cross`; `just test` runs Go tests only. See [verification](docs/verification.md) for prerequisites and direct Go alternatives.
 
-The eventual command interface uses a group and an action:
+The command interface uses a group and an action:
 
 ```text
 kaneo-cli instance get-status
@@ -26,7 +26,7 @@ kaneo-cli org accept-invitation
 kaneo-cli task update-status
 ```
 
-`auth login`, `auth get-session` and `instance get-status` are executable today; `org accept-invitation` and `task update-status` remain planned. Releases will target Linux, macOS and Windows on amd64 and arm64, with Homebrew for Linux/macOS.
+Commands such as `task get`, `project list`, `task create` and `task update-status` are executable today. Releases will target Linux, macOS and Windows on amd64 and arm64, with Homebrew for Linux/macOS.
 
 ## Start here
 

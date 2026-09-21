@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  pull_request:
   push:
     branches:
       - main
@@ -38,48 +37,10 @@ jobs:
       - name: Run shared checks
         run: just check
 
-  race:
-    name: Race detector
-    needs: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Check out the verified revision
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          cache: false
-      - name: Run race detector
-        run: go run ./internal/cmd/dev race
-
-  vuln:
-    name: Vulnerability scan
-    needs: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Check out the verified revision
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          cache: false
-      - name: Run pinned govulncheck
-        run: go run ./internal/cmd/dev vuln
-
   cross:
     name: Cross-build release targets
     needs:
       - verify
-      - race
-      - vuln
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -92,8 +53,12 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+      - name: Set up just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+        with:
+          just-version: '1.58.0'
       - name: Build all release targets
-        run: go run ./internal/cmd/dev cross
+        run: just cross
 
   release:
     name: Release

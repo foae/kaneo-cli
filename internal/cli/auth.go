@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/foae/kaneo-cli/internal/auth"
 	"github.com/foae/kaneo-cli/internal/client"
+	"github.com/foae/kaneo-cli/internal/config"
 )
 
 const maxAPIKeyBytes = 1 << 20
@@ -32,7 +34,7 @@ func (a *app) newAuthCommand() *cobra.Command {
 			return help(cmd)
 		},
 	}
-	group.AddCommand(a.newAuthLoginCommand(), a.newAuthLogoutCommand(), a.newAuthGetSessionCommand())
+	group.AddCommand(a.newAuthLoginCommand(), a.newAuthLogoutCommand(), a.newAuthGetSessionCommand(), a.newAuthDeviceAuthorizationPageCommand())
 	return group
 }
 
@@ -46,7 +48,7 @@ func (a *app) newAuthLoginCommand() *cobra.Command {
 		Args:  noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx := cmd.Context()
-			sess, err := a.session(ctx)
+			sess, err := a.loginSession(ctx)
 			if err != nil {
 				return err
 			}
@@ -93,6 +95,43 @@ func (a *app) newAuthLoginCommand() *cobra.Command {
 	cmd.Flags().StringVar(&apiKeyFile, "api-key-file", "", "Read an API key from this file, or - for stdin")
 	cmd.Flags().StringVar(&clientID, "client-id", "", "Device authorization client ID (default kaneo-cli)")
 	return cmd
+}
+
+// loginSession resolves an explicitly requested, not-yet-persisted profile in
+// memory. Credential saving persists it only after authentication succeeds.
+func (a *app) loginSession(ctx context.Context) (*session, error) {
+	dir, err := a.configDir()
+	if err != nil {
+		return nil, err
+	}
+	store := config.NewStore(dir)
+	cfg, err := store.Load(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	name := a.flags.profile
+	if name == "" {
+		name = a.env("KANEO_PROFILE")
+	}
+	if name != "" {
+		if _, ok := cfg.Profile(name); !ok {
+			profile := cfg.EnsureProfile(name)
+			cfg.PutProfile(name, *profile)
+		}
+	}
+
+	resolved, err := a.resolver(cfg).Resolve()
+	if err != nil {
+		return nil, &usageError{err: err}
+	}
+	return &session{
+		app:      a,
+		store:    store,
+		cfg:      cfg,
+		resolved: resolved,
+		creds:    a.credentialStore(store, a.streams.errOut),
+	}, nil
 }
 
 func (a *app) newAuthLogoutCommand() *cobra.Command {

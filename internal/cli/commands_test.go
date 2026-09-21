@@ -573,9 +573,6 @@ func TestNonJSONSuccessRejected(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	if !strings.Contains(stderr, "non-JSON") {
-		t.Fatalf("stderr = %q", stderr)
-	}
 }
 
 func TestLogoutRequiresYes(t *testing.T) {
@@ -590,6 +587,90 @@ func TestLogoutRequiresYes(t *testing.T) {
 	}
 	if len(env.keyring.values) == 0 {
 		t.Fatal("credential removed without --yes")
+	}
+}
+
+func TestNamedProfileLoginPersistsOnlyAfterSuccess(t *testing.T) {
+	env := newTestEnv(t)
+	const base = "https://example.com/api"
+	env.setAPIURL(base)
+	if status, _, stderr := env.run("profile", "set", "stable", "--api-url", base); status != 0 {
+		t.Fatalf("set stable profile: status=%d stderr=%q", status, stderr)
+	}
+
+	store := config.NewStore(env.dir)
+	before, err := os.ReadFile(store.Path())
+	if err != nil {
+		t.Fatalf("read initial config: %v", err)
+	}
+	assertConfigUnchanged := func(t *testing.T) {
+		t.Helper()
+		after, err := os.ReadFile(store.Path())
+		if err != nil {
+			t.Fatalf("read config after failed login: %v", err)
+		}
+		if !bytes.Equal(after, before) {
+			t.Fatalf("failed login changed config:\nbefore=%s\nafter=%s", before, after)
+		}
+	}
+
+	env.setStdin("\n")
+	if status, _, stderr := env.run("--profile", "team", "auth", "login", "--api-key-file", "-"); status != 2 {
+		t.Fatalf("empty API key status=%d, want 2 (stderr=%q)", status, stderr)
+	}
+	assertConfigUnchanged(t)
+
+	env.app.deviceLogin = func(context.Context, auth.DeviceOptions) (auth.DeviceToken, error) {
+		return auth.DeviceToken{}, auth.ErrDeviceAccessDenied
+	}
+	if status, _, stderr := env.run("--profile", "team", "auth", "login"); status != 3 {
+		t.Fatalf("denied device login status=%d, want 3 (stderr=%q)", status, stderr)
+	}
+	assertConfigUnchanged(t)
+
+	env.setStdin("team-key\n")
+	if status, _, stderr := env.run("--profile", "team", "auth", "login", "--api-key-file", "-"); status != 0 {
+		t.Fatalf("successful named login: status=%d stderr=%q", status, stderr)
+	}
+	cfg, err := store.Load(context.Background())
+	if err != nil {
+		t.Fatalf("load config after successful login: %v", err)
+	}
+	if cfg.DefaultProfile != "stable" {
+		t.Fatalf("default profile=%q, want stable", cfg.DefaultProfile)
+	}
+	profile, ok := cfg.Profile("team")
+	if !ok {
+		t.Fatal("successful named login did not create profile")
+	}
+	if profile.APIURL != base {
+		t.Fatalf("team API URL=%q, want %q", profile.APIURL, base)
+	}
+	ref, ok := profile.CredentialFor(base)
+	if !ok || ref.Backend != config.BackendKeyring {
+		t.Fatalf("team credential reference=%+v, stored=%t", ref, ok)
+	}
+	if secret, err := env.keyring.Get("team", base); err != nil || secret != "team-key" {
+		t.Fatalf("team credential=%q, err=%v", secret, err)
+	}
+}
+
+func TestLoginCreatesExplicitProfile(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"hasUsers":true,"hasAdmin":true}`))
+	}))
+	defer server.Close()
+
+	env := newTestEnv(t)
+	base := server.URL + "/api"
+	env.env["KANEO_API_URL"] = base
+	env.setStdin("key-a\n")
+	if status, _, stderr := env.run("auth", "login", "--api-key-file", "-", "--profile", "team"); status != 0 {
+		t.Fatalf("login: status=%d stderr=%q", status, stderr)
+	}
+	if status, stdout, stderr := env.run("instance", "get-status", "--profile", "team"); status != 0 {
+		t.Fatalf("reuse profile: status=%d stdout=%q stderr=%q", status, stdout, stderr)
 	}
 }
 

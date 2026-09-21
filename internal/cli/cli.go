@@ -133,6 +133,12 @@ func (a *app) newRootCommand() *cobra.Command {
 		SilenceUsage:      true,
 		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
 		Args:              noArgs,
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			if err := cmd.ValidateFlagGroups(); err != nil {
+				return &usageError{err: err}
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if showVersion {
 				return writeVersion(cmd.OutOrStdout(), a.info)
@@ -154,6 +160,7 @@ func (a *app) newRootCommand() *cobra.Command {
 	root.AddCommand(a.newAuthCommand())
 	root.AddCommand(a.newInstanceCommand())
 	root.AddCommand(a.newConfigCommand())
+	root.AddCommand(a.newAPIGroups()...)
 
 	return root
 }

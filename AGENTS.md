@@ -4,7 +4,7 @@ This public repository is an **unofficial Kaneo CLI**. Read progressively: this 
 
 ## Non-negotiable boundaries
 
-- Current executable: help and version only. Do not mistake the operation inventory for implementation. No fake successful API commands, no TODO handlers, no placeholder packages.
+- Current executable coverage includes profiles, authentication, all 55 non-browser reads, 103 JSON mutations and avatar/presigned file transfers: 160 of 162 pinned operations. The two browser-navigation endpoints are being added as URL handoffs, not JSON wrappers. Consult the operation inventory and verification evidence for implemented coverage and outstanding blockers; registration alone is not acceptance. No fake successful API commands, no TODO handlers, no placeholder packages.
 - The pinned official API baseline plus documented device authorization defines the implementation target. Do not invent fields, pagination, authentication requirements, or server behavior.
 - Every pinned operation has exactly one canonical command mapping. Mark it implemented only with observable evidence. Browser and binary operations need deliberate contracts, not fabricated JSON wrappers.
 - Preserve LICENSE and upstream notices. No public SDK promise: application packages belong in `internal/`.
@@ -31,7 +31,7 @@ Inspect existing patterns first. Prefer Go standard library and concrete types; 
 
 Before changing an endpoint, read its complete operation, referenced schemas, parameters, security overrides and request/response media types. Compare official prose and pinned upstream source when the schema is incomplete. Record discrepancies with source URL, revision, endpoint, observed behavior and impact; escalate materially conflicting contracts rather than silently choosing.
 
-Run `just` to discover developer tasks, `just test` for Go tests only, and `just check` for shared verification before handoff. Hooks are optional and never auto-installed. Keep recipes thin: orchestration and tool pins belong in the Go developer tooling, not duplicated in the justfile. Direct Go alternatives remain available in [verification](docs/verification.md). Run focused behavior checks during development. Tests must defend behavior, not source text or mock forwarding. Report exactly what ran, platform, API baseline and container digest; never call a cross-build runtime validation.
+Run `just` to discover developer tasks, `just test` for Go tests only, and `just check`, `just race`, `just vuln`, and `just cross` for routine shared verification before handoff. Hooks are optional and never auto-installed. Keep recipes thin: orchestration and tool pins belong in the Go developer tooling, not duplicated in the justfile. Direct Go alternatives remain available in [verification](docs/verification.md). Run focused behavior checks during development. Tests must defend behavior, not source text or mock forwarding. Report exactly what ran, platform, API baseline and container digest; never call a cross-build runtime validation.
 
 Run `just lint` for focused static feedback; it is also part of `check`. The pinned golangci-lint policy in `.golangci.yml` applies to production and test code. Fix causes, not symptoms; suppress only demonstrated false positives with a specific linter and concrete explanation. See [verification](docs/verification.md#lint-policy).
 
