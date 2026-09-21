@@ -172,6 +172,28 @@ Upstream or environmental limitations observed and recorded (not CLI defects):
 
 Pending evidence, not claimed: external-service integration operations (GitHub/Gitea/Slack/Discord/Mattermost/Telegram/generic webhook create/update/delete/verify/import) — only fixture protocol coverage is claimed, never a mocked live integration; organization invitation accept/reject/cancel with real invitation tokens; the two deferred browser-navigation endpoints; native OS keyring and Windows DACL evidence.
 
+## Packet 4 evidence (2026-09-21)
+
+Commit `<pending>`. Reconciliation and local release acceptance. Publication remains disabled; `release/readiness.json` is unchanged.
+
+Reconciliation (`just check` plus `TestInventoryCoverageIsHonest` in `internal/cli/coverage_test.go`): the pinned inventory has 162 operations and `api/commands.json` has exactly 162 entries with no duplicates, none missing and none extra. 160 are `implemented`; the only two `planned` entries are the deliberately deferred browser endpoints (`auth get-device-authorization-page`, `mcp start-authorization`). Every `implemented` mapping resolves to a registered cobra command that has a `RunE`; a `planned` mapping that is not one of the two documented deferrals fails the check, so there is no `implemented` row backed only by a stub. `go run ./internal/cmd/specinventory --check` reports the generated inventory current.
+
+Local release plan (`go run ./internal/cmd/release plan`): `enabled: false`, current tag none, next tag `v0.1.0`, reason "first releasable change; policy fixes the first release at v0.1.0", five required-evidence items.
+
+Snapshot (`just snapshot`, GoReleaser v2.18.0, snapshot mode, no uploads): six CGO-free archives — Linux and macOS `amd64`/`arm64` tarballs and Windows `amd64`/`arm64` zips — each containing `LICENSE` and the binary. The SHA-256 checksum manifest verifies all six (`OK`). Embedded build metadata is `version=0.0.0-SNAPSHOT-<commit>`, the exact commit SHA and build date; the extracted Linux amd64 binary is a statically linked ELF, `version` and `--version` return the same JSON object, and help lists 36 command groups.
+
+Reproducible checks: `just check`; `just snapshot` then `(cd dist && sha256sum -c kaneo-cli_*_checksums.txt)`; `go run ./internal/cmd/release plan`; `go test ./internal/cli -run TestInventoryCoverageIsHonest`.
+
+Readiness assessment against `release/readiness.json` — publication is **not** proposed:
+
+- `public-api`: **not met.** Two documented operations (the browser endpoints) are unimplemented, and `getOrganizationRole` has an unresolved parameter gap. The full public API is not complete.
+- `authentication`: **partially met.** API-key and device-code flows are locally accepted, but real device approval/denial and expired/revoked credential behavior remain pending.
+- `profiles`: met locally (selection, persistence, isolation, migration, precedence, concurrency); native OS keyring behavior is unverified.
+- `safety`: met locally (`--yes` before network, redaction, non-interactive behavior).
+- `local-release-acceptance`: snapshot, checksums, embedded metadata and plan done; installation smoke is Linux-only.
+
+Blockers before activation, recorded rather than waived: implement or obtain a decision for the two browser-navigation endpoints; resolve the `getOrganizationRole` missing-parameter discrepancy; resolve the `detachLabelFromTask` 400; obtain real device approval/denial and expired/revoked-credential evidence; obtain native macOS/Windows keyring and DACL execution; and complete real external-service integration acceptance.
+
 ## Foundation evidence (2026-09-20)
 
 Verified locally on Linux amd64 with Go 1.27.1:
