@@ -44,3 +44,15 @@ release:
   github:
     owner: foae
     name: kaneo-cli
+  header: |
+    Unofficial JSON-first Kaneo CLI. Linux, macOS and Windows archives are provided for amd64 and arm64.
+
+    All 162 pinned operations have command mappings. GitHub, Gitea, Slack, Discord, Mattermost and Telegram integrations are fixture-tested, **not live-provider verified**; live-provider acceptance was explicitly deferred for v1.0.0.
+
+    See [verification evidence](https://github.com/foae/kaneo-cli/blob/{{ .Tag }}/docs/verification.md) and [API compatibility notes](https://github.com/foae/kaneo-cli/blob/{{ .Tag }}/docs/api/README.md).
+
+    Homebrew installation (after the generated Formula PR merges):
+    ```
+    brew tap foae/kaneo-cli https://github.com/foae/kaneo-cli
+    brew install foae/kaneo-cli/kaneo-cli
+    ```

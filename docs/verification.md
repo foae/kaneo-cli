@@ -243,7 +243,9 @@ Release preparation checks:
 - Stable release planner returned `v1.0.0` with publication still disabled. Regression checks cover real Git NUL/newline separators, subject-only release signals and breaking-change precedence.
 - `just check`, `actionlint` and `just snapshot` passed on Linux amd64. All six snapshot archives passed SHA-256 and LICENSE/executable-content checks; the extracted Linux amd64 binary returned linked version, commit and build date. Cross-built archives are not native runtime evidence.
 - The native keyring lifecycle test calls the OS backend directly, without plaintext fallback. Run `KANEO_NATIVE_KEYRING_TEST=1 go test ./internal/auth -run TestNativeKeyring -count=1 -v` in an unlocked credential-store session (PowerShell: set `$env:KANEO_NATIVE_KEYRING_TEST='1'` first). This workstation has no Secret Service provider, so its native run failed as expected; no local native-keyring success is claimed.
-- Main-only CI now exercises the native keyring on Linux with an isolated D-Bus session and unlocked GNOME Keyring, macOS Keychain and Windows Credential Manager. Successful hosted results must be linked before release activation.
+- Hosted native credential acceptance passed on revision `ad42403454ac2fd15cef64468cba1af0c85d4128`: [CI run 35590087700](https://github.com/foae/kaneo-cli/actions/runs/35590087700). All three Verify jobs passed, including the real store/get/delete lifecycle on Linux Secret Service (isolated D-Bus session and unlocked GNOME Keyring), macOS Keychain and Windows Credential Manager. These are native hosted runner checks, not claims of ARM runtime execution.
+
+Release activation links these observations from `release/readiness.json`. External-provider live acceptance remains explicitly deferred. GitHub immutable releases are enabled; publication and Homebrew installation evidence will be recorded after those operations actually succeed.
 
 ## Foundation evidence (2026-09-20)
 
