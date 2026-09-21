@@ -1,6 +1,6 @@
 # CLI contract
 
-Everything here except help/version is a **future implementation contract**.
+This is the binding contract for the command surface. Help, version, `profile` management, `auth login`/`logout`/`get-session`, `instance get-status` and `config get` are implemented; every other documented operation is a **future implementation contract**.
 
 ## Names and input
 
@@ -10,7 +10,7 @@ Use `--profile NAME`, `--api-url URL`, `--timeout DURATION` and `--yes` consiste
 
 Document operation-specific named flags for scalar path/query parameters. Complex bodies accept `--body-file PATH` or `--body-file -` for stdin. Decode and validate without losing unknown schema-permitted data or numeric precision. A flag is present only when explicitly supplied: omitted, JSON null, false, zero and empty string are distinct. Reject conflicting body/field inputs rather than silently picking one. Never accept secrets in positional arguments or print shell commands containing them.
 
-No implicit prompts, even on a TTY. Device login is an explicit interactive action; describe its behavior on a non-TTY and provide a no-browser path. Destructive actions (deletes, revocations, removals, resets and equivalent irreversible state changes) require `--yes` before making any request, independent of terminal type. Bulk mutation must report partial failure rather than successful exit for incomplete work.
+No implicit prompts, even on a TTY. Device login is an explicit interactive action; describe its behavior on a non-TTY and provide a no-browser path. Destructive actions (deletes, revocations, removals, resets and equivalent irreversible state changes) require `--yes` before making any request, independent of terminal type. This includes local credential removal via `auth logout` and `profile delete`. Bulk mutation must report partial failure rather than successful exit for incomplete work.
 
 ## Output
 

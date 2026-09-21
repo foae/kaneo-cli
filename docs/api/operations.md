@@ -2,7 +2,7 @@
 
 # API operation inventory
 
-This inventory contains 162 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`). Every entry is mapped to a planned CLI command; this file does not expose or implement any command.
+This inventory contains 162 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
 
 Detailed request schemas, query/path parameters, effective security, and responses are in the generated [`api/operations.json`](../../api/operations.json). Schema references resolve against the pinned OpenAPI snapshot.
 
@@ -27,7 +27,7 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
 | `auth get-device-authorization-page` | `GET` | `/auth/device` | `getDeviceAuthorizationPage` | `planned` | 2 |  | 200, 302 |
-| `auth get-session` | `GET` | `/auth/get-session` | `getSession` | `planned` | 0 |  | 200 |
+| `auth get-session` | `GET` | `/auth/get-session` | `getSession` | `implemented` | 0 |  | 200 |
 
 ## column
 
@@ -52,7 +52,7 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `config get` | `GET` | `/config` | `getConfig` | `planned` | 0 |  | 200 |
+| `config get` | `GET` | `/config` | `getConfig` | `implemented` | 0 |  | 200 |
 
 ## custom-field
 
@@ -111,7 +111,7 @@ Detailed request schemas, query/path parameters, effective security, and respons
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `instance get-status` | `GET` | `/instance/status` | `getInstanceStatus` | `planned` | 0 |  | 200 |
+| `instance get-status` | `GET` | `/instance/status` | `getInstanceStatus` | `implemented` | 0 |  | 200 |
 
 ## invitation
 

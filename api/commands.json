@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
   "status_values": [
-    "planned"
+    "planned",
+    "implemented"
   ],
   "operations": [
     {
@@ -9,14 +10,14 @@
       "path": "/instance/status",
       "group": "instance",
       "action": "get-status",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
       "path": "/auth/get-session",
       "group": "auth",
       "action": "get-session",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "GET",
@@ -37,7 +38,7 @@
       "path": "/config",
       "group": "config",
       "action": "get",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "method": "POST",

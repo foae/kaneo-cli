@@ -93,7 +93,31 @@ Required scenarios:
 - Native keyring success, unavailable-keyring warning/fallback, secure Unix mode/Windows DACL, concurrency and logout cleanup.
 - Integration operations: fixture protocol coverage is distinct from real external-service acceptance. Document service credentials/prerequisites and evidence; never mark a mock as a live integration run.
 
-The foundation can prove help/version, checks, inventory consistency, packaging and environment readiness only. Full API compatibility, authentication, profiles and all platform-specific credentials remain **pending implementation**. Publishing stays disabled until their evidence meets [release readiness](releases.md).
+The foundation can prove help/version, checks, inventory consistency, packaging and environment readiness only. Full API compatibility and all platform-specific credentials remain **pending implementation**. Publishing stays disabled until their evidence meets [release readiness](releases.md).
+
+## Packet 1 evidence (2026-09-20)
+
+Implemented: named profiles (`profile set|use|list|get|delete`), keyring-first credential storage with a warned plaintext fallback, API-key login (`auth login --api-key-file`), RFC 8628 device login (`auth login`), local logout (`auth logout`) and the public/session reads `instance get-status`, `config get` and `auth get-session`. Those three operations are marked `implemented` in `api/commands.json`; `release/readiness.json` remains disabled and no native keyring claim is made.
+
+Environment: Linux amd64, Go 1.27.1, just 1.58.0. API snapshot SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`. Disposable Kaneo image `ghcr.io/usekaneo/kaneo@sha256:a85a23996c36166cfcebcb4ee161b40cc62c7b924faf06353684a84d5e84162c` (the compose pin); observed server version `2.25.0`. The instance was torn down with its volumes after testing.
+
+Checks, all passing: `just check` (formatting, vet, pinned golangci-lint, tests, module tidiness, offline inventory), `just race`, `just cross` (six CGO-free targets) and `just vuln` (no vulnerabilities). Test suites cover the transport, configuration, credential store and CLI against fixture servers.
+
+Binary scenarios exercised against a local fixture server and the disposable instance:
+
+- IO separation: API JSON on stdout, diagnostics and warnings on stderr; no-content responses leave stdout empty; JSON `null` is preserved.
+- Exit statuses 0/2/3/4/5 and interruption (130) with one structured error object carrying stable code, HTTP status and operation ID.
+- Credentialed cross-origin redirects are refused; unauthenticated redirects are followed; plain-HTTP credential warnings appear once per invocation.
+- Timeout and context cancellation stop requests.
+- Profile isolation: two profiles send their own credentials; a changed origin is never sent another URL's credential.
+- `KANEO_TOKEN` is invocation-only and is not persisted.
+- Credential lifecycle: an available keyring backend (mocked), the unavailable-keyring fallback with a warning (the real headless Linux path), an access-denied keyring that is not silently downgraded, migration that clears the stale plaintext fallback, and logout/profile deletion that remove secrets. Config directory/file modes are 0700/0600 and concurrent updates are exercised.
+- Device flow (fixture): pending, slow-down, access-denied, expired-token, invalid-client, expiry and cancellation transitions, with no device code or token in output.
+- Disposable instance: public instance status and config, a null session, an authenticated session with a real API key, a real device-code request with observed `authorization_pending` polling and Ctrl-C interruption (`interrupted`, no credential stored), and a real `invalid_client` rejection.
+
+Pending native or external evidence, not claimed: native OS keyring success and Windows DACL enforcement (this host has no reachable Secret Service, so only the warned fallback ran), macOS Keychain and native macOS/Windows execution, and real device approval/denial (fixture-verified; the disposable flow was observed for pending, rejection and interruption only).
+
+Post-review hardening (same date), after a seven-seat cross-model panel: non-timeout transport failures map to exit 4 with safe messages; device denial, expiry and invalid-client map to exit 3; unrecognized error bodies are no longer echoed; cross-origin redirects carrying a bearer token or a sensitive body (including 307/308 replays) are refused; public reads no longer load a credential and the `profile`/`logout` paths no longer depend on a reachable backend; logout requires `--yes`; the fallback credential file is permission-checked on read and restricted before any secret byte is written; device interval and expiry are bounded against overflow and hostile values; and a 2xx polling error payload continues polling. `just check`, `just race`, `just cross` and `just vuln` were re-run after these changes. Native keyring/DACL evidence remains pending.
 
 ## Foundation evidence (2026-09-20)
 

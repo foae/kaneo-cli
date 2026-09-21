@@ -6,7 +6,7 @@ The relationship is verified rather than inferred from this repository's license
 
 ## Inventory
 
-[`api/commands.json`](../../api/commands.json) is the reviewed source-to-command map. Each OpenAPI method/path has exactly one `group action` pair and status. Canonical groups are singular; `org` is the deliberate abbreviation for Organization Management. All entries are `planned`: the inventory is a design reference, not an executable command surface.
+[`api/commands.json`](../../api/commands.json) is the reviewed source-to-command map. Each OpenAPI method/path has exactly one `group action` pair and status. Canonical groups are singular; `org` is the deliberate abbreviation for Organization Management. A status is `implemented` only when the command exists and has recorded evidence; every other entry is `planned` and remains a design reference.
 
 Generate the derived inventory and this reference with:
 

@@ -524,7 +524,7 @@
       "command": {
         "group": "auth",
         "action": "get-session",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [],
       "responses": {
@@ -3568,7 +3568,7 @@
       "command": {
         "group": "config",
         "action": "get",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [],
       "responses": {
@@ -6272,7 +6272,7 @@
       "command": {
         "group": "instance",
         "action": "get-status",
-        "status": "planned"
+        "status": "implemented"
       },
       "security": [],
       "responses": {
