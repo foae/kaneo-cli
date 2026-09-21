@@ -174,7 +174,7 @@ Pending evidence, not claimed: external-service integration operations (GitHub/G
 
 ## Packet 4 evidence (2026-09-21)
 
-Commit `<pending>`. Reconciliation and local release acceptance. Publication remains disabled; `release/readiness.json` is unchanged.
+Commit `cfcd4ff`. Reconciliation and local release acceptance. Publication remains disabled; `release/readiness.json` is unchanged.
 
 Reconciliation (`just check` plus `TestInventoryCoverageIsHonest` in `internal/cli/coverage_test.go`): the pinned inventory has 162 operations and `api/commands.json` has exactly 162 entries with no duplicates, none missing and none extra. 160 are `implemented`; the only two `planned` entries are the deliberately deferred browser endpoints (`auth get-device-authorization-page`, `mcp start-authorization`). Every `implemented` mapping resolves to a registered cobra command that has a `RunE`; a `planned` mapping that is not one of the two documented deferrals fails the check, so there is no `implemented` row backed only by a stub. `go run ./internal/cmd/specinventory --check` reports the generated inventory current.
 
