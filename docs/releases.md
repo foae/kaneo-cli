@@ -63,7 +63,7 @@ For ambiguous partial publication, stop automatic retries. Preserve the tag and 
 
 `complete` confirms artifact integrity and container identity, not completion of attestations, anonymous access or the Formula PR. A rerun does not repair those later steps; finish them through reviewed recovery using existing verified artifacts.
 
-The agent plugin has its own version in `.claude-plugin/plugin.json`, starting at `1.0.0`; bump it when its skill or plugin metadata changes, independently of CLI tags. README examples intentionally pin the distribution-introduction release `v1.2.0`, not `latest`: confirm that the reviewed release plan produces that version before merging this first distribution change, and verify every linked artifact and anonymous image after publication. Later releases need not rewrite historical pinned examples.
+The agent plugin has its own version in `.claude-plugin/plugin.json`, starting at `1.0.0`; bump it when its skill or plugin metadata changes, independently of CLI tags. README download links resolve to GitHub Releases rather than a hardcoded version. The [installer](../install.sh) resolves the latest stable tag once and downloads that version's archive and checksum manifest; keep its filename contract aligned with GoReleaser.
 
 ## Homebrew Formula
 
