@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"sync"
@@ -176,6 +177,202 @@ func TestGetSessionNullAndNoContent(t *testing.T) {
 			}
 			if stdout != tt.want {
 				t.Fatalf("stdout = %q, want %q", stdout, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetSessionRedactsToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"session":{"id":"s1","token":"SECRET","userId":"u1"},"user":{"id":"u1","email":"a@b.c"}}`))
+	}))
+	defer server.Close()
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	env.env["KANEO_TOKEN"] = "synthetic"
+	status, stdout, stderr := env.run("auth", "get-session")
+	if status != 0 {
+		t.Fatalf("status = %d, stderr = %s", status, stderr)
+	}
+	if strings.Contains(stdout, "SECRET") {
+		t.Fatalf("stdout leaked the token: %q", stdout)
+	}
+	if !strings.Contains(stdout, `"[REDACTED]"`) {
+		t.Fatalf("stdout = %q, want a redaction marker", stdout)
+	}
+	for _, want := range []string{"s1", "u1", "a@b.c"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("stdout = %q, want it to keep %q", stdout, want)
+		}
+	}
+}
+
+func TestGetSessionPassesThroughWithoutToken(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{name: "null session value", body: `{"session":null}`},
+		{name: "no session key", body: `{"user":{"id":"u1"}}`},
+		{name: "session without token", body: `{"session":{"id":"s1"}}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(tt.body))
+			}))
+			defer server.Close()
+
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			env.env["KANEO_TOKEN"] = "synthetic"
+			status, stdout, stderr := env.run("auth", "get-session")
+			if status != 0 {
+				t.Fatalf("status = %d, stderr = %s", status, stderr)
+			}
+			// The redacted path always re-encodes, so whitespace and
+			// top-level key order may differ from the server's bytes.
+			assertSameJSON(t, stdout, tt.body)
+		})
+	}
+}
+
+// assertSameJSON compares two JSON documents by value, ignoring whitespace and
+// object key order, which the redacted path is free to change.
+func assertSameJSON(t *testing.T, got, want string) {
+	t.Helper()
+	var gotValue, wantValue any
+	if err := json.Unmarshal([]byte(got), &gotValue); err != nil {
+		t.Fatalf("stdout not JSON: %v (%q)", err, got)
+	}
+	if err := json.Unmarshal([]byte(want), &wantValue); err != nil {
+		t.Fatalf("want not JSON: %v (%q)", err, want)
+	}
+	if !reflect.DeepEqual(gotValue, wantValue) {
+		t.Fatalf("stdout = %q, want equivalent to %q", got, want)
+	}
+}
+
+// A secret-bearing path whose intermediate segment is present but is not an
+// object cannot be redacted, so it must be rejected rather than printed.
+func TestRedactedResponseRejectsNonObjectSegment(t *testing.T) {
+	for _, body := range []string{`{"session":[{"token":"SECRET"}]}`, `{"session":"SECRET"}`} {
+		t.Run(body, func(t *testing.T) {
+			env := newRedactedSessionEnv(t, body)
+			status, stdout, _ := env.run("auth", "get-session")
+			if status == 0 {
+				t.Fatalf("status = 0, want nonzero for a non-object session segment")
+			}
+			if strings.Contains(stdout, "SECRET") {
+				t.Fatalf("stdout leaked the token: %q", stdout)
+			}
+		})
+	}
+}
+
+// Go's decoder keeps the last duplicate key, so the output must be re-encoded
+// from the decoded value; passing the original bytes through would emit the
+// earlier, secret-bearing copy.
+func TestRedactedResponseHandlesDuplicateKeys(t *testing.T) {
+	t.Run("later duplicate is null", func(t *testing.T) {
+		env := newRedactedSessionEnv(t, `{"session":{"token":"SECRET"},"session":null}`)
+		status, stdout, stderr := env.run("auth", "get-session")
+		if status != 0 {
+			t.Fatalf("status = %d, stderr = %s", status, stderr)
+		}
+		if strings.Contains(stdout, "SECRET") {
+			t.Fatalf("stdout leaked the token: %q", stdout)
+		}
+		assertSameJSON(t, stdout, `{"session":null}`)
+	})
+	t.Run("both duplicates bear a secret", func(t *testing.T) {
+		env := newRedactedSessionEnv(t, `{"session":{"token":"A"},"session":{"token":"B"}}`)
+		status, stdout, stderr := env.run("auth", "get-session")
+		if status != 0 {
+			t.Fatalf("status = %d, stderr = %s", status, stderr)
+		}
+		for _, secret := range []string{`"A"`, `"B"`} {
+			if strings.Contains(stdout, secret) {
+				t.Fatalf("stdout leaked %s: %q", secret, stdout)
+			}
+		}
+		if !strings.Contains(stdout, `"[REDACTED]"`) {
+			t.Fatalf("stdout = %q, want a redaction marker", stdout)
+		}
+	})
+	t.Run("duplicate inside the session object", func(t *testing.T) {
+		env := newRedactedSessionEnv(t, `{"session":{"token":"SECRET","token":null}}`)
+		status, stdout, stderr := env.run("auth", "get-session")
+		if status != 0 {
+			t.Fatalf("status = %d, stderr = %s", status, stderr)
+		}
+		if strings.Contains(stdout, "SECRET") {
+			t.Fatalf("stdout leaked the token: %q", stdout)
+		}
+	})
+}
+
+// The legacy single-field path is used for gitea get-integration, which must
+// not leak an earlier duplicate of the redacted field either.
+func TestGiteaIntegrationRedactsDuplicateWebhookSecret(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"webhookSecret":"SECRET","webhookSecret":null}`))
+	}))
+	defer server.Close()
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	env.env["KANEO_TOKEN"] = "synthetic"
+	status, stdout, stderr := env.run("gitea", "get-integration", "--project-id", "p1")
+	if status != 0 {
+		t.Fatalf("status = %d, stderr = %s", status, stderr)
+	}
+	if strings.Contains(stdout, "SECRET") {
+		t.Fatalf("stdout leaked the webhook secret: %q", stdout)
+	}
+	assertSameJSON(t, stdout, `{"webhookSecret":null}`)
+}
+
+// newRedactedSessionEnv serves body from a stub API for auth get-session.
+func newRedactedSessionEnv(t *testing.T, body string) *testEnv {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(server.Close)
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	env.env["KANEO_TOKEN"] = "synthetic"
+	return env
+}
+
+// A secret-bearing response that is valid JSON but not an object could itself
+// be the secret, so it must be rejected rather than printed. Only a bare null
+// passes through, because an unauthenticated session is legitimately null.
+func TestRedactedResponseRejectsNonObjectBody(t *testing.T) {
+	for _, body := range []string{`"bare-secret-string"`, `["bare-secret-string"]`, `123`} {
+		t.Run(body, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(body))
+			}))
+			defer server.Close()
+
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			env.env["KANEO_TOKEN"] = "synthetic"
+			status, stdout, _ := env.run("auth", "get-session")
+			if status == 0 {
+				t.Fatalf("status = 0, want nonzero for a non-object secret-bearing body")
+			}
+			if strings.Contains(stdout, "bare-secret-string") {
+				t.Fatalf("stdout leaked the body: %q", stdout)
 			}
 		})
 	}

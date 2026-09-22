@@ -197,7 +197,7 @@ func (a *app) newAuthGetSessionCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return writeJSONStream(cmd.OutOrStdout(), resp)
+			return writeRedactedJSONPath(cmd.OutOrStdout(), resp, "session", "token")
 		},
 	}
 }

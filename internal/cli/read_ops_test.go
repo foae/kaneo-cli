@@ -288,6 +288,54 @@ func TestReadPathEscapingAndQueryOmission(t *testing.T) {
 	}
 }
 
+func TestSearchGlobalHiddenQueryAlias(t *testing.T) {
+	var gotQuery string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	env.env["KANEO_TOKEN"] = "synthetic"
+
+	if status, _, stderr := env.run("search", "global", "--q", "foo", "--workspace-id", "W"); status != 0 {
+		t.Fatalf("canonical: status=%d stderr=%q", status, stderr)
+	}
+	canonical := gotQuery
+	if !strings.Contains(canonical, "q=foo") {
+		t.Fatalf("canonical query = %q", canonical)
+	}
+
+	gotQuery = ""
+	if status, _, stderr := env.run("search", "global", "--query", "foo", "--workspace-id", "W"); status != 0 {
+		t.Fatalf("alias: status=%d stderr=%q", status, stderr)
+	}
+	if gotQuery != canonical {
+		t.Fatalf("alias query = %q, want %q", gotQuery, canonical)
+	}
+
+	if status, stdout, stderr := env.run("search", "global", "--q", "a", "--query", "b", "--workspace-id", "W"); status == 0 {
+		t.Fatalf("both flags accepted: status=%d stdout=%q stderr=%q", status, stdout, stderr)
+	}
+	if status, _, stderr := env.run("search", "global", "--workspace-id", "W"); status != 2 || !strings.Contains(stderr, "--q is required") {
+		t.Fatalf("neither flag: status=%d stderr=%q", status, stderr)
+	}
+
+	status, stdout, stderr := env.run("search", "global", "--help")
+	if status != 0 {
+		t.Fatalf("help: status=%d stderr=%q", status, stderr)
+	}
+	if strings.Contains(stdout+stderr, "--query") {
+		t.Fatalf("help exposed the hidden alias: %q", stdout+stderr)
+	}
+	if !strings.Contains(stdout, "--q string") {
+		t.Fatalf("help missing canonical flag: %q", stdout)
+	}
+}
+
 func TestRoleSelectorRejectsAmbiguousOrEmptyInput(t *testing.T) {
 	env := newTestEnv(t)
 	env.setAPIURL("https://example.com/api")
@@ -298,6 +346,165 @@ func TestRoleSelectorRejectsAmbiguousOrEmptyInput(t *testing.T) {
 	} {
 		if status, stdout, stderr := env.run(args...); status != 2 || stdout != "" {
 			t.Fatalf("%v: status=%d stdout=%q stderr=%q", args, status, stdout, stderr)
+		}
+	}
+}
+
+// keyResolutionServer serves a project list and a board for task key resolution
+// and records the path (with query) of every request it receives.
+func keyResolutionServer(t *testing.T, projects, board string) (*httptest.Server, *[]string) {
+	t.Helper()
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.EscapedPath()
+		if r.URL.RawQuery != "" {
+			path += "?" + r.URL.RawQuery
+		}
+		requests = append(requests, path)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.HasSuffix(r.URL.EscapedPath(), "/api/project"):
+			_, _ = w.Write([]byte(projects))
+		case strings.Contains(r.URL.EscapedPath(), "/api/task/tasks/"):
+			_, _ = w.Write([]byte(board))
+		default:
+			_, _ = w.Write([]byte(`{"id":"t-1","title":"resolved task"}`))
+		}
+	}))
+	return server, &requests
+}
+
+const keyResolutionProjects = `[{"id":"p-1","slug":"KAN"},{"id":"p-2","slug":"OTHER"}]`
+
+func TestTaskGetResolvesDisplayKey(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		key   string
+		board string
+	}{
+		{"column", "KAN-12", `{"data":{"columns":[{"tasks":[{"id":"t-9","number":11},{"id":"t-1","number":12}]}]}}`},
+		{"case-insensitive", "kan-12", `{"data":{"columns":[{"tasks":[{"id":"t-1","number":12}]}]}}`},
+		{"archived", "KAN-12", `{"data":{"columns":[],"archivedTasks":[{"id":"t-1","number":12}]}}`},
+		{"planned", "KAN-12", `{"data":{"columns":[],"plannedTasks":[{"id":"t-1","number":12}]}}`},
+		{"duplicate-across-buckets", "KAN-12", `{"data":{"columns":[{"tasks":[{"id":"t-1","number":12}]}],"archivedTasks":[{"id":"t-1","number":12}]}}`},
+		{"null-number-skipped", "KAN-12", `{"data":{"columns":[{"tasks":[{"id":"t-null","number":null},{"id":"t-1","number":12}]}]}}`},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server, requests := keyResolutionServer(t, keyResolutionProjects, test.board)
+			defer server.Close()
+
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			env.env["KANEO_TOKEN"] = "synthetic"
+
+			status, stdout, stderr := env.run("task", "get", "--key", test.key, "--workspace-id", "W")
+			if status != 0 {
+				t.Fatalf("status=%d stderr=%q", status, stderr)
+			}
+			want := []string{"/api/project?includeArchived=true&workspaceId=W", "/api/task/tasks/p-1", "/api/task/t-1"}
+			if strings.Join(*requests, " ") != strings.Join(want, " ") {
+				t.Fatalf("requests = %v, want %v", *requests, want)
+			}
+			if !strings.Contains(stdout, "resolved task") {
+				t.Fatalf("stdout = %q", stdout)
+			}
+		})
+	}
+}
+
+func TestTaskGetKeyResolutionFailures(t *testing.T) {
+	for _, test := range []struct {
+		name         string
+		args         []string
+		board        string
+		wantContains string
+		wantRequests int
+	}{
+		{"unknown-slug", []string{"task", "get", "--key", "NOPE-1", "--workspace-id", "W"}, `{"data":{"columns":[]}}`, "NOPE", 1},
+		{"unknown-number", []string{"task", "get", "--key", "KAN-99", "--workspace-id", "W"}, `{"data":{"columns":[{"tasks":[{"id":"t-1","number":12}]}]}}`, "KAN-99", 2},
+		{"malformed-key", []string{"task", "get", "--key", "foo", "--workspace-id", "W"}, `{"data":{"columns":[]}}`, "KAN-12", 0},
+		{"key-without-workspace", []string{"task", "get", "--key", "KAN-12"}, `{"data":{"columns":[]}}`, "", 0},
+		{"id-and-key", []string{"task", "get", "--id", "t-1", "--key", "KAN-12", "--workspace-id", "W"}, `{"data":{"columns":[]}}`, "", 0},
+		{"neither", []string{"task", "get"}, `{"data":{"columns":[]}}`, "", 0},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server, requests := keyResolutionServer(t, keyResolutionProjects, test.board)
+			defer server.Close()
+
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			env.env["KANEO_TOKEN"] = "synthetic"
+
+			status, stdout, stderr := env.run(test.args...)
+			if status == 0 || stdout != "" {
+				t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+			}
+			if test.wantContains != "" && !strings.Contains(stderr, test.wantContains) {
+				t.Fatalf("stderr = %q, want mention of %q", stderr, test.wantContains)
+			}
+			if len(*requests) != test.wantRequests {
+				t.Fatalf("requests = %v, want %d", *requests, test.wantRequests)
+			}
+			for _, request := range *requests {
+				if strings.HasPrefix(request, "/api/task/") && !strings.HasPrefix(request, "/api/task/tasks/") {
+					t.Fatalf("issued a task fetch despite failed resolution: %v", *requests)
+				}
+			}
+		})
+	}
+}
+
+func TestTaskGetByIDSkipsResolution(t *testing.T) {
+	server, requests := keyResolutionServer(t, keyResolutionProjects, `{"data":{"columns":[]}}`)
+	defer server.Close()
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	env.env["KANEO_TOKEN"] = "synthetic"
+
+	status, stdout, stderr := env.run("task", "get", "--id", "t-42")
+	if status != 0 {
+		t.Fatalf("status=%d stderr=%q", status, stderr)
+	}
+	if len(*requests) != 1 || (*requests)[0] != "/api/task/t-42" {
+		t.Fatalf("requests = %v", *requests)
+	}
+	if !strings.Contains(stdout, "resolved task") {
+		t.Fatalf("stdout = %q", stdout)
+	}
+}
+
+func TestReadHelpRequiredMarkers(t *testing.T) {
+	env := newTestEnv(t)
+	env.setAPIURL("https://example.com/api")
+
+	status, stdout, stderr := env.run("task", "get", "--help")
+	if status != 0 {
+		t.Fatalf("task get help: status=%d stderr=%q", status, stderr)
+	}
+	if !strings.Contains(stdout, "(required unless --key is given)") {
+		t.Fatalf("task get help missing the conditional marker: %q", stdout)
+	}
+	for _, line := range strings.Split(stdout, "\n") {
+		if strings.Contains(line, "--id string") && strings.Contains(line, "(required)") {
+			t.Fatalf("--id still claims to be unconditionally required: %q", line)
+		}
+	}
+
+	// Specs without key resolution keep today's exact rendering.
+	status, stdout, stderr = env.run("search", "global", "--help")
+	if status != 0 {
+		t.Fatalf("search global help: status=%d stderr=%q", status, stderr)
+	}
+	for _, want := range []string{"--q string", "--workspace-id string"} {
+		found := false
+		for _, line := range strings.Split(stdout, "\n") {
+			if strings.Contains(line, want) && strings.HasSuffix(strings.TrimSpace(line), "(required)") {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("search global help lost the plain (required) marker on %s: %q", want, stdout)
 		}
 	}
 }
@@ -481,5 +688,187 @@ func TestRedactedJSONResponseUsesSafeInvalidJSONGuidance(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "dashboard or proxy") || strings.Contains(stderr, "redacted-routing-secret") {
 		t.Fatalf("stderr = %q", stderr)
+	}
+}
+
+func TestTaskGetResolvesArchivedProject(t *testing.T) {
+	// The project is only visible when archived projects are requested.
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.EscapedPath()
+		if r.URL.RawQuery != "" {
+			path += "?" + r.URL.RawQuery
+		}
+		requests = append(requests, path)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.HasSuffix(r.URL.EscapedPath(), "/api/project"):
+			if r.URL.Query().Get("includeArchived") != "true" {
+				_, _ = w.Write([]byte(`[]`))
+				return
+			}
+			_, _ = w.Write([]byte(`[{"id":"p-1","slug":"KAN","isArchived":true}]`))
+		case strings.Contains(r.URL.EscapedPath(), "/api/task/tasks/"):
+			_, _ = w.Write([]byte(`{"data":{"columns":[],"archivedTasks":[{"id":"t-1","number":12}]}}`))
+		default:
+			_, _ = w.Write([]byte(`{"id":"t-1","title":"resolved task"}`))
+		}
+	}))
+	defer server.Close()
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	env.env["KANEO_TOKEN"] = "synthetic"
+
+	status, stdout, stderr := env.run("task", "get", "--key", "KAN-12", "--workspace-id", "W")
+	if status != 0 {
+		t.Fatalf("status=%d stderr=%q", status, stderr)
+	}
+	want := []string{"/api/project?includeArchived=true&workspaceId=W", "/api/task/tasks/p-1", "/api/task/t-1"}
+	if strings.Join(requests, " ") != strings.Join(want, " ") {
+		t.Fatalf("requests = %v, want %v", requests, want)
+	}
+	if !strings.Contains(stdout, "resolved task") {
+		t.Fatalf("stdout = %q", stdout)
+	}
+}
+
+func TestTaskGetKeyResolutionAmbiguity(t *testing.T) {
+	for _, test := range []struct {
+		name         string
+		projects     string
+		board        string
+		wantContains string
+	}{
+		{
+			"ambiguous-slug",
+			`[{"id":"p-1","slug":"KAN"},{"id":"p-2","slug":"kan"}]`,
+			`{"data":{"columns":[{"tasks":[{"id":"t-1","number":12}]}]}}`,
+			"matches 2 projects",
+		},
+		{
+			"ambiguous-task",
+			keyResolutionProjects,
+			`{"data":{"columns":[{"tasks":[{"id":"t-1","number":12},{"id":"t-2","number":12}]}]}}`,
+			"matches 2 tasks",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server, requests := keyResolutionServer(t, test.projects, test.board)
+			defer server.Close()
+
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			env.env["KANEO_TOKEN"] = "synthetic"
+
+			status, stdout, stderr := env.run("task", "get", "--key", "KAN-12", "--workspace-id", "W")
+			if status == 0 || stdout != "" {
+				t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+			}
+			if !strings.Contains(stderr, test.wantContains) {
+				t.Fatalf("stderr = %q, want mention of %q", stderr, test.wantContains)
+			}
+			for _, request := range *requests {
+				if strings.HasPrefix(request, "/api/task/") && !strings.HasPrefix(request, "/api/task/tasks/") {
+					t.Fatalf("issued a task fetch despite ambiguous resolution: %v", *requests)
+				}
+			}
+		})
+	}
+}
+
+func TestTaskGetKeyResolutionRejectsOversizedBody(t *testing.T) {
+	oversized := `[{"id":"p-1","slug":"KAN","pad":"` + strings.Repeat("a", maxRequestBody) + `"}]`
+	oversizedBoard := `{"data":{"pad":"` + strings.Repeat("a", maxRequestBody) + `","columns":[{"tasks":[{"id":"t-1","number":12}]}]}}`
+	for _, test := range []struct {
+		name     string
+		projects string
+		board    string
+	}{
+		{"projects", oversized, `{"data":{"columns":[{"tasks":[{"id":"t-1","number":12}]}]}}`},
+		{"board", keyResolutionProjects, oversizedBoard},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server, _ := keyResolutionServer(t, test.projects, test.board)
+			defer server.Close()
+
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			env.env["KANEO_TOKEN"] = "synthetic"
+
+			status, stdout, stderr := env.run("task", "get", "--key", "KAN-12", "--workspace-id", "W")
+			if status == 0 || stdout != "" {
+				t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+			}
+			if !strings.Contains(stderr, "exceeds") {
+				t.Fatalf("stderr = %q, want a size limit failure", stderr)
+			}
+		})
+	}
+}
+
+func TestTaskGetKeyResolutionRejectsNonJSONBody(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		projects string
+		board    string
+	}{
+		{"projects", "not json", `{"data":{"columns":[{"tasks":[{"id":"t-1","number":12}]}]}}`},
+		{"board", keyResolutionProjects, "not json"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server, requests := keyResolutionServer(t, test.projects, test.board)
+			defer server.Close()
+
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			env.env["KANEO_TOKEN"] = "synthetic"
+
+			status, stdout, stderr := env.run("task", "get", "--key", "KAN-12", "--workspace-id", "W")
+			if status == 0 || stdout != "" {
+				t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+			}
+			for _, request := range *requests {
+				if strings.HasPrefix(request, "/api/task/") && !strings.HasPrefix(request, "/api/task/tasks/") {
+					t.Fatalf("issued a task fetch despite an unusable body: %v", *requests)
+				}
+			}
+		})
+	}
+}
+
+func TestTaskGetKeyResolutionRejectsEmptyWorkspaceID(t *testing.T) {
+	server, requests := keyResolutionServer(t, keyResolutionProjects, `{"data":{"columns":[]}}`)
+	defer server.Close()
+
+	env := newTestEnv(t)
+	env.setAPIURL(server.URL + "/api")
+	env.env["KANEO_TOKEN"] = "synthetic"
+
+	status, stdout, stderr := env.run("task", "get", "--key", "KAN-12", "--workspace-id", "")
+	if status != 2 || stdout != "" {
+		t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+	}
+	if !strings.Contains(stderr, "--workspace-id is required") {
+		t.Fatalf("stderr = %q", stderr)
+	}
+	if len(*requests) != 0 {
+		t.Fatalf("requests = %v, want none", *requests)
+	}
+}
+
+func TestNavigationHelpMarksRequiredFlags(t *testing.T) {
+	env := newTestEnv(t)
+	status, stdout, stderr := env.run("mcp", "start-authorization", "--help")
+	if status != 0 {
+		t.Fatalf("status=%d stderr=%q", status, stderr)
+	}
+	for _, want := range []string{"OAuth client ID (required)", "PKCE code challenge method (one of: S256) (required)"} {
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("stdout = %q, want %q", stdout, want)
+		}
+	}
+	if strings.Contains(stdout, "OAuth state (required)") {
+		t.Fatalf("optional flag marked required: %q", stdout)
 	}
 }
