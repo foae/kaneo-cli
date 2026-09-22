@@ -51,7 +51,7 @@ kaneo-cli task get --key "$TASK_KEY" --workspace-id "$WORKSPACE_ID"
 kaneo-cli comment list-task --task-id "$TASK_ID"
 ```
 
-The pinned `task list` response is a board plus `pagination`. With no `--page` or `--limit`, it intentionally returns all results on one page; ordinary discovery must omit both. Responses above 8 MiB fail before stdout—this is a failure, not an empty list. In that case, explicitly request `--page` and `--limit`, read `pagination.totalPages` from every successful response, and inspect pages 1 through that value before deciding. Never stop after an arbitrary first page.
+The pinned `task list` response is a board plus `pagination`. That board holds tasks in **three** places: `data.columns[].tasks`, `data.plannedTasks` (the UI's Backlog board) and `data.archivedTasks`. A walk over `data.columns[]` alone silently misses the other two, so a hand-rolled display-key lookup reports "not found" for a task that exists; this is a further reason to resolve keys with `task get --key`. Narrow the response to one container with `--status`, which accepts a column slug or the reserved values `planned` and `archived`. With no `--page` or `--limit`, it intentionally returns all results on one page; ordinary discovery must omit both. Responses above 8 MiB fail before stdout—this is a failure, not an empty list. In that case, explicitly request `--page` and `--limit`, read `pagination.totalPages` from every successful response, and inspect pages 1 through that value before deciding. Never stop after an arbitrary first page.
 
 Resolve a display key with `task get --key` rather than by hand. `--id` and `--key` are mutually exclusive and exactly one is required, and `--key` additionally requires `--workspace-id`. Resolution is exact and client-side: the workspace's projects are matched on slug, case-insensitively, then that project's board is matched on the task `number` across its columns and its archived and planned buckets. A key that is not a project slug followed by a positive number, a slug or number with no match, and a slug or number matching more than one candidate are all usage errors (exit 2) that name the problem and point back at `--id`; the CLI never guesses a task. Archived projects and archived tasks both resolve, so a key never silently fails because its work was archived.
 
@@ -59,7 +59,7 @@ Resolve a display key with `task get --key` rather than by hand. `--id` and `--k
 
 ## Create and update a task
 
-`status` is a column slug discovered with `column list`; it is not its display label. The pinned create schema requires all four shown fields and permits priorities `no-priority`, `low`, `medium`, `high`, and `urgent`. Do not invent values or omit a required field.
+`status` is a column slug discovered with `column list`, not its display label, or one of the two reserved values described under [Backlog and Archive](#backlog-and-archive-are-statuses-not-columns). The pinned create schema requires all four shown fields and permits priorities `no-priority`, `low`, `medium`, `high`, and `urgent`. Do not invent values or omit a required field.
 
 ```sh
 create_body="$(STATUS_SLUG="$STATUS_SLUG" python3 -c '
@@ -82,6 +82,21 @@ printf '%s' "$priority_body" | kaneo-cli task update-priority --id "$TASK_ID" --
 ```
 
 Read the task afterward to verify the requested change. Do not overwrite unrelated fields or infer completion from a successful help invocation.
+
+## Backlog and Archive are statuses, not columns
+
+A board's three task containers are `columns`, `plannedTasks` (the UI's Backlog board) and `archivedTasks`. There is no dedicated endpoint and no `task plan` or `task archive` subcommand: a task enters one of the two buckets by writing the reserved status `planned` or `archived` wherever a column slug is accepted, and leaves it by writing a column slug back.
+
+```sh
+backlog_body="$(python3 -c 'import json; print(json.dumps({"status":"planned"}))')" || exit $?
+printf '%s' "$backlog_body" | kaneo-cli task update-status --id "$TASK_ID" --body-file -
+```
+
+- `task create`, `task update-status`, `task update` and `task bulk-update` all accept both reserved values, so a task can be filed straight into the Backlog when it is created rather than created and then moved.
+- `task move` does not. Its `destinationStatus` must be a column slug of the destination project; a reserved value is rejected with HTTP 400.
+- Any other unrecognized status is rejected with HTTP 400 and the task is left unchanged.
+- Neither bucket records the column a task came from, and neither stores a column itself. When restoring, state which column you are restoring to, or ask; do not guess the first column.
+- `task import` is the exception to the rejection rule: an unrecognized status is silently rewritten to `planned`, so the task lands in the Backlog, the response still reports success, and the only trace is a string in `results.tasks[].warnings`. Read those warnings; a zero exit status does not mean the import was clean.
 
 ## Add a comment
 

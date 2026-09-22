@@ -53,6 +53,16 @@
         {"in": "query", "name": "roleName", "required": false},
         {"in": "query", "name": "organizationId", "required": false}
       ]
+    },
+    "task_reserved_statuses": {
+      "operation_ids": ["updateTaskStatus", "createTask", "moveTask", "importTasks", "listTasks"],
+      "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/ca70c72c4ed5585d0e4ffc3baf692def6f44d185/apps/api/src/task/validate-task-fields.ts",
+      "source_revision": "ca70c72c4ed5585d0e4ffc3baf692def6f44d185",
+      "relationship": "The pinned OpenAPI describes a task status only as an unconstrained string and describes PUT /task/status/{id} as a move to another column. Upstream declares two additional reserved values at the same revision the snapshot was taken from. This supplement is help text only; it is evidence for the contract, not a modification of the pinned snapshot.",
+      "scope": "CLI help supplement only. The pinned OpenAPI, the generated operation inventory and the generated request-body reference remain unchanged.",
+      "observed_at": "2026-09-22",
+      "evidence": "Disposable pinned Kaneo (image digest recorded in docs/verification.md): writing status \"planned\" or \"archived\" through updateTaskStatus returned HTTP 200 with columnId null and moved the task into the board's plannedTasks or archivedTasks container; writing a column slug back restored it with a non-null columnId. createTask accepted \"planned\" directly. moveTask rejected destinationStatus \"planned\" with HTTP 400 \"Selected status is not valid for the destination project\". An unknown status on updateTaskStatus returned HTTP 400 and left the task unchanged. importTasks accepted an unknown status, stored it as \"planned\" and reported success with a per-task warning. listTasks --status planned returned only the planned container. See docs/verification.md.",
+      "constraints": "Valid task statuses are the project's column slugs plus the reserved values \"planned\" and \"archived\" (upstream VIRTUAL_STATUSES). A column may not be created with either reserved slug, so the board's three containers cannot collide. moveTask accepts destination column slugs only."
     }
   }
 }
