@@ -25,6 +25,7 @@ This public repository is an **unofficial Kaneo CLI**. Read progressively: this 
 | Implementation sequence | [Work packets](docs/implementation.md) |
 | Checks, fixtures, real instance | [Verification](docs/verification.md) |
 | Tags, distribution, recovery | [Releases](docs/releases.md) |
+| Known defects left unfixed here | [Reported bugs](docs/reported_bugs/README.md) |
 
 ## Working rules
 
