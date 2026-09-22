@@ -55,6 +55,9 @@ func (a *app) newWriteCommand(spec writeSpec) *cobra.Command {
 		if len(param.enum) > 0 {
 			help = strings.TrimSpace(help + " (one of: " + strings.Join(param.enum, ", ") + ")")
 		}
+		if param.required {
+			help = strings.TrimSpace(help + " (required)")
+		}
 		cmd.Flags().String(param.flag, "", help)
 	}
 	if spec.body {

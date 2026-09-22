@@ -371,3 +371,14 @@ func TestMutationBodyCannotRedirectWithoutBearer(t *testing.T) {
 		t.Fatalf("status=%d requests=%d stdout=%q stderr=%q", status, requests, stdout, stderr)
 	}
 }
+
+func TestWriteHelpMarksRequiredFlags(t *testing.T) {
+	env := newTestEnv(t)
+	status, stdout, stderr := env.run("task", "create", "--help")
+	if status != 0 {
+		t.Fatalf("status=%d stderr=%q", status, stderr)
+	}
+	if !strings.Contains(stdout, "--project-id string") || !strings.Contains(stdout, "(required)") {
+		t.Fatalf("stdout = %q", stdout)
+	}
+}

@@ -249,6 +249,8 @@ var readSpecs = []readSpec{
 			{name: "roleName", in: paramQuery, flag: "role-name", minLen: 1, help: "Role name (exclusive with --role-id)"},
 			{name: "organizationId", in: paramQuery, flag: "organization-id", minLen: 1, help: "Organization ID; defaults to the active organization"},
 		},
+		oneRequired:       []string{"role-id", "role-name"},
+		mutuallyExclusive: []string{"role-id", "role-name"},
 	},
 	{
 		group: "org", action: "list",
@@ -323,7 +325,7 @@ var readSpecs = []readSpec{
 		operationID: "globalSearch",
 		path:        "/search",
 		params: []readParam{
-			{name: "q", in: paramQuery, flag: "q", required: true, minLen: 1},
+			{name: "q", in: paramQuery, flag: "q", required: true, minLen: 1, alias: "query"},
 			{name: "type", in: paramQuery, flag: "type", enum: []string{"all", "tasks", "projects", "workspaces", "comments", "activities"}},
 			{name: "workspaceId", in: paramQuery, flag: "workspace-id", required: true, minLen: 1},
 			{name: "projectId", in: paramQuery, flag: "project-id"},
@@ -356,6 +358,15 @@ var readSpecs = []readSpec{
 		path:        "/task/{id}",
 		params: []readParam{
 			{name: "id", in: paramPath, flag: "id", required: true},
+		},
+		oneRequired:       []string{"id", "key"},
+		mutuallyExclusive: []string{"id", "key"},
+		requiredTogether:  []string{"key", "workspace-id"},
+		keyResolution: &keyResolution{
+			flag:      "key",
+			target:    "id",
+			help:      "Task display key such as KAN-12; requires --workspace-id",
+			scopeHelp: "Workspace ID that contains the key's project; used only with --key",
 		},
 	},
 	{

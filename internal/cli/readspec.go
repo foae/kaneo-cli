@@ -38,6 +38,10 @@ type readParam struct {
 	numeric  bool
 	minLen   int
 	help     string
+	// alias is an optional hidden alternative flag name for the same
+	// parameter. It is accepted but never shown in help, so the canonical
+	// spec-derived name stays the documented one.
+	alias string
 }
 
 // readSpec is one read-only operation mapped to a CLI command.
@@ -59,6 +63,28 @@ type readSpec struct {
 	// binary marks an operation whose 200 response is a non-JSON stream that
 	// must be written to an explicit destination.
 	binary bool
+	// oneRequired lists flag names of which at least one must be supplied.
+	oneRequired []string
+	// mutuallyExclusive lists flag names that may not be combined.
+	mutuallyExclusive []string
+	// requiredTogether lists flag names that must all be supplied if any is.
+	requiredTogether []string
+	// keyResolution, when set, registers client-side-only flags that resolve a
+	// display key such as "KAN-12" into a path parameter before the request.
+	keyResolution *keyResolution
+}
+
+// keyResolution maps a human display key onto an opaque identifier parameter.
+type keyResolution struct {
+	// flag is the client-side key flag, e.g. "key".
+	flag string
+	// target is the spec param flag it populates, e.g. "id".
+	target string
+	// help describes the key flag. It is per-operation because the key's shape
+	// is domain-specific; the scope flag's help is derived from it.
+	help string
+	// scopeHelp describes the --workspace-id flag the resolution needs.
+	scopeHelp string
 }
 
 func (a *app) newReadCommand(spec readSpec) *cobra.Command {
@@ -75,11 +101,34 @@ func (a *app) newReadCommand(spec readSpec) *cobra.Command {
 		if len(param.enum) > 0 {
 			help = strings.TrimSpace(help + " (one of: " + strings.Join(param.enum, ", ") + ")")
 		}
+		if param.required {
+			// A key-resolution target is still a required wire parameter, but
+			// the key flag can supply it, so the help must not claim otherwise.
+			if spec.keyResolution != nil && param.flag == spec.keyResolution.target {
+				help = strings.TrimSpace(help + " (required unless --" + spec.keyResolution.flag + " is given)")
+			} else {
+				help = strings.TrimSpace(help + " (required)")
+			}
+		}
 		cmd.Flags().String(param.flag, "", help)
+		if param.alias != "" {
+			cmd.Flags().String(param.alias, "", help)
+			_ = cmd.Flags().MarkHidden(param.alias)
+			cmd.MarkFlagsMutuallyExclusive(param.flag, param.alias)
+		}
 	}
-	if spec.operationID == "getOrganizationRole" {
-		cmd.MarkFlagsOneRequired("role-id", "role-name")
-		cmd.MarkFlagsMutuallyExclusive("role-id", "role-name")
+	if spec.keyResolution != nil {
+		cmd.Flags().String(spec.keyResolution.flag, "", spec.keyResolution.help)
+		cmd.Flags().String("workspace-id", "", spec.keyResolution.scopeHelp)
+	}
+	if len(spec.oneRequired) > 0 {
+		cmd.MarkFlagsOneRequired(spec.oneRequired...)
+	}
+	if len(spec.mutuallyExclusive) > 0 {
+		cmd.MarkFlagsMutuallyExclusive(spec.mutuallyExclusive...)
+	}
+	if len(spec.requiredTogether) > 0 {
+		cmd.MarkFlagsRequiredTogether(spec.requiredTogether...)
 	}
 	if spec.binary {
 		cmd.Flags().String("output", "", "Destination file path, or - for stdout (required)")
@@ -96,12 +145,53 @@ func (a *app) runRead(cmd *cobra.Command, spec readSpec) error {
 			return err
 		}
 	}
+	// The session is built at most once per invocation, lazily, so resolution
+	// and the final request always share one effective configuration and
+	// commands that fail earlier never touch the credential backend.
+	var sess *session
+	getSession := func() (*session, error) {
+		if sess != nil {
+			return sess, nil
+		}
+		created, err := a.session(ctx)
+		if err != nil {
+			return nil, err
+		}
+		sess = created
+		return sess, nil
+	}
+
+	// Client-side key resolution populates the target parameter before the
+	// normal parameter loop, so the request itself stays a single plain GET.
+	if spec.keyResolution != nil {
+		if keyFlag := cmd.Flags().Lookup(spec.keyResolution.flag); keyFlag != nil && keyFlag.Changed {
+			keySession, err := getSession()
+			if err != nil {
+				return err
+			}
+			resolved, err := a.resolveKey(ctx, keySession, cmd, spec)
+			if err != nil {
+				return err
+			}
+			if err := cmd.Flags().Set(spec.keyResolution.target, resolved); err != nil {
+				return &processError{err: err}
+			}
+		}
+	}
+
 	pathValues := make(map[string]string, len(spec.params))
 	var query url.Values
 	for _, param := range spec.params {
 		flag := cmd.Flags().Lookup(param.flag)
 		if flag == nil {
 			return &processError{err: fmt.Errorf("internal error: flag --%s is not registered for %s", param.flag, spec.operationID)}
+		}
+		// Mutual exclusion is enforced by cobra, so at most one of the
+		// canonical flag and its hidden alias can have been set.
+		if !flag.Changed && param.alias != "" {
+			if aliasFlag := cmd.Flags().Lookup(param.alias); aliasFlag != nil && aliasFlag.Changed {
+				flag = aliasFlag
+			}
 		}
 		value := flag.Value.String()
 		if !flag.Changed {
@@ -128,11 +218,11 @@ func (a *app) runRead(cmd *cobra.Command, spec readSpec) error {
 		return &processError{err: err}
 	}
 
-	sess, err := a.session(ctx)
+	requestSession, err := getSession()
 	if err != nil {
 		return err
 	}
-	apiClient, err := a.readClient(ctx, sess, spec.public, spec.optionalAuth)
+	apiClient, err := a.readClient(ctx, requestSession, spec.public, spec.optionalAuth)
 	if err != nil {
 		return err
 	}

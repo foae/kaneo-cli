@@ -74,6 +74,9 @@ func addNavigationFlags(cmd *cobra.Command, params []navigationParam) {
 		if len(param.enum) > 0 {
 			help += " (one of: " + strings.Join(param.enum, ", ") + ")"
 		}
+		if param.required {
+			help = strings.TrimSpace(help + " (required)")
+		}
 		cmd.Flags().String(param.flag, "", help)
 	}
 }
