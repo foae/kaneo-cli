@@ -376,7 +376,7 @@ var readSpecs = []readSpec{
 		path:        "/task/tasks/{projectId}",
 		params: []readParam{
 			{name: "projectId", in: paramPath, flag: "project-id", required: true},
-			{name: "status", in: paramQuery, flag: "status"},
+			{name: "status", in: paramQuery, flag: "status", help: "Column slug, or the reserved values planned or archived"},
 			{name: "priority", in: paramQuery, flag: "priority"},
 			{name: "assigneeId", in: paramQuery, flag: "assignee-id"},
 			{name: "page", in: paramQuery, flag: "page", numeric: true},

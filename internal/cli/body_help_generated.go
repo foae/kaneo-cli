@@ -84,3 +84,22 @@ var generatedBodyHelp = map[string]string{
 	"verifyGitHubInstallation":                  "JSON body (required):\n  projectId (required): string\n  repositoryName (required): string\n  repositoryOwner (required): string",
 	"verifyGiteaAccess":                         "JSON body (required):\n  accessToken (required): string\n  baseUrl (required): string (format: uri)\n  projectId (required): string\n  repositoryName (required): string\n  repositoryOwner (required): string",
 }
+
+// generatedSecretBodyOperations lists operations whose JSON request body carries
+// a credential, so a plain-text error may echo a submitted value back.
+var generatedSecretBodyOperations = map[string]bool{
+	"createDiscordIntegration":        true,
+	"createGenericWebhookIntegration": true,
+	"createGiteaIntegration":          true,
+	"createMattermostIntegration":     true,
+	"createSlackIntegration":          true,
+	"createTelegramIntegration":       true,
+	"listGiteaRepositories":           true,
+	"updateDiscordIntegration":        true,
+	"updateGenericWebhookIntegration": true,
+	"updateMattermostIntegration":     true,
+	"updateNotificationPreferences":   true,
+	"updateSlackIntegration":          true,
+	"updateTelegramIntegration":       true,
+	"verifyGiteaAccess":               true,
+}

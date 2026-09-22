@@ -36,6 +36,8 @@ type writeSpec struct {
 	destructive bool
 	// public marks an operation whose documented security is empty.
 	public bool
+	// notes is supplemental help appended to the command's long description.
+	notes string
 }
 
 func (a *app) newWriteCommand(spec writeSpec) *cobra.Command {
@@ -49,6 +51,13 @@ func (a *app) newWriteCommand(spec writeSpec) *cobra.Command {
 	}
 	if bodyHelp := generatedBodyHelp[spec.operationID]; bodyHelp != "" {
 		cmd.Long = spec.short + "\n\n" + bodyHelp
+	}
+	if spec.notes != "" {
+		if cmd.Long == "" {
+			cmd.Long = spec.short + "\n\n" + spec.notes
+		} else {
+			cmd.Long += "\n\n" + spec.notes
+		}
 	}
 	for _, param := range spec.params {
 		help := param.help
@@ -131,6 +140,7 @@ func (a *app) runWrite(cmd *cobra.Command, spec writeSpec) error {
 		ContentType: contentTypeFor(body),
 		OperationID: spec.operationID,
 		Sensitive:   !spec.public && body != nil,
+		SecretBody:  generatedSecretBodyOperations[spec.operationID],
 	})
 	if err != nil {
 		return err
