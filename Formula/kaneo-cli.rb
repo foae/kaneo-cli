@@ -4,26 +4,26 @@
 class KaneoCli < Formula
   desc "Command-line client for Kaneo"
   homepage "https://github.com/foae/kaneo-cli"
-  version "1.5.0"
+  version "1.6.0"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/foae/kaneo-cli/releases/download/v1.5.0/kaneo-cli_1.5.0_darwin_arm64.tar.gz"
-      sha256 "8c981e110779a3aca9baaf4824b7903e93e7e88a9d863cc073f444e66d68cf52"
+      url "https://github.com/foae/kaneo-cli/releases/download/v1.6.0/kaneo-cli_1.6.0_darwin_arm64.tar.gz"
+      sha256 "a84ff1963eac41eb003140308b2c686f2971a2b58c6d08f80f99f4771945a732"
     else
-      url "https://github.com/foae/kaneo-cli/releases/download/v1.5.0/kaneo-cli_1.5.0_darwin_amd64.tar.gz"
-      sha256 "9dc7f54edf463ba76af568c865a117355124b31d7029953c6522cf05ff50ce2b"
+      url "https://github.com/foae/kaneo-cli/releases/download/v1.6.0/kaneo-cli_1.6.0_darwin_amd64.tar.gz"
+      sha256 "e873f1f208c5857c6647914466dc5d6ce2a407d3d8e6ad3cfb004f54277b65c4"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/foae/kaneo-cli/releases/download/v1.5.0/kaneo-cli_1.5.0_linux_arm64.tar.gz"
-      sha256 "3cca36e3d7beb37c2053529d8466f76157d087fc42958910373c5cc47f90aaf2"
+      url "https://github.com/foae/kaneo-cli/releases/download/v1.6.0/kaneo-cli_1.6.0_linux_arm64.tar.gz"
+      sha256 "d7e805af0151009b607d3d218471d917e8780dd47c9d79e72cdf67c9b7322483"
     else
-      url "https://github.com/foae/kaneo-cli/releases/download/v1.5.0/kaneo-cli_1.5.0_linux_amd64.tar.gz"
-      sha256 "721d3b150f7cf1989a7c65d22c42dd757216045911dfef8c357307ffe683f761"
+      url "https://github.com/foae/kaneo-cli/releases/download/v1.6.0/kaneo-cli_1.6.0_linux_amd64.tar.gz"
+      sha256 "5cefd6507746d12914de54d2001842d19819f5542391fcae6b285c53e9dfc7c6"
     end
   end
 
