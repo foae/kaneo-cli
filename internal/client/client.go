@@ -105,6 +105,10 @@ type Request struct {
 	// Sensitive marks a body that carries a credential even though the request
 	// has no Authorization header, so it triggers the plain-HTTP warning.
 	Sensitive bool
+	// SecretBody marks an operation whose request body carries a credential.
+	// Such a server may echo a submitted value back in an error, so plain-text
+	// error bodies are not surfaced for these operations.
+	SecretBody bool
 }
 
 // Response is a successful (2xx) response. The caller must close Body.
@@ -156,7 +160,7 @@ func (c *Client) Do(ctx context.Context, req Request) (*Response, error) {
 		return nil, translateTransportError(err)
 	}
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		apiErr := newError(resp, req.OperationID)
+		apiErr := newError(resp, req.OperationID, req.SecretBody)
 		_ = resp.Body.Close()
 		return nil, apiErr
 	}

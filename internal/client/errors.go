@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"strconv"
@@ -96,9 +97,10 @@ func statusCode(status int) string {
 }
 
 // newError translates a failed response into an *Error, reading a bounded
-// portion of the body for a documented message field. It never echoes an
-// unrecognized raw body, which could contain reflected secrets.
-func newError(resp *http.Response, operationID string) *Error {
+// portion of the body for a documented message field and otherwise for a
+// server-declared plain-text explanation. It never echoes an unrecognized
+// JSON, HTML or binary body, which could contain reflected secrets.
+func newError(resp *http.Response, operationID string, secretBody bool) *Error {
 	apiErr := &Error{
 		StatusCode:  resp.StatusCode,
 		Code:        statusCode(resp.StatusCode),
@@ -118,7 +120,44 @@ func newError(resp *http.Response, operationID string) *Error {
 	}
 	apiErr.Message = extractMessage(body)
 	apiErr.ServerCode = extractServerCode(body)
+	if apiErr.Message == "" {
+		apiErr.Message = plainTextMessage(resp, body, secretBody)
+	}
 	return apiErr
+}
+
+// plainTextMessage returns a failed response's body as the diagnostic message
+// when the pinned spec documents that error as text/plain. The media type must
+// be exactly text/plain, the body must not parse as JSON, it must be valid
+// UTF-8 with no control characters after whitespace collapsing, and operations
+// whose request body carries a credential are excluded because such a server
+// may echo a submitted value back.
+func plainTextMessage(resp *http.Response, body []byte, secretBody bool) string {
+	if secretBody {
+		return ""
+	}
+	// A JSON body has already been offered to extractMessage, so if that produced
+	// nothing the shape is undocumented and must not be echoed. Go's content
+	// sniffing labels an unlabeled JSON body text/plain, so the media type alone
+	// cannot establish that the server declared plain text.
+	if json.Valid(body) {
+		return ""
+	}
+	mediaType, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if err != nil || mediaType != "text/plain" {
+		return ""
+	}
+	if !utf8.Valid(body) {
+		return ""
+	}
+	text := collapse(string(body))
+	if text == "" {
+		return ""
+	}
+	if strings.ContainsFunc(text, func(r rune) bool { return r < 0x20 || r == 0x7f }) {
+		return ""
+	}
+	return truncate(text)
 }
 
 func beginsWithHTML(body []byte) bool {
