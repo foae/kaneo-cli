@@ -11,6 +11,7 @@ This public repository is an **unofficial Kaneo CLI**. Read progressively: this 
 - Never print credentials, cookies, authorization headers, device tokens, presigned URLs, or unredacted HTTP debug dumps. Tests use synthetic credentials.
 - No implicit prompts. Destructive operations require `--yes`. Never silently retry mutations or send credentials across origins.
 - Publishing remains disabled until the readiness requirements in the release documentation are met. Never publish, tag, push, or change repository settings unless authorized.
+- A release is one deliverable: the binary release and its Homebrew Formula bump ship together. Publishing archives is not a finished release while the generated `chore(homebrew)` pull request is still open, because `brew` keeps resolving the previous version. Verify the Formula's checksums against the published manifest, merge it, and confirm the tap reports the new version before reporting a release done.
 - Complete one dependency-ordered work packet at a time. Keep API response JSON on stdout and diagnostics on stderr; preserve omitted/null/false/zero distinctions.
 
 ## Task routing
