@@ -69,6 +69,8 @@ README download links resolve to GitHub Releases rather than a hardcoded version
 
 ## Homebrew Formula
 
+The Formula bump is part of the release, not an optional follow-up. Until the generated pull request merges, `Formula/kaneo-cli.rb` on `main` still names the previous version and `brew install` resolves it, so the release is incomplete however many archives were published. Treat merging that pull request, and confirming `brew info` reports the new version, as the release's final step.
+
 After a fresh release, `release/formula.sh` downloads the already-published immutable checksum manifest and renders `Formula/kaneo-cli.rb` for macOS and Linux `amd64`/`arm64`. The workflow pushes that generated file to a new `chore/homebrew-vX.Y.Z` branch and opens a normal PR against `main`; it does not update the protected branch directly. The tap URL is `https://github.com/foae/kaneo-cli`, and, after the Formula PR merges, installation is:
 
 Review the bot-created Formula PR and run local checks before merging. CI runs after the merge to `main`, not on PR creation or reopening. Do not configure these post-merge jobs as required PR checks; they cannot report on PR heads. Publication needs no long-lived credentials.
