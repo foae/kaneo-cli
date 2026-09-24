@@ -3,13 +3,15 @@ name: kaneo-cli
 description: Manage Kaneo workspaces, projects, tasks, board columns, and comments with the unofficial kaneo-cli. Use for finding Kaneo work, creating tasks, changing task status or priority, and commenting on tasks. Requires the separately installed CLI and authorized access to the intended Kaneo instance.
 license: MIT
 compatibility: Requires the separately installed kaneo-cli and network access to the user's Kaneo instance. Stable CLI versions also make a best-effort GitHub update check on the version command. Shell examples use POSIX syntax; adapt filesystem operations to the host.
+metadata:
+  version: "1.8.0"
 ---
 
 # Kaneo CLI
 
 Use the installed `kaneo-cli` executable. This skill does not install the CLI, configure credentials, grant permission, or provide a server. See https://github.com/foae/kaneo-cli#install for installation.
 
-This portable skill is versioned by the repository release tag it was installed from, in lockstep with the CLI; it has no independent release counter. Check the installation record and https://github.com/foae/kaneo-cli/releases when the user requests an update. Do not install or update either component implicitly. The CLI does not detect installed skill versions. For an unrecorded copy, report its version as unknown rather than inferring it from the CLI.
+This portable skill is versioned in lockstep with the CLI release tag it was installed from; `metadata.version` in this file records that tag's version without the `v`. When the user requests an update, compare the installed `metadata.version` with the latest release at https://github.com/foae/kaneo-cli/releases. Copies without the field predate v1.8.0. Do not install or update either component implicitly. The CLI does not detect installed skill versions. For a copy without `metadata.version`, report its version as unknown rather than inferring it from the CLI.
 
 ## Before acting
 

@@ -26,6 +26,7 @@ This public repository is an **unofficial Kaneo CLI**. Read progressively: this 
 | Checks, fixtures, real instance | [Verification](docs/verification.md) |
 | Tags, distribution, recovery | [Releases](docs/releases.md) |
 | Known defects left unfixed here | [Reported bugs](docs/reported_bugs/README.md) |
+| Refresh to a newer Kaneo API and release | [update-cli skill](.agents/skills/update-cli/SKILL.md) |
 
 ## Working rules
 

@@ -101,7 +101,7 @@ The portable [Kaneo CLI skill](../skills/kaneo-cli/SKILL.md) teaches commands an
 2. Extract it and copy the complete `skills/kaneo-cli/` directory, including `SKILL.md` and `LICENSE`, into your agent's documented skill directory. There is no universal install path across agents; use its own skill installation mechanism.
 3. Install the CLI from the same release and configure authentication separately. Reload skills using your agent's documented mechanism.
 
-The repository release tag versions both the CLI and skill. Keep that tag in your installation record; an unrecorded copy has an unknown version. To update, explicitly choose a newer release and replace the whole skill directory from its source archive. Do not infer the installed skill version from `kaneo-cli version`; the CLI does not inspect or update agent skill installations.
+The repository release tag versions both the CLI and skill. The installed `SKILL.md` frontmatter records it as `metadata.version` (the tag without the `v`); compare that value with the [latest release](https://github.com/foae/kaneo-cli/releases/latest). To see exactly what changed, open `https://github.com/foae/kaneo-cli/compare/vOLD...vNEW` and filter **Files changed** to `skills/kaneo-cli/`, or run `git diff vOLD vNEW -- skills/kaneo-cli/` in a clone. A copy without `metadata.version` predates v1.8.0 and has an unknown version. To update, explicitly choose a newer release and replace the whole skill directory from its source archive. Do not infer the installed skill version from `kaneo-cli version`; the CLI does not inspect or update agent skill installations.
 
 ### Optional Claude Code plugin
 

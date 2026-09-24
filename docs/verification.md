@@ -7,7 +7,7 @@ Use Go 1.27+ and [just](https://github.com/casey/just) 1.58.0, the version pinne
 Run `just` or `just --list` for the task menu; neither runs checks or starts services:
 
 ```sh
-just check     # formatting, vet, lint, tests, tidy diff, inventory
+just check     # formatting, vet, lint, tests, tidy diff, inventory, skill stamp
 just test      # Go tests only
 just lint      # pinned golangci-lint, including test code
 just fmt       # explicitly format Go files (writes files)
@@ -17,6 +17,7 @@ just race      # race tests, supported native toolchain required
 just vuln      # pinned govulncheck
 just snapshot  # pinned GoReleaser, never publishes
 just hooks     # explicitly opt in to Git hooks
+just stamp-skill # stamp the agent skill with the planned release (writes files)
 ```
 
 The justfile is a convenience interface, not a second implementation of verification. CI runs only on pushes to `main`, not on pull requests: its Linux/macOS/Windows verification matrix invokes `just check`, followed by `just cross`. Release preparation uses `just snapshot`. Race detection and vulnerability scanning remain optional local commands (`just race` and `just vuln`), not hosted jobs. Run local checks before requesting review or merging. Hooks call Go directly so installed hooks do not require just. Changes to recipes must preserve native Windows compatibility and nonzero failure propagation. Keep lifecycle logic and tool versions in Go, and update the documented just version alongside its CI pin.
@@ -27,7 +28,7 @@ Without just, these direct commands remain available from the repository root; t
 
 ```sh
 go run ./internal/cmd/dev fmt       # explicitly format Go files
-go run ./internal/cmd/dev check     # formatting, vet, lint, tests, tidy diff, inventory
+go run ./internal/cmd/dev check     # formatting, vet, lint, tests, tidy diff, inventory, skill stamp
 go test ./...                      # Go tests only
 go run ./internal/cmd/dev lint      # pinned golangci-lint, including test code
 go run ./internal/cmd/dev build     # host executable
@@ -35,6 +36,7 @@ go run ./internal/cmd/dev cross     # six CGO-free release targets
 go run ./internal/cmd/dev race      # race tests, supported native toolchain required
 go run ./internal/cmd/dev vuln      # pinned govulncheck
 go run ./internal/cmd/dev snapshot  # pinned GoReleaser, never publishes
+go run ./internal/cmd/release stamp-skill  # stamp the agent skill (writes files)
 ```
 
 The formatting check must fail on changes; use `fmt` deliberately to fix them. Tests should exercise observable behavior and real edge cases. Use fixture HTTP servers for wire-contract tests, temporary config directories for isolation and synthetic tokens only. Avoid snapshots that pin incidental prose or tests asserting source-code spelling.
@@ -370,4 +372,4 @@ Live scenarios, each observed through a locally built binary:
 - `github list-repositories --repository-page 0` failed with exit 2 before any request.
 - `label delete` on a label attached to 30 tasks refused without `--yes`, then returned exit 5, code `incomplete`, and a stdout body carrying `pendingDeletion: true`. Repeating the command returned exit 0, and a following read no longer found the label.
 
-The offset-paging race in key resolution is now handled: a walk that finds nothing while `pagination.total` changed after page one is repeated once, and a second miss on a changing board fails with exit 1 instead of claiming the task is absent. Deleting one task and creating another between two page requests leaves `total` unchanged and is still undetectable. Fixture-only in this run: GitHub import continuation (no GitHub App configured), the resolver re-walk, and every other changed operation. `just check`, `just race`, `just vuln` and `just cross` passed. `release/readiness.json` still states the 162 mappings approved for v1.0.0; it is a reviewed activation record and was deliberately not rewritten.
+The offset-paging race in key resolution is now handled: a walk that finds nothing while `pagination.total` changed after page one is repeated once, and a second miss on a changing board fails with exit 1 instead of claiming the task is absent. Deleting one task and creating another between two page requests leaves `total` unchanged and is still undetectable. Fixture-only in this run: GitHub import continuation (no GitHub App configured), the resolver re-walk, and every other changed operation. `just check`, `just race`, `just vuln` and `just cross` passed. `release/readiness.json` then still stated the 162 mappings approved for v1.0.0 and was deliberately not rewritten in that change; the reviewed v1.8.0 change updated its `public-api` count to 167 and linked this section as evidence.

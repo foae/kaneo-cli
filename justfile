@@ -7,7 +7,7 @@ set shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive", "-Co
 list:
     @just --list
 
-# Verify formatting, vet, lint, tests, module tidiness, and API inventory.
+# Verify formatting, vet, lint, tests, module tidiness, API inventory, and the skill stamp.
 check:
     go run ./internal/cmd/dev check
 
@@ -42,6 +42,10 @@ vuln:
 # Build snapshot release archives without publishing.
 snapshot:
     go run ./internal/cmd/dev snapshot
+
+# Stamp the agent skill with the planned release version (writes files).
+stamp-skill:
+    go run ./internal/cmd/release stamp-skill
 
 # Opt in to Git hooks; never installed implicitly.
 hooks:
