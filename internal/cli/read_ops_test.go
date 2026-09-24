@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -350,9 +351,11 @@ func TestRoleSelectorRejectsAmbiguousOrEmptyInput(t *testing.T) {
 	}
 }
 
-// keyResolutionServer serves a project list and a board for task key resolution
-// and records the path (with query) of every request it receives.
-func keyResolutionServer(t *testing.T, projects, board string) (*httptest.Server, *[]string) {
+// keyResolutionServer serves a project list and board pages for task key
+// resolution and records the path (with query) of every request it receives.
+// Board page N is served from pages[N-1]; a page past the end serves an empty
+// board, as a server that runs out of tasks would.
+func keyResolutionServer(t *testing.T, projects string, pages ...string) (*httptest.Server, *[]string) {
 	t.Helper()
 	var requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -366,7 +369,16 @@ func keyResolutionServer(t *testing.T, projects, board string) (*httptest.Server
 		case strings.HasSuffix(r.URL.EscapedPath(), "/api/project"):
 			_, _ = w.Write([]byte(projects))
 		case strings.Contains(r.URL.EscapedPath(), "/api/task/tasks/"):
-			_, _ = w.Write([]byte(board))
+			page, err := strconv.Atoi(r.URL.Query().Get("page"))
+			if err != nil || page < 1 {
+				t.Errorf("board request without a valid page: %s", path)
+				page = 1
+			}
+			if page > len(pages) {
+				_, _ = w.Write([]byte(`{"data":{"columns":[]},"pagination":{"total":0,"page":` + strconv.Itoa(page) + `,"pageSize":100,"totalPages":1}}`))
+				return
+			}
+			_, _ = w.Write([]byte(pages[page-1]))
 		default:
 			_, _ = w.Write([]byte(`{"id":"t-1","title":"resolved task"}`))
 		}
@@ -375,6 +387,12 @@ func keyResolutionServer(t *testing.T, projects, board string) (*httptest.Server
 }
 
 const keyResolutionProjects = `[{"id":"p-1","slug":"KAN"},{"id":"p-2","slug":"OTHER"}]`
+
+// boardPage is the query every board request carries: full pages sorted by
+// number so the walk is stable and can stop once it has passed the target.
+func boardPage(page int) string {
+	return "/api/task/tasks/p-1?limit=100&page=" + strconv.Itoa(page) + "&sortBy=number&sortOrder=asc"
+}
 
 func TestTaskGetResolvesDisplayKey(t *testing.T) {
 	for _, test := range []struct {
@@ -401,12 +419,132 @@ func TestTaskGetResolvesDisplayKey(t *testing.T) {
 			if status != 0 {
 				t.Fatalf("status=%d stderr=%q", status, stderr)
 			}
-			want := []string{"/api/project?includeArchived=true&workspaceId=W", "/api/task/tasks/p-1", "/api/task/t-1"}
+			want := []string{"/api/project?includeArchived=true&workspaceId=W", boardPage(1), "/api/task/t-1"}
 			if strings.Join(*requests, " ") != strings.Join(want, " ") {
 				t.Fatalf("requests = %v, want %v", *requests, want)
 			}
 			if !strings.Contains(stdout, "resolved task") {
 				t.Fatalf("stdout = %q", stdout)
+			}
+		})
+	}
+}
+
+// pagedBoard renders board page `page` of `totalPages`, its column holding the
+// given task numbers, with the pagination shape upstream sends.
+func pagedBoard(page, totalPages int, numbers ...int) string {
+	tasks := make([]string, 0, len(numbers))
+	for _, number := range numbers {
+		tasks = append(tasks, `{"id":"t-`+strconv.Itoa(number)+`","number":`+strconv.Itoa(number)+`}`)
+	}
+	return `{"data":{"columns":[{"tasks":[` + strings.Join(tasks, ",") + `]}]},"pagination":{"total":` + strconv.Itoa(totalPages*100) + `,"page":` + strconv.Itoa(page) + `,"pageSize":100,"totalPages":` + strconv.Itoa(totalPages) + `}}`
+}
+
+func TestTaskGetResolvesDisplayKeyAcrossPages(t *testing.T) {
+	for _, test := range []struct {
+		name         string
+		key          string
+		pages        []string
+		wantStatus   int
+		wantContains string
+		wantBoards   int
+	}{
+		// The target sits on a later page: the walk continues past page 1.
+		{"second-page", "KAN-5", []string{pagedBoard(1, 3, 1, 2, 3), pagedBoard(2, 3, 4, 5, 6), pagedBoard(3, 3, 7, 8, 9)}, 0, "resolved task", 2},
+		// The target sits on the last page, reached only by trusting totalPages.
+		{"last-page", "KAN-9", []string{pagedBoard(1, 3, 1, 2, 3), pagedBoard(2, 3, 4, 5, 6), pagedBoard(3, 3, 7, 8, 9)}, 0, "resolved task", 3},
+		// A later bucket on the same page still counts, so a planned task on page 2 resolves.
+		{"planned-on-second-page", "KAN-5", []string{pagedBoard(1, 2, 1, 2, 3), `{"data":{"columns":[],"plannedTasks":[{"id":"t-5","number":5}]},"pagination":{"total":4,"page":2,"pageSize":100,"totalPages":2}}`}, 0, "resolved task", 2},
+		// A page whose tasks all sit outside every bucket (an unbucketed status) is not the end of the board.
+		{"empty-middle-page", "KAN-9", []string{pagedBoard(1, 3, 1, 2), pagedBoard(2, 3), pagedBoard(3, 3, 9)}, 0, "resolved task", 3},
+		// Ascending order has passed the target on page 1: stop without fetching the rest.
+		{"stops-past-target", "KAN-2", []string{pagedBoard(1, 3, 1, 3), pagedBoard(2, 3, 4, 5), pagedBoard(3, 3, 6, 7)}, 2, "KAN-2", 1},
+		// The page count comes from the first page; a later page cannot extend the walk.
+		{"later-page-cannot-extend", "KAN-9", []string{pagedBoard(1, 2, 1, 2), pagedBoard(2, 5, 3, 4), pagedBoard(3, 5, 9)}, 2, "KAN-9", 2},
+		// A duplicate straddling a page boundary is still reported as ambiguous.
+		{"ambiguous-across-pages", "KAN-2", []string{pagedBoard(1, 2, 1, 2), `{"data":{"columns":[{"tasks":[{"id":"t-2b","number":2},{"id":"t-3","number":3}]}]},"pagination":{"total":4,"page":2,"pageSize":100,"totalPages":2}}`}, 2, "matches 2 tasks", 2},
+		// No pagination object at all is a single page.
+		{"unpaginated-server", "KAN-9", []string{`{"data":{"columns":[{"tasks":[{"id":"t-1","number":1}]}]}}`, pagedBoard(2, 2, 9)}, 2, "KAN-9", 1},
+		// A page count that is not a usable number is one page.
+		{"unusable-page-count", "KAN-9", []string{`{"data":{"columns":[{"tasks":[{"id":"t-1","number":1}]}]},"pagination":{"totalPages":-3}}`, pagedBoard(2, 2, 9)}, 2, "KAN-9", 1},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server, requests := keyResolutionServer(t, keyResolutionProjects, test.pages...)
+			defer server.Close()
+
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			env.env["KANEO_TOKEN"] = "synthetic"
+
+			status, stdout, stderr := env.run("task", "get", "--key", test.key, "--workspace-id", "W")
+			if status != test.wantStatus {
+				t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+			}
+			want := []string{"/api/project?includeArchived=true&workspaceId=W"}
+			for page := 1; page <= test.wantBoards; page++ {
+				want = append(want, boardPage(page))
+			}
+			if test.wantStatus == 0 {
+				want = append(want, "/api/task/t-"+strings.TrimPrefix(test.key, "KAN-"))
+				if !strings.Contains(stdout, test.wantContains) {
+					t.Fatalf("stdout = %q", stdout)
+				}
+			} else {
+				if stdout != "" || !strings.Contains(stderr, test.wantContains) {
+					t.Fatalf("stdout=%q stderr=%q, want mention of %q", stdout, stderr, test.wantContains)
+				}
+			}
+			if strings.Join(*requests, " ") != strings.Join(want, " ") {
+				t.Fatalf("requests = %v, want %v", *requests, want)
+			}
+		})
+	}
+}
+
+func TestTaskGetKeyResolutionFailsOnLaterPageError(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		body string
+		code int
+	}{
+		{"server-error", `{"error":"boom"}`, http.StatusInternalServerError},
+		{"invalid-json", "not json", http.StatusOK},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var requests []string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests = append(requests, r.URL.EscapedPath()+"?"+r.URL.RawQuery)
+				w.Header().Set("Content-Type", "application/json")
+				switch {
+				case strings.HasSuffix(r.URL.EscapedPath(), "/api/project"):
+					_, _ = w.Write([]byte(keyResolutionProjects))
+				case strings.Contains(r.URL.EscapedPath(), "/api/task/tasks/"):
+					if r.URL.Query().Get("page") == "1" {
+						_, _ = w.Write([]byte(pagedBoard(1, 3, 1, 2, 3)))
+						return
+					}
+					w.WriteHeader(test.code)
+					_, _ = w.Write([]byte(test.body))
+				default:
+					_, _ = w.Write([]byte(`{"id":"t-1","title":"resolved task"}`))
+				}
+			}))
+			defer server.Close()
+
+			env := newTestEnv(t)
+			env.setAPIURL(server.URL + "/api")
+			env.env["KANEO_TOKEN"] = "synthetic"
+
+			// A failure partway through the walk is an error, never "no task".
+			status, stdout, stderr := env.run("task", "get", "--key", "KAN-9", "--workspace-id", "W")
+			if status == 0 || status == 2 || stdout != "" {
+				t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+			}
+			if strings.Contains(stderr, "no task") {
+				t.Fatalf("stderr = %q, reported not-found for a failed page", stderr)
+			}
+			if len(requests) != 3 {
+				t.Fatalf("requests = %v, want the project list and two pages", requests)
 			}
 		})
 	}
@@ -724,7 +862,7 @@ func TestTaskGetResolvesArchivedProject(t *testing.T) {
 	if status != 0 {
 		t.Fatalf("status=%d stderr=%q", status, stderr)
 	}
-	want := []string{"/api/project?includeArchived=true&workspaceId=W", "/api/task/tasks/p-1", "/api/task/t-1"}
+	want := []string{"/api/project?includeArchived=true&workspaceId=W", boardPage(1), "/api/task/t-1"}
 	if strings.Join(requests, " ") != strings.Join(want, " ") {
 		t.Fatalf("requests = %v, want %v", requests, want)
 	}
