@@ -31,6 +31,7 @@ type plan struct {
 	Release      bool   `json:"release"`
 	Reason       string `json:"reason"`
 	EvidenceSize int    `json:"requiredEvidenceCount"`
+	SkillVersion string `json:"skillVersion"`
 }
 
 var (
@@ -39,17 +40,25 @@ var (
 	breakingTitlePattern = regexp.MustCompile(`(?im).*(\w+)(\(.*\))?!:.*`)
 	featureTitlePattern  = regexp.MustCompile(`(?im).*feat(\(.*\))?:.*`)
 	fixTitlePattern      = regexp.MustCompile(`(?im).*fix(\(.*\))?:.*`)
+	skillVersionPattern  = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+$`)
 )
 
+const usage = "usage: go run ./internal/cmd/release plan [--json] [--manifest path] [--skill path]\n       go run ./internal/cmd/release stamp-skill [--manifest path] [--skill path]"
+
 func main() {
-	if len(os.Args) < 2 || os.Args[1] != "plan" {
-		fmt.Fprintln(os.Stderr, "usage: go run ./internal/cmd/release plan [--json] [--manifest path]")
+	if len(os.Args) < 2 || (os.Args[1] != "plan" && os.Args[1] != "stamp-skill") {
+		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(64)
 	}
+	command := os.Args[1]
 
-	flags := flag.NewFlagSet("plan", flag.ExitOnError)
-	jsonOutput := flags.Bool("json", false, "write the plan as JSON")
+	flags := flag.NewFlagSet(command, flag.ExitOnError)
+	jsonOutput := false
+	if command == "plan" {
+		flags.BoolVar(&jsonOutput, "json", false, "write the plan as JSON")
+	}
 	manifestPath := flags.String("manifest", "release/readiness.json", "release readiness manifest")
+	skillPath := flags.String("skill", "skills/kaneo-cli/SKILL.md", "agent skill carrying the metadata.version stamp")
 	_ = flags.Parse(os.Args[2:])
 
 	ready, err := loadReadiness(*manifestPath)
@@ -60,11 +69,40 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
-	entry, err := makePlan(ready, current)
+	log, err := commitLog(current)
 	if err != nil {
 		fail(err)
 	}
-	if *jsonOutput {
+	entry, err := makePlan(ready, current, log)
+	if err != nil {
+		fail(err)
+	}
+	skill, err := os.ReadFile(*skillPath)
+	if err != nil {
+		fail(fmt.Errorf("read agent skill: %w", err))
+	}
+
+	if command == "stamp-skill" {
+		expected := expectedSkillVersion(entry)
+		if expected == "" {
+			fail(errors.New("stamp-skill: no current tag and no releasable change, so there is no expected skill version"))
+		}
+		stamped, old, err := stampSkill(skill, expected)
+		if err != nil {
+			fail(err)
+		}
+		if err := os.WriteFile(*skillPath, stamped, 0o644); err != nil { //nolint:gosec // SKILL.md is a public, version-controlled document.
+			fail(fmt.Errorf("write agent skill: %w", err))
+		}
+		fmt.Fprintf(os.Stderr, "%s metadata.version: %s -> %s\n", *skillPath, display(old), expected)
+		return
+	}
+
+	entry.SkillVersion, err = checkSkill(entry, skill)
+	if err != nil {
+		fail(fmt.Errorf("%s: %w", *skillPath, err))
+	}
+	if jsonOutput {
 		data, err := json.Marshal(entry)
 		if err != nil {
 			fail(err)
@@ -72,7 +110,7 @@ func main() {
 		fmt.Println(string(data))
 		return
 	}
-	fmt.Printf("enabled: %t\ncurrent tag: %s\nnext tag: %s\nrelease: %t\nreason: %s\nrequired evidence: %d\n", entry.Enabled, display(entry.CurrentTag), display(entry.NextTag), entry.Release, entry.Reason, entry.EvidenceSize)
+	fmt.Printf("enabled: %t\ncurrent tag: %s\nnext tag: %s\nrelease: %t\nreason: %s\nrequired evidence: %d\nskill version: %s\n", entry.Enabled, display(entry.CurrentTag), display(entry.NextTag), entry.Release, entry.Reason, entry.EvidenceSize, display(entry.SkillVersion))
 }
 
 func loadReadiness(path string) (readiness, error) {
@@ -113,15 +151,15 @@ func currentTag() (string, error) {
 	return tags[len(tags)-1].String(), nil
 }
 
-func makePlan(ready readiness, current string) (plan, error) {
+func commitLog(current string) (string, error) {
 	logRange := "HEAD"
 	if current != "" {
 		logRange = current + "..HEAD"
 	}
-	log, err := git("log", "--format=%B%x00", logRange)
-	if err != nil {
-		return plan{}, err
-	}
+	return git("log", "--format=%B%x00", logRange)
+}
+
+func makePlan(ready readiness, current, log string) (plan, error) {
 	kind := releaseKind(log)
 	entry := plan{Enabled: ready.Enabled, CurrentTag: current, EvidenceSize: len(ready.RequiredEvidence)}
 	if kind == "" {
@@ -140,6 +178,109 @@ func makePlan(ready readiness, current string) (plan, error) {
 	}
 	entry.Reason = kind + " release under the stable policy"
 	return entry, nil
+}
+
+// expectedSkillVersion returns the version the skill stamp must carry: the
+// planned tag when releasing, otherwise the current tag, without the "v".
+// It is empty when there is neither.
+func expectedSkillVersion(entry plan) string {
+	if entry.Release {
+		return strings.TrimPrefix(entry.NextTag, "v")
+	}
+	return strings.TrimPrefix(entry.CurrentTag, "v")
+}
+
+// checkSkill validates the skill stamp against the plan and returns the
+// stamp it found. Without an expected version the check is skipped.
+func checkSkill(entry plan, skill []byte) (string, error) {
+	expected := expectedSkillVersion(entry)
+	found, err := parseSkillVersion(skill)
+	if expected == "" {
+		return found, nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("%w; expected metadata.version %q; run `just stamp-skill`", err, expected)
+	}
+	if found != expected {
+		return "", fmt.Errorf("skill metadata.version is %q, expected %q; run `just stamp-skill`", found, expected)
+	}
+	return found, nil
+}
+
+// skillVersionLine locates the version entry under the top-level metadata
+// map of the leading YAML frontmatter. It returns the line index, the byte
+// offsets of the raw value within that line, and the split lines.
+func skillVersionLine(skill []byte) (lines []string, index, start, end int, err error) {
+	lines = strings.SplitAfter(string(skill), "\n")
+	if len(lines) == 0 || strings.TrimRight(lines[0], "\r\n") != "---" {
+		return nil, 0, 0, 0, errors.New("skill has no leading YAML frontmatter")
+	}
+	inMetadata := false
+	for i := 1; i < len(lines); i++ {
+		content := strings.TrimRight(lines[i], "\r\n")
+		if content == "---" {
+			return nil, 0, 0, 0, errors.New("skill frontmatter has no metadata.version")
+		}
+		if strings.TrimSpace(content) == "" {
+			continue
+		}
+		indented := content[0] == ' ' || content[0] == '\t'
+		if !indented {
+			inMetadata = strings.TrimRight(content, " \t") == "metadata:"
+			continue
+		}
+		if !inMetadata {
+			continue
+		}
+		trimmed := strings.TrimLeft(content, " \t")
+		if !strings.HasPrefix(trimmed, "version:") {
+			continue
+		}
+		start = len(content) - len(trimmed) + len("version:")
+		for start < len(content) && (content[start] == ' ' || content[start] == '\t') {
+			start++
+		}
+		end = max(len(strings.TrimRight(content, " \t")), start)
+		return lines, i, start, end, nil
+	}
+	return nil, 0, 0, 0, errors.New("skill frontmatter is not terminated")
+}
+
+func parseSkillVersion(skill []byte) (string, error) {
+	lines, index, start, end, err := skillVersionLine(skill)
+	if err != nil {
+		return "", err
+	}
+	raw := lines[index][start:end]
+	value := unquote(raw)
+	if !skillVersionPattern.MatchString(value) {
+		return "", fmt.Errorf("skill metadata.version %q is not a plain X.Y.Z version", raw)
+	}
+	return value, nil
+}
+
+// stampSkill rewrites only the metadata.version value, preserving its
+// quoting and every other byte. It returns the previous raw value.
+func stampSkill(skill []byte, version string) ([]byte, string, error) {
+	lines, index, start, end, err := skillVersionLine(skill)
+	if err != nil {
+		return nil, "", err
+	}
+	line := lines[index]
+	raw := line[start:end]
+	value := version
+	if len(raw) >= 2 && (raw[0] == '"' || raw[0] == '\'') && raw[len(raw)-1] == raw[0] {
+		value = string(raw[0]) + version + string(raw[0])
+	}
+	lines[index] = line[:start] + value + line[end:]
+	return []byte(strings.Join(lines, "")), unquote(raw), nil
+}
+
+func unquote(raw string) string {
+	if len(raw) >= 2 && (raw[0] == '"' || raw[0] == '\'') && raw[len(raw)-1] == raw[0] {
+		return raw[1 : len(raw)-1]
+	}
+	return raw
 }
 
 func releaseKind(log string) string {

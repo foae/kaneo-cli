@@ -113,6 +113,7 @@ func check(root string) error {
 		{"test", "./..."},
 		{"mod", "tidy", "-diff"},
 		{"run", "./internal/cmd/specinventory", "--check"},
+		{"run", "./internal/cmd/release", "plan"},
 	} {
 		if err := run(root, nil, "go", command...); err != nil {
 			return err
