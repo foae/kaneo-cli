@@ -121,9 +121,12 @@ const boardPageSize = 100
 // project, so the order is total and undisturbed by status or position
 // changes, and it ends the walk early: once a page holds a number above the
 // target, no later page can hold the target. Deleting a lower-numbered task
-// during the walk shifts the offsets and can hide the target for that one
-// run; a rerun resolves it. Servers that ignore paging return one page with
-// no or a single-page pagination object, and the walk degrades to one request.
+// during the walk shifts the offsets and can hide the target, so a walk that
+// finds nothing while pagination.total changed after page one is repeated
+// once from page one; if that walk also misses the target on a changing board
+// the lookup fails as a process error rather than claiming the task is absent.
+// Servers that ignore paging return one page with no or a single-page
+// pagination object, and the walk degrades to one request.
 func resolveTaskNumber(ctx context.Context, apiClient *client.Client, projectID, key string, number int) (string, error) {
 	apiPath, err := expandPath("/task/tasks/{projectId}", map[string]string{"projectId": projectID})
 	if err != nil {
@@ -146,66 +149,97 @@ func resolveTaskNumber(ctx context.Context, apiClient *client.Client, projectID,
 		// Absent on servers that predate board pagination.
 		Pagination *struct {
 			TotalPages float64 `json:"totalPages"`
+			// Absent on servers that do not report it; then no change is
+			// detectable.
+			Total *float64 `json:"total"`
 		} `json:"pagination"`
 	}
 
-	// A task can appear in more than one bucket, so count distinct IDs.
-	seen := make(map[string]bool)
+	// walk scans the board once and reports the matches and whether a page
+	// after the first reported a different total than page one.
+	walk := func() ([]string, bool, error) {
+		// A task can appear in more than one bucket, so count distinct IDs.
+		seen := make(map[string]bool)
+		var matches []string
+		changed := false
+		var firstTotal *float64
+		// The page count is fixed by the first response so a later page cannot
+		// extend the walk; it is the only bound when the target is never passed.
+		totalPages := 1
+		for page := 1; ; page++ {
+			payload, err := readBoundedJSON(ctx, apiClient, client.Request{
+				Method: "GET",
+				Path:   apiPath,
+				Query: url.Values{
+					"page":      []string{strconv.Itoa(page)},
+					"limit":     []string{strconv.Itoa(boardPageSize)},
+					"sortBy":    []string{"number"},
+					"sortOrder": []string{"asc"},
+				},
+				OperationID: "listTasks",
+			}, "task list")
+			if err != nil {
+				return nil, false, err
+			}
+			var board boardPage
+			if err := json.Unmarshal(payload, &board); err != nil {
+				return nil, false, &processError{err: client.ErrInvalidJSONResponse}
+			}
+
+			buckets := [][]boardTask{board.Data.ArchivedTasks, board.Data.PlannedTasks}
+			for _, column := range board.Data.Columns {
+				buckets = append(buckets, column.Tasks)
+			}
+			highest := 0.0
+			for _, bucket := range buckets {
+				for _, task := range bucket {
+					if task.Number != nil && *task.Number > highest {
+						highest = *task.Number
+					}
+					if task.ID == "" || task.Number == nil || *task.Number != float64(number) {
+						continue
+					}
+					if seen[task.ID] {
+						continue
+					}
+					seen[task.ID] = true
+					matches = append(matches, task.ID)
+				}
+			}
+
+			if page == 1 && board.Pagination != nil {
+				totalPages = pageCount(board.Pagination.TotalPages)
+				firstTotal = board.Pagination.Total
+			}
+			if page > 1 && firstTotal != nil && board.Pagination != nil && board.Pagination.Total != nil &&
+				*board.Pagination.Total != *firstTotal {
+				changed = true
+			}
+			// Stop at the server's last page or once the ascending order has
+			// passed the target. A page with no bucketed task is not the end: a
+			// task whose status matches no column occupies a slot without
+			// appearing anywhere. A duplicate number is impossible upstream but is
+			// still reported as ambiguous, so the walk never stops on a bare match.
+			if page >= totalPages || highest > float64(number) {
+				break
+			}
+		}
+		return matches, changed, nil
+	}
+
+	const maxWalks = 2
 	var matches []string
-	// The page count is fixed by the first response so a later page cannot
-	// extend the walk; it is the only bound when the target is never passed.
-	totalPages := 1
-	for page := 1; ; page++ {
-		payload, err := readBoundedJSON(ctx, apiClient, client.Request{
-			Method: "GET",
-			Path:   apiPath,
-			Query: url.Values{
-				"page":      []string{strconv.Itoa(page)},
-				"limit":     []string{strconv.Itoa(boardPageSize)},
-				"sortBy":    []string{"number"},
-				"sortOrder": []string{"asc"},
-			},
-			OperationID: "listTasks",
-		}, "task list")
+	for attempt := 1; ; attempt++ {
+		found, changed, err := walk()
 		if err != nil {
 			return "", err
 		}
-		var board boardPage
-		if err := json.Unmarshal(payload, &board); err != nil {
-			return "", &processError{err: client.ErrInvalidJSONResponse}
-		}
-
-		buckets := [][]boardTask{board.Data.ArchivedTasks, board.Data.PlannedTasks}
-		for _, column := range board.Data.Columns {
-			buckets = append(buckets, column.Tasks)
-		}
-		highest := 0.0
-		for _, bucket := range buckets {
-			for _, task := range bucket {
-				if task.Number != nil && *task.Number > highest {
-					highest = *task.Number
-				}
-				if task.ID == "" || task.Number == nil || *task.Number != float64(number) {
-					continue
-				}
-				if seen[task.ID] {
-					continue
-				}
-				seen[task.ID] = true
-				matches = append(matches, task.ID)
-			}
-		}
-
-		if page == 1 && board.Pagination != nil {
-			totalPages = pageCount(board.Pagination.TotalPages)
-		}
-		// Stop at the server's last page or once the ascending order has
-		// passed the target. A page with no bucketed task is not the end: a
-		// task whose status matches no column occupies a slot without
-		// appearing anywhere. A duplicate number is impossible upstream but is
-		// still reported as ambiguous, so the walk never stops on a bare match.
-		if page >= totalPages || highest > float64(number) {
+		matches = found
+		if len(matches) > 0 || !changed {
 			break
+		}
+		if attempt >= maxWalks {
+			return "", &processError{err: fmt.Errorf("the board of %q changed during the lookup; retry", key)}
 		}
 	}
 	switch len(matches) {

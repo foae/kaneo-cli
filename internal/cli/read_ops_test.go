@@ -50,6 +50,105 @@ func inventoryOperations(t *testing.T) []inventoryOperation {
 	return doc.Operations
 }
 
+type inventoryParameter struct {
+	In       string `json:"in"`
+	Name     string `json:"name"`
+	Required bool   `json:"required"`
+	Schema   *struct {
+		Pattern   string   `json:"pattern"`
+		Enum      []string `json:"enum"`
+		MinLength int      `json:"minLength"`
+		MaxLength int      `json:"maxLength"`
+	} `json:"schema"`
+}
+
+// numericSchemaPattern is the spec pattern the numeric flag enforces.
+const numericSchemaPattern = `^\d+$`
+
+// checkParamConstraints compares each CLI parameter's local validation with
+// the documented schema, so a spec refresh cannot tighten or loosen a
+// constraint without the CLI following.
+func checkParamConstraints(t *testing.T, operationID string, op inventoryOperation, params []readParam) {
+	t.Helper()
+	documented := make(map[string]inventoryParameter, len(op.Parameters))
+	for _, param := range op.Parameters {
+		documented[param.In+":"+param.Name] = param
+	}
+	for _, param := range params {
+		location := "path"
+		if param.in == paramQuery {
+			location = "query"
+		}
+		doc, ok := documented[location+":"+param.name]
+		if !ok {
+			continue
+		}
+		var pattern string
+		var enum []string
+		var minLen, maxLen int
+		if doc.Schema != nil {
+			pattern, enum, minLen, maxLen = doc.Schema.Pattern, doc.Schema.Enum, doc.Schema.MinLength, doc.Schema.MaxLength
+		}
+		gotPattern := param.pattern
+		if param.numeric {
+			if gotPattern != "" {
+				t.Errorf("%s %s: numeric param also sets pattern %q", operationID, param.name, gotPattern)
+			}
+			gotPattern = numericSchemaPattern
+		}
+		if gotPattern != pattern {
+			t.Errorf("%s %s: pattern = %q, documented %q", operationID, param.name, gotPattern, pattern)
+		}
+		if strings.Join(param.enum, ",") != strings.Join(enum, ",") {
+			t.Errorf("%s %s: enum = %v, documented %v", operationID, param.name, param.enum, enum)
+		}
+		if param.minLen != minLen || param.maxLen != maxLen {
+			t.Errorf("%s %s: length = [%d,%d], documented [%d,%d]", operationID, param.name, param.minLen, param.maxLen, minLen, maxLen)
+		}
+	}
+}
+
+func TestNavigationParamsMatchInventory(t *testing.T) {
+	ops := inventoryOperations(t)
+	for operationID, params := range map[string][]navigationParam{
+		"getDeviceAuthorizationPage": deviceAuthorizationPageParams,
+		"authorizeMcpOAuthClient":    mcpAuthorizationParams,
+	} {
+		var op *inventoryOperation
+		for i := range ops {
+			if ops[i].OperationID == operationID {
+				op = &ops[i]
+			}
+		}
+		if op == nil {
+			t.Errorf("%s: operation not in inventory", operationID)
+			continue
+		}
+		plain := make([]readParam, 0, len(params))
+		for _, param := range params {
+			plain = append(plain, param.readParam)
+		}
+		if len(op.Parameters) != len(plain) {
+			t.Errorf("%s: %d params, %d documented", operationID, len(plain), len(op.Parameters))
+		}
+		for _, param := range op.Parameters {
+			found := false
+			for _, local := range plain {
+				if local.name == param.Name {
+					found = true
+					if local.required != param.Required {
+						t.Errorf("%s %s: required differs", operationID, param.Name)
+					}
+				}
+			}
+			if !found {
+				t.Errorf("%s: documented param %s missing", operationID, param.Name)
+			}
+		}
+		checkParamConstraints(t, operationID, *op, plain)
+	}
+}
+
 type inventoryOperation struct {
 	Method      string `json:"method"`
 	Path        string `json:"path"`
@@ -58,13 +157,9 @@ type inventoryOperation struct {
 		Group  string `json:"group"`
 		Action string `json:"action"`
 	} `json:"command"`
-	Parameters []struct {
-		In       string `json:"in"`
-		Name     string `json:"name"`
-		Required bool   `json:"required"`
-	} `json:"parameters"`
-	RequestBody *json.RawMessage `json:"request_body"`
-	Security    []map[string]any `json:"security"`
+	Parameters  []inventoryParameter `json:"parameters"`
+	RequestBody *json.RawMessage     `json:"request_body"`
+	Security    []map[string]any     `json:"security"`
 	Responses   map[string]struct {
 		Content map[string]json.RawMessage `json:"content"`
 	} `json:"responses"`
@@ -126,6 +221,7 @@ func TestReadSpecsMatchInventory(t *testing.T) {
 				t.Errorf("%s: required flag differs for %s:%s", spec.operationID, location, param.name)
 			}
 		}
+		checkParamConstraints(t, spec.operationID, op, spec.params)
 	}
 
 	// Every GET operation must be accounted for so coverage stays honest.
@@ -460,7 +556,8 @@ func TestTaskGetResolvesDisplayKeyAcrossPages(t *testing.T) {
 		// Ascending order has passed the target on page 1: stop without fetching the rest.
 		{"stops-past-target", "KAN-2", []string{pagedBoard(1, 3, 1, 3), pagedBoard(2, 3, 4, 5), pagedBoard(3, 3, 6, 7)}, 2, "KAN-2", 1},
 		// The page count comes from the first page; a later page cannot extend the walk.
-		{"later-page-cannot-extend", "KAN-9", []string{pagedBoard(1, 2, 1, 2), pagedBoard(2, 5, 3, 4), pagedBoard(3, 5, 9)}, 2, "KAN-9", 2},
+		// Page 2 keeps page 1's total so only the page count differs.
+		{"later-page-cannot-extend", "KAN-9", []string{pagedBoard(1, 2, 1, 2), `{"data":{"columns":[{"tasks":[{"id":"t-3","number":3},{"id":"t-4","number":4}]}]},"pagination":{"total":200,"page":2,"pageSize":100,"totalPages":5}}`, pagedBoard(3, 5, 9)}, 2, "KAN-9", 2},
 		// A duplicate straddling a page boundary is still reported as ambiguous.
 		{"ambiguous-across-pages", "KAN-2", []string{pagedBoard(1, 2, 1, 2), `{"data":{"columns":[{"tasks":[{"id":"t-2b","number":2},{"id":"t-3","number":3}]}]},"pagination":{"total":4,"page":2,"pageSize":100,"totalPages":2}}`}, 2, "matches 2 tasks", 2},
 		// No pagination object at all is a single page.

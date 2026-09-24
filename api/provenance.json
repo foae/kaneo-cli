@@ -3,16 +3,16 @@
   "openapi": {
     "local_path": "api/openapi.json",
     "official_url": "https://kaneo.app/docs/openapi.json",
-    "retrieved_at": "2026-09-20T20:01:45Z",
-    "sha256": "a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e",
-    "operation_count_observed": 162,
+    "retrieved_at": "2026-09-24T17:05:00Z",
+    "sha256": "e25fae2994bdafc30fecfeef5d4d3049dac4820eaffc7d63f3b837eba7939b3e",
+    "operation_count_observed": 167,
     "upstream_repository": "https://github.com/usekaneo/kaneo",
     "upstream_path": "apps/docs/openapi.json",
-    "upstream_source_commit": "ca70c72c4ed5585d0e4ffc3baf692def6f44d185",
-    "upstream_source_commit_url": "https://github.com/usekaneo/kaneo/commit/ca70c72c4ed5585d0e4ffc3baf692def6f44d185",
-    "upstream_main_commit_verified": "0982593b8206622c6f7e9bf774d39207bcf002b9",
-    "upstream_raw_url": "https://raw.githubusercontent.com/usekaneo/kaneo/ca70c72c4ed5585d0e4ffc3baf692def6f44d185/apps/docs/openapi.json",
-    "source_relationship": "Verified from usekaneo/kaneo apps/docs/docs.json at main commit 0982593b8206622c6f7e9bf774d39207bcf002b9: its API Reference tab sets openapi to openapi.json. The official kaneo.app/docs/openapi.json fetch and the pinned upstream source both had the recorded SHA-256."
+    "upstream_source_commit": "d4dc32bebd3b8f16e314d6bc875c3e6502abb883",
+    "upstream_source_commit_url": "https://github.com/usekaneo/kaneo/commit/d4dc32bebd3b8f16e314d6bc875c3e6502abb883",
+    "upstream_main_commit_verified": "121183e93eb82d3372ccf1419a5fd59d4aacadba",
+    "upstream_raw_url": "https://raw.githubusercontent.com/usekaneo/kaneo/d4dc32bebd3b8f16e314d6bc875c3e6502abb883/apps/docs/openapi.json",
+    "source_relationship": "Verified from usekaneo/kaneo apps/docs/docs.json at main commit 121183e93eb82d3372ccf1419a5fd59d4aacadba: its API Reference tab sets openapi to openapi.json. The official kaneo.app/docs/openapi.json fetch, apps/docs/openapi.json at release tag v2.27.0 (commit d4dc32bebd3b8f16e314d6bc875c3e6502abb883) and the same file at that main commit all had the recorded SHA-256."
   },
   "license": {
     "spdx": "MIT",
@@ -43,22 +43,22 @@
       "operation_id": "getOrganizationRole",
       "source_url": "https://raw.githubusercontent.com/better-auth/better-auth/v1.6.26/packages/better-auth/src/plugins/organization/routes/crud-access-control.ts",
       "source_revision": "v1.6.26",
-      "relationship": "Kaneo at ca70c72c4ed5585d0e4ffc3baf692def6f44d185 declares better-auth ^1.6.26. This source tag is evidence for the contract, not a claim about the container's exact installed patch.",
+      "relationship": "Kaneo at ca70c72c4ed5585d0e4ffc3baf692def6f44d185 and at d4dc32bebd3b8f16e314d6bc875c3e6502abb883 (v2.27.0) declares better-auth ^1.6.26. This source tag is evidence for the contract, not a claim about the container's exact installed patch.",
       "scope": "CLI query supplement only. The pinned OpenAPI and generated source inventory remain unchanged.",
       "observed_at": "2026-09-21",
       "evidence": "Disposable pinned Kaneo v2.25.0: roleId and roleName each returned HTTP 200 and the newly created organization role when organizationId was supplied. See docs/verification.md.",
       "constraints": "Exactly one non-empty roleId or roleName; optional non-empty organizationId, otherwise the server uses the active organization.",
       "parameters": [
-        {"in": "query", "name": "roleId", "required": false},
-        {"in": "query", "name": "roleName", "required": false},
-        {"in": "query", "name": "organizationId", "required": false}
+        {"in": "query", "name": "roleId", "required": false, "schema": {"type": "string", "minLength": 1}},
+        {"in": "query", "name": "roleName", "required": false, "schema": {"type": "string", "minLength": 1}},
+        {"in": "query", "name": "organizationId", "required": false, "schema": {"type": "string", "minLength": 1}}
       ]
     },
     "task_reserved_statuses": {
       "operation_ids": ["updateTaskStatus", "createTask", "moveTask", "importTasks", "listTasks"],
       "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/ca70c72c4ed5585d0e4ffc3baf692def6f44d185/apps/api/src/task/validate-task-fields.ts",
       "source_revision": "ca70c72c4ed5585d0e4ffc3baf692def6f44d185",
-      "relationship": "The pinned OpenAPI describes a task status only as an unconstrained string and describes PUT /task/status/{id} as a move to another column. Upstream declares two additional reserved values at the same revision the snapshot was taken from. This supplement is help text only; it is evidence for the contract, not a modification of the pinned snapshot.",
+      "relationship": "The pinned OpenAPI describes a task status only as an unconstrained string and describes PUT /task/status/{id} as a move to another column. Upstream declares two additional reserved values at the revision the previous snapshot was taken from; the declaring file is byte-identical at d4dc32bebd3b8f16e314d6bc875c3e6502abb883 (v2.27.0), the current snapshot revision. This supplement is help text only; it is evidence for the contract, not a modification of the pinned snapshot.",
       "scope": "CLI help supplement only. The pinned OpenAPI, the generated operation inventory and the generated request-body reference remain unchanged.",
       "observed_at": "2026-09-22",
       "evidence": "Disposable pinned Kaneo (image digest recorded in docs/verification.md): writing status \"planned\" or \"archived\" through updateTaskStatus returned HTTP 200 with columnId null and moved the task into the board's plannedTasks or archivedTasks container; writing a column slug back restored it with a non-null columnId. createTask accepted \"planned\" directly. moveTask rejected destinationStatus \"planned\" with HTTP 400 \"Selected status is not valid for the destination project\". An unknown status on updateTaskStatus returned HTTP 400 and left the task unchanged. importTasks accepted an unknown status, stored it as \"planned\" and reported success with a per-task warning. listTasks --status planned returned only the planned container. See docs/verification.md.",
