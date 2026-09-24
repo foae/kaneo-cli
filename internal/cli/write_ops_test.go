@@ -70,6 +70,7 @@ func TestWriteSpecsMatchInventory(t *testing.T) {
 				t.Errorf("%s: required flag differs for %s:%s", spec.operationID, location, param.name)
 			}
 		}
+		checkParamConstraints(t, spec.operationID, op, spec.params)
 		if spec.method == "DELETE" && !spec.destructive {
 			t.Errorf("%s: DELETE method must be destructive", spec.operationID)
 		}

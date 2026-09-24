@@ -1,6 +1,6 @@
 # Implementation work packets
 
-These packets define the dependency order and acceptance criteria, not a claim that all criteria have passed. Packets 1–4 and follow-up work have evidence recorded in [verification](verification.md): all 162 pinned mappings are implemented, including the two browser-navigation URL handoffs. The v1.0.0 release decision explicitly defers external-provider live acceptance; see [releases](releases.md) for the approved boundary. Complete prerequisites before dependent work; within a packet, disjoint command groups may be parallelized after shared contracts are settled.
+These packets define the dependency order and acceptance criteria, not a claim that all criteria have passed. Packets 1–4 and follow-up work have evidence recorded in [verification](verification.md): all 167 pinned mappings are implemented, including the two browser-navigation URL handoffs. The v1.0.0 release decision explicitly defers external-provider live acceptance; see [releases](releases.md) for the approved boundary. Complete prerequisites before dependent work; within a packet, disjoint command groups may be parallelized after shared contracts are settled.
 
 ## 1. Runtime, configuration and auth
 

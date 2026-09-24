@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -149,10 +150,20 @@ func (a *app) runWrite(cmd *cobra.Command, spec writeSpec) error {
 }
 
 // Preserve the complete server result on stdout even when a batch only partly
-// succeeds. Scripts can inspect individual outcomes while relying on exit 5.
+// succeeds or reports unfinished work. Scripts can inspect individual outcomes
+// while relying on exit 5. Unfinished work is never continued automatically:
+// exactly one request is made and the caller decides whether to repeat it.
 func writeMutationResult(out io.Writer, resp *client.Response, operation string) error {
 	switch operation {
 	case "bulkUpdateTasks", "importTasks", "importGitHubIssues", "importGiteaIssues":
+	case "deleteLabel":
+		if resp.StatusCode != http.StatusAccepted {
+			return writeJSONStream(out, resp)
+		}
+		if err := writeJSONStream(out, resp); err != nil {
+			return err
+		}
+		return incompleteError(resp.StatusCode, operation)
 	default:
 		return writeJSONStream(out, resp)
 	}
@@ -183,6 +194,11 @@ func writeMutationResult(out io.Writer, resp *client.Response, operation string)
 	if err := writeJSONBytes(out, payload); err != nil {
 		return err
 	}
+	// Unfinished work takes precedence: the saved run must be continued
+	// before its per-item outcome is final.
+	if operation == "importGitHubIssues" && (resp.StatusCode == http.StatusAccepted || importPending(payload)) {
+		return incompleteError(resp.StatusCode, operation)
+	}
 	if (result.Success != nil && !*result.Success) || result.Results.Failed > 0 || len(result.Errors) > 0 {
 		return &client.Error{
 			StatusCode: resp.StatusCode, Code: "partial_failure",
@@ -191,6 +207,33 @@ func writeMutationResult(out io.Writer, resp *client.Response, operation string)
 		}
 	}
 	return nil
+}
+
+// importPending reports whether an issue import result carries a JSON true
+// "pending" field. Any other value, or its absence, is not pending.
+func importPending(payload []byte) bool {
+	var result struct {
+		Pending json.RawMessage `json:"pending"`
+	}
+	if err := json.Unmarshal(payload, &result); err != nil {
+		return false
+	}
+	return string(result.Pending) == "true"
+}
+
+// incompleteMessages tells the caller how to continue work the server saved
+// but did not finish.
+var incompleteMessages = map[string]string{
+	"deleteLabel":        "label deletion is still in progress; repeat the same command to continue",
+	"importGitHubIssues": "issue import is still in progress; repeat with the returned runId in the request body to continue",
+}
+
+func incompleteError(status int, operation string) error {
+	return &client.Error{
+		StatusCode: status, Code: "incomplete",
+		Message:     incompleteMessages[operation],
+		OperationID: operation,
+	}
 }
 
 // readBody reads and validates the JSON request body before any network access.

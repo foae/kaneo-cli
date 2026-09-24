@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "operation_count": 162,
+  "operation_count": 167,
   "source": {
     "openapi_path": "api/openapi.json",
-    "sha256": "a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e"
+    "sha256": "e25fae2994bdafc30fecfeef5d4d3049dac4820eaffc7d63f3b837eba7939b3e"
   },
   "operations": [
     {
@@ -109,6 +109,7 @@
             "schema": {
               "properties": {
                 "comment": {
+                  "maxLength": 10000,
                   "type": "string"
                 },
                 "taskId": {
@@ -189,6 +190,7 @@
                   "type": "string"
                 },
                 "comment": {
+                  "maxLength": 10000,
                   "type": "string"
                 }
               },
@@ -324,13 +326,26 @@
         },
         "400": {
           "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "type": "object"
+              }
+            },
             "text/plain": {
               "schema": {
                 "type": "string"
               }
             }
           },
-          "description": "Invalid body, or unknown task"
+          "description": "Invalid body, unknown task, or comment activity submitted through the generic endpoint"
         },
         "401": {
           "description": "Missing or invalid credentials"
@@ -3492,7 +3507,7 @@
                   "type": "string"
                 },
                 "externalSource": {
-                  "description": "The tool the comment was imported from.",
+                  "description": "The tool the comment was imported from. Supplying external attribution requires workspace:manage_settings.",
                   "enum": [
                     "planka",
                     "trello",
@@ -3501,7 +3516,7 @@
                   "type": "string"
                 },
                 "externalUserName": {
-                  "description": "Attribution for an imported comment. Ignored unless externalSource is also given.",
+                  "description": "Attribution for an imported comment. Requires workspace:manage_settings and externalSource; otherwise ignored.",
                   "maxLength": 120,
                   "type": "string"
                 }
@@ -3552,7 +3567,7 @@
               }
             }
           },
-          "description": "No workspace access, or missing task:update permission"
+          "description": "No workspace access, missing task:update permission, or external attribution without workspace:manage_settings"
         }
       }
     },
@@ -3749,7 +3764,7 @@
               }
             }
           },
-          "description": "No access to the project's workspace"
+          "description": "No workspace access or missing read permission"
         }
       }
     },
@@ -3817,7 +3832,7 @@
               }
             }
           },
-          "description": "No access to the project's workspace"
+          "description": "No workspace access or missing read permission"
         }
       }
     },
@@ -3885,7 +3900,7 @@
               }
             }
           },
-          "description": "No access to the project's workspace"
+          "description": "No workspace access or missing read permission"
         }
       }
     },
@@ -4051,7 +4066,7 @@
               }
             }
           },
-          "description": "No access to the task's workspace"
+          "description": "No workspace access or missing task:read permission"
         }
       }
     },
@@ -5714,7 +5729,7 @@
         "GitHub"
       ],
       "summary": "Import GitHub issues",
-      "description": "Import the linked repository's issues as tasks. Issues that already have a task are skipped.",
+      "description": "Import open issues and link open pull requests in bounded steps. Existing tasks are updated. Continue 202 responses with the returned runId until 200; the same runId safely retries completion. Progress is saved after each page. New calls without runId resume an unfinished import or start a new one after completion.",
       "command": {
         "group": "github",
         "action": "import-issues",
@@ -5726,6 +5741,13 @@
             "schema": {
               "properties": {
                 "projectId": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "runId": {
+                  "maxLength": 128,
+                  "minLength": 1,
                   "type": "string"
                 }
               },
@@ -5752,7 +5774,17 @@
               }
             }
           },
-          "description": "Import summary"
+          "description": "Completed import summary"
+        },
+        "202": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueImportResult"
+              }
+            }
+          },
+          "description": "Saved import progress; continue with runId"
         },
         "400": {
           "content": {
@@ -5786,6 +5818,36 @@
             }
           },
           "description": "Project not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration or import changed; refresh before resuming"
+        },
+        "429": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Import busy; retry after one second"
+        },
+        "502": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Provider unavailable or invalid page; progress is saved"
         }
       }
     },
@@ -6019,6 +6081,16 @@
             }
           },
           "description": "Integration not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration changed or another repository is already linked"
         }
       }
     },
@@ -6030,7 +6102,7 @@
         "GitHub"
       ],
       "summary": "Create GitHub integration",
-      "description": "Link a project to a GitHub repository.",
+      "description": "Link a project to a GitHub repository. Disconnect first to switch repositories; existing issue and pull request links cannot be reused for another repository.",
       "command": {
         "group": "github",
         "action": "create-integration",
@@ -6052,10 +6124,12 @@
             "schema": {
               "properties": {
                 "repositoryName": {
+                  "maxLength": 100,
                   "minLength": 1,
                   "type": "string"
                 },
                 "repositoryOwner": {
+                  "maxLength": 100,
                   "minLength": 1,
                   "type": "string"
                 }
@@ -6108,6 +6182,16 @@
             }
           },
           "description": "No workspace access, or missing workspace:manage_settings"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration changed or another repository is already linked"
         }
       }
     },
@@ -6131,6 +6215,26 @@
           "name": "projectId",
           "required": true,
           "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "installationPage",
+          "required": false,
+          "schema": {
+            "default": "1",
+            "pattern": "^[1-9][0-9]{0,5}$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "repositoryPage",
+          "required": false,
+          "schema": {
+            "default": "1",
+            "pattern": "^[1-9][0-9]{0,5}$",
             "type": "string"
           }
         }
@@ -6200,10 +6304,12 @@
                   "type": "string"
                 },
                 "repositoryName": {
+                  "maxLength": 100,
                   "minLength": 1,
                   "type": "string"
                 },
                 "repositoryOwner": {
+                  "maxLength": 100,
                   "minLength": 1,
                   "type": "string"
                 }
@@ -6462,6 +6568,16 @@
             }
           },
           "description": "Task not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The workspace label is being deleted"
         }
       }
     },
@@ -6609,7 +6725,7 @@
         "Labels"
       ],
       "summary": "Delete label",
-      "description": "Delete a label by ID",
+      "description": "Delete a label by ID. Large workspace cascades remove at most 25 task copies per request. Repeat DELETE with the same ID after HTTP 202 until HTTP 200 completes the operation. The persisted start boundary allows safe resumption after a disconnect. HTTP 429 asks the caller to retry later.",
       "command": {
         "group": "label",
         "action": "delete",
@@ -6640,6 +6756,16 @@
             }
           },
           "description": "Label deleted successfully"
+        },
+        "202": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PendingLabelDeletion"
+              }
+            }
+          },
+          "description": "Deletion has more batches; repeat the same request"
         },
         "400": {
           "content": {
@@ -6673,6 +6799,16 @@
             }
           },
           "description": "The label's task no longer exists"
+        },
+        "429": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Deletion capacity is busy; retry after Retry-After"
         }
       }
     },
@@ -6825,6 +6961,16 @@
             }
           },
           "description": "No workspace access, or missing label:update permission"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The workspace label is being deleted"
         }
       }
     },
@@ -6993,6 +7139,16 @@
             }
           },
           "description": "Task not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The workspace label is being deleted"
         }
       }
     },
@@ -7407,6 +7563,8 @@
           "name": "client_id",
           "required": true,
           "schema": {
+            "maxLength": 128,
+            "minLength": 1,
             "type": "string"
           }
         },
@@ -7426,7 +7584,7 @@
           "required": true,
           "schema": {
             "description": "PKCE challenge; only S256 is accepted.",
-            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]{43}$",
             "type": "string"
           }
         },
@@ -7446,6 +7604,7 @@
           "name": "state",
           "required": false,
           "schema": {
+            "maxLength": 1024,
             "type": "string"
           }
         }
@@ -7487,6 +7646,8 @@
           "name": "requestId",
           "required": true,
           "schema": {
+            "maxLength": 128,
+            "minLength": 1,
             "type": "string"
           }
         }
@@ -7545,6 +7706,8 @@
           "name": "requestId",
           "required": true,
           "schema": {
+            "maxLength": 128,
+            "minLength": 1,
             "type": "string"
           }
         }
@@ -7656,6 +7819,7 @@
                     ],
                     "type": "string"
                   },
+                  "maxItems": 2,
                   "type": "array"
                 },
                 "redirect_uris": {
@@ -7663,6 +7827,7 @@
                     "maxLength": 2048,
                     "type": "string"
                   },
+                  "maxItems": 10,
                   "minItems": 1,
                   "type": "array"
                 },
@@ -7673,6 +7838,7 @@
                     ],
                     "type": "string"
                   },
+                  "maxItems": 1,
                   "minItems": 1,
                   "type": "array"
                 },
@@ -8849,7 +9015,7 @@
               }
             }
           },
-          "description": "No workspace access, or missing project:update permission"
+          "description": "No workspace access, missing project:update, or missing project:share when visibility changes"
         }
       }
     },
@@ -8985,6 +9151,379 @@
     },
     {
       "method": "GET",
+      "path": "/public-project/{id}",
+      "operation_id": "getPublicProject",
+      "tags": [
+        "Projects"
+      ],
+      "summary": "Get a public project board",
+      "description": "Read a public board in bounded task pages. Visibility is checked before loading tasks. Continue through pagination.totalPages for all tasks and through relatedPage/pagination.relatedTotalPages for their complete related records.",
+      "command": {
+        "group": "project",
+        "action": "get-public",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "priority",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "assigneeId",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "relatedPage",
+          "required": false,
+          "schema": {
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "limit",
+          "required": false,
+          "schema": {
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "sortBy",
+          "required": false,
+          "schema": {
+            "enum": [
+              "createdAt",
+              "priority",
+              "dueDate",
+              "position",
+              "title",
+              "number"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "sortOrder",
+          "required": false,
+          "schema": {
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "dueBefore",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "dueAfter",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicBoardPage"
+              }
+            }
+          },
+          "description": "A public board page"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid pagination or filters"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project is not public"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project not found"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Task list request timed out"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/public-project/{id}/description",
+      "operation_id": "getPublicProjectDescriptionPage",
+      "tags": [
+        "Projects"
+      ],
+      "summary": "Read a public project description page",
+      "command": {
+        "group": "project",
+        "action": "get-public-description",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "offset",
+          "required": false,
+          "schema": {
+            "default": 0,
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "version",
+          "required": false,
+          "schema": {
+            "pattern": "^[0-9]{1,10}$",
+            "type": "string"
+          }
+        }
+      ],
+      "security": [],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDescriptionPage"
+              }
+            }
+          },
+          "description": "Public project description page"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid description cursor"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Public project not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Description changed or no longer public"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Description request timed out"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/public-project/{id}/task/{taskId}/description",
+      "operation_id": "getPublicTaskDescriptionPage",
+      "tags": [
+        "Projects"
+      ],
+      "summary": "Read a public task description page",
+      "command": {
+        "group": "project",
+        "action": "get-public-task-description",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "taskId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "offset",
+          "required": false,
+          "schema": {
+            "default": 0,
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "version",
+          "required": false,
+          "schema": {
+            "pattern": "^[0-9]{1,10}$",
+            "type": "string"
+          }
+        }
+      ],
+      "security": [],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDescriptionPage"
+              }
+            }
+          },
+          "description": "Public task description page"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid description cursor"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Public task not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Description changed or no longer public"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Description request timed out"
+        }
+      }
+    },
+    {
+      "method": "GET",
       "path": "/search",
       "operation_id": "globalSearch",
       "tags": [
@@ -9003,6 +9542,7 @@
           "name": "q",
           "required": true,
           "schema": {
+            "maxLength": 512,
             "minLength": 1,
             "type": "string"
           }
@@ -9925,6 +10465,100 @@
       }
     },
     {
+      "method": "GET",
+      "path": "/task/description-matches/{projectId}",
+      "operation_id": "findDeferredTaskDescriptions",
+      "tags": [
+        "Tasks"
+      ],
+      "summary": "Search descriptions omitted from task lists",
+      "command": {
+        "group": "task",
+        "action": "find-description-matches",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "query",
+          "required": true,
+          "schema": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "after",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDescriptionMatches"
+              }
+            }
+          },
+          "description": "Matching task IDs"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid search query or cursor"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Description search timed out"
+        }
+      }
+    },
+    {
       "method": "PUT",
       "path": "/task/description/{id}",
       "operation_id": "updateTaskDescription",
@@ -10787,7 +11421,7 @@
         "Tasks"
       ],
       "summary": "List tasks",
-      "description": "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Filter and paginate with the query parameters.",
+      "description": "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Responses always contain at most 100 tasks (50 by default). Continue through pagination.totalPages for the whole board, and for each task page follow relatedPage through pagination.relatedTotalPages for all labels, links and column metadata. Filters and sorting apply before pagination. Descriptions larger than 64 KiB are omitted with descriptionDeferred=true; read the task detail or description pages for full text.",
       "command": {
         "group": "task",
         "action": "list",
@@ -10829,6 +11463,15 @@
         {
           "in": "query",
           "name": "page",
+          "required": false,
+          "schema": {
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "relatedPage",
           "required": false,
           "schema": {
             "pattern": "^\\d+$",
@@ -10927,6 +11570,16 @@
             }
           },
           "description": "No access to the project's workspace"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Task list request timed out"
         }
       }
     },
@@ -11173,13 +11826,16 @@
             "schema": {
               "properties": {
                 "description": {
+                  "description": "Omit to preserve the existing description when updating a list summary.",
                   "type": "string"
                 },
                 "dueDate": {
                   "type": "string"
                 },
                 "position": {
-                  "type": "number"
+                  "maximum": 2147483646,
+                  "minimum": 0,
+                  "type": "integer"
                 },
                 "priority": {
                   "enum": [
@@ -11209,7 +11865,6 @@
               },
               "required": [
                 "title",
-                "description",
                 "priority",
                 "status",
                 "projectId",
@@ -11259,6 +11914,119 @@
             }
           },
           "description": "No workspace access, or missing task:update or task:assign permission"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/task/{id}/description",
+      "operation_id": "getTaskDescriptionPage",
+      "tags": [
+        "Tasks"
+      ],
+      "summary": "Read a description page",
+      "command": {
+        "group": "task",
+        "action": "get-description",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "offset",
+          "required": false,
+          "schema": {
+            "default": 0,
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "version",
+          "required": false,
+          "schema": {
+            "pattern": "^[0-9]{1,10}$",
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDescriptionPage"
+              }
+            }
+          },
+          "description": "Description page"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid offset or version"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Task not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Description changed; reload from offset zero"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Description request timed out"
         }
       }
     },
@@ -12162,10 +12930,12 @@
                 "contentType": {
                   "description": "One of image/png, image/jpeg, or image/webp.",
                   "example": "image/png",
+                  "maxLength": 64,
                   "type": "string"
                 },
                 "data": {
                   "description": "Base64 encoded image bytes.",
+                  "maxLength": 700076,
                   "type": "string"
                 }
               },
@@ -12207,6 +12977,26 @@
         },
         "401": {
           "description": "Missing or invalid credentials"
+        },
+        "408": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Request body timed out"
+        },
+        "413": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Request body exceeds the upload limit"
         }
       }
     },

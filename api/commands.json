@@ -1138,6 +1138,41 @@
       "group": "user",
       "action": "delete-avatar",
       "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/public-project/{id}",
+      "group": "project",
+      "action": "get-public",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/public-project/{id}/description",
+      "group": "project",
+      "action": "get-public-description",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/public-project/{id}/task/{taskId}/description",
+      "group": "project",
+      "action": "get-public-task-description",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/task/description-matches/{projectId}",
+      "group": "task",
+      "action": "find-description-matches",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/task/{id}/description",
+      "group": "task",
+      "action": "get-description",
+      "status": "implemented"
     }
   ]
 }

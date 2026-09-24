@@ -130,6 +130,8 @@ var readSpecs = []readSpec{
 		path:        "/github-integration/repositories/{projectId}",
 		params: []readParam{
 			{name: "projectId", in: paramPath, flag: "project-id", required: true},
+			{name: "installationPage", in: paramQuery, flag: "installation-page", pattern: `^[1-9][0-9]{0,5}$`},
+			{name: "repositoryPage", in: paramQuery, flag: "repository-page", pattern: `^[1-9][0-9]{0,5}$`},
 		},
 	},
 	{
@@ -190,7 +192,7 @@ var readSpecs = []readSpec{
 		path:        "/mcp/authorize/request/{requestId}",
 		public:      true,
 		params: []readParam{
-			{name: "requestId", in: paramPath, flag: "request-id", required: true},
+			{name: "requestId", in: paramPath, flag: "request-id", required: true, minLen: 1, maxLen: 128},
 		},
 	},
 	{
@@ -310,6 +312,51 @@ var readSpecs = []readSpec{
 		},
 	},
 	{
+		group: "project", action: "get-public",
+		short:       "Get a public project board",
+		operationID: "getPublicProject",
+		path:        "/public-project/{id}",
+		public:      true,
+		params: []readParam{
+			{name: "id", in: paramPath, flag: "id", required: true, help: "Project ID"},
+			{name: "status", in: paramQuery, flag: "status"},
+			{name: "priority", in: paramQuery, flag: "priority"},
+			{name: "assigneeId", in: paramQuery, flag: "assignee-id"},
+			{name: "page", in: paramQuery, flag: "page", numeric: true},
+			{name: "relatedPage", in: paramQuery, flag: "related-page", numeric: true},
+			{name: "limit", in: paramQuery, flag: "limit", numeric: true},
+			{name: "sortBy", in: paramQuery, flag: "sort-by", enum: []string{"createdAt", "priority", "dueDate", "position", "title", "number"}},
+			{name: "sortOrder", in: paramQuery, flag: "sort-order", enum: []string{"asc", "desc"}},
+			{name: "dueBefore", in: paramQuery, flag: "due-before"},
+			{name: "dueAfter", in: paramQuery, flag: "due-after"},
+		},
+	},
+	{
+		group: "project", action: "get-public-description",
+		short:       "Read a public project description page",
+		operationID: "getPublicProjectDescriptionPage",
+		path:        "/public-project/{id}/description",
+		public:      true,
+		params: []readParam{
+			{name: "id", in: paramPath, flag: "id", required: true, help: "Project ID"},
+			{name: "offset", in: paramQuery, flag: "offset", numeric: true},
+			{name: "version", in: paramQuery, flag: "version", pattern: `^[0-9]{1,10}$`},
+		},
+	},
+	{
+		group: "project", action: "get-public-task-description",
+		short:       "Read a public task description page",
+		operationID: "getPublicTaskDescriptionPage",
+		path:        "/public-project/{id}/task/{taskId}/description",
+		public:      true,
+		params: []readParam{
+			{name: "id", in: paramPath, flag: "id", required: true, help: "Project ID"},
+			{name: "taskId", in: paramPath, flag: "task-id", required: true, help: "Task ID"},
+			{name: "offset", in: paramQuery, flag: "offset", numeric: true},
+			{name: "version", in: paramQuery, flag: "version", pattern: `^[0-9]{1,10}$`},
+		},
+	},
+	{
 		group: "project", action: "list",
 		short:       "List projects",
 		operationID: "listProjects",
@@ -325,7 +372,7 @@ var readSpecs = []readSpec{
 		operationID: "globalSearch",
 		path:        "/search",
 		params: []readParam{
-			{name: "q", in: paramQuery, flag: "q", required: true, minLen: 1, alias: "query"},
+			{name: "q", in: paramQuery, flag: "q", required: true, minLen: 1, maxLen: 512, alias: "query"},
 			{name: "type", in: paramQuery, flag: "type", enum: []string{"all", "tasks", "projects", "workspaces", "comments", "activities"}},
 			{name: "workspaceId", in: paramQuery, flag: "workspace-id", required: true, minLen: 1},
 			{name: "projectId", in: paramQuery, flag: "project-id"},
@@ -352,6 +399,17 @@ var readSpecs = []readSpec{
 		},
 	},
 	{
+		group: "task", action: "find-description-matches",
+		short:       "Search descriptions omitted from task lists",
+		operationID: "findDeferredTaskDescriptions",
+		path:        "/task/description-matches/{projectId}",
+		params: []readParam{
+			{name: "projectId", in: paramPath, flag: "project-id", required: true},
+			{name: "query", in: paramQuery, flag: "query", required: true, minLen: 1, maxLen: 256},
+			{name: "after", in: paramQuery, flag: "after", minLen: 1, maxLen: 128},
+		},
+	},
+	{
 		group: "task", action: "get",
 		short:       "Get task",
 		operationID: "getTask",
@@ -370,6 +428,17 @@ var readSpecs = []readSpec{
 		},
 	},
 	{
+		group: "task", action: "get-description",
+		short:       "Read a description page",
+		operationID: "getTaskDescriptionPage",
+		path:        "/task/{id}/description",
+		params: []readParam{
+			{name: "id", in: paramPath, flag: "id", required: true, help: "Task ID"},
+			{name: "offset", in: paramQuery, flag: "offset", numeric: true},
+			{name: "version", in: paramQuery, flag: "version", pattern: `^[0-9]{1,10}$`},
+		},
+	},
+	{
 		group: "task", action: "list",
 		short:       "List tasks",
 		operationID: "listTasks",
@@ -380,6 +449,7 @@ var readSpecs = []readSpec{
 			{name: "priority", in: paramQuery, flag: "priority"},
 			{name: "assigneeId", in: paramQuery, flag: "assignee-id"},
 			{name: "page", in: paramQuery, flag: "page", numeric: true},
+			{name: "relatedPage", in: paramQuery, flag: "related-page", numeric: true},
 			{name: "limit", in: paramQuery, flag: "limit", numeric: true},
 			{name: "sortBy", in: paramQuery, flag: "sort-by", enum: []string{"createdAt", "priority", "dueDate", "position", "title", "number"}},
 			{name: "sortOrder", in: paramQuery, flag: "sort-order", enum: []string{"asc", "desc"}},

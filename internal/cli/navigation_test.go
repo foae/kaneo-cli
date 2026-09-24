@@ -51,7 +51,7 @@ func TestMCPAuthorizationHandoffEncodesAndPreservesStateOmission(t *testing.T) {
 		"--response-type", "code",
 		"--client-id", "client & one",
 		"--redirect-uri", "https://client.example/callback?x=a&y=b",
-		"--code-challenge", "challenge+/=",
+		"--code-challenge", "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
 		"--code-challenge-method", "S256",
 	}
 	for _, test := range []struct {
@@ -66,7 +66,7 @@ func TestMCPAuthorizationHandoffEncodesAndPreservesStateOmission(t *testing.T) {
 				"response_type":         {"code"},
 				"client_id":             {"client & one"},
 				"redirect_uri":          {"https://client.example/callback?x=a&y=b"},
-				"code_challenge":        {"challenge+/="},
+				"code_challenge":        {"E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"},
 				"code_challenge_method": {"S256"},
 			},
 		},
@@ -77,7 +77,7 @@ func TestMCPAuthorizationHandoffEncodesAndPreservesStateOmission(t *testing.T) {
 				"response_type":         {"code"},
 				"client_id":             {"client & one"},
 				"redirect_uri":          {"https://client.example/callback?x=a&y=b"},
-				"code_challenge":        {"challenge+/="},
+				"code_challenge":        {"E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"},
 				"code_challenge_method": {"S256"},
 				"state":                 {""},
 			},
@@ -116,11 +116,49 @@ func TestNavigationRejectsInvalidInputBeforeOutput(t *testing.T) {
 	for _, args := range [][]string{
 		{"auth", "get-device-authorization-page", "--ui", "0"},
 		{"mcp", "start-authorization", "--response-type", "token"},
-		{"mcp", "start-authorization", "--response-type", "code", "--client-id", "client", "--redirect-uri", strings.Repeat("x", 2049), "--code-challenge", "challenge", "--code-challenge-method", "S256"},
+		mcpArgs("--redirect-uri", strings.Repeat("x", 2049)),
+		mcpArgs("--code-challenge", "challenge+/="),
+		mcpArgs("--code-challenge", validChallenge[:42]),
+		mcpArgs("--code-challenge", validChallenge+"A"),
+		mcpArgs("--code-challenge", validChallenge[:42]+"="),
+		mcpArgs("--client-id", ""),
+		mcpArgs("--client-id", strings.Repeat("c", 129)),
+		append(mcpArgs(), "--state", strings.Repeat("s", 1025)),
 	} {
 		status, stdout, _ := env.run(args...)
 		if status != 2 || stdout != "" {
 			t.Fatalf("%v: status=%d stdout=%q", args, status, stdout)
 		}
+	}
+}
+
+const validChallenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+
+// mcpArgs returns a valid start-authorization invocation with one flag
+// overridden when a flag and value are given.
+func mcpArgs(override ...string) []string {
+	values := map[string]string{
+		"--response-type":         "code",
+		"--client-id":             "client",
+		"--redirect-uri":          "https://client.example/callback",
+		"--code-challenge":        validChallenge,
+		"--code-challenge-method": "S256",
+	}
+	if len(override) == 2 {
+		values[override[0]] = override[1]
+	}
+	args := []string{"mcp", "start-authorization"}
+	for _, flag := range []string{"--response-type", "--client-id", "--redirect-uri", "--code-challenge", "--code-challenge-method"} {
+		args = append(args, flag, values[flag])
+	}
+	return args
+}
+
+func TestMCPAuthorizationAcceptsBoundaryValues(t *testing.T) {
+	env := newTestEnv(t)
+	env.setAPIURL("https://kaneo.example/api")
+	args := append(mcpArgs("--client-id", strings.Repeat("c", 128)), "--state", strings.Repeat("s", 1024))
+	if status, stdout, stderr := env.run(args...); status != 0 || stdout == "" {
+		t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
 	}
 }

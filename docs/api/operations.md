@@ -2,7 +2,7 @@
 
 # API operation inventory
 
-This inventory contains 162 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `a5f29855e3f25c703bf665fd17703cc79b672bd4e24f9f5fbd8f0c1b8e44db9e`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
+This inventory contains 167 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `e25fae2994bdafc30fecfeef5d4d3049dac4820eaffc7d63f3b837eba7939b3e`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
 
 Detailed request schemas, query/path parameters, effective security, and responses are in the generated [`api/operations.json`](../../api/operations.json). Schema references resolve against the pinned OpenAPI snapshot.
 
@@ -129,8 +129,8 @@ Path parameters (not JSON body fields):
 ```text
 JSON body (required):
   content (required): string
-  externalSource (optional): string (one of: "planka", "trello", "jira") — The tool the comment was imported from.
-  externalUserName (optional): string — Attribution for an imported comment. Ignored unless externalSource is also given.
+  externalSource (optional): string (one of: "planka", "trello", "jira") — The tool the comment was imported from. Supplying external attribution requires workspace:manage_settings.
+  externalUserName (optional): string — Attribution for an imported comment. Requires workspace:manage_settings and externalSource; otherwise ignored.
 ```
 
 ### `comment update` request
@@ -316,13 +316,13 @@ JSON body (required):
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `github create-integration` | `POST` | `/github-integration/project/{projectId}` | `createGitHubIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `github create-integration` | `POST` | `/github-integration/project/{projectId}` | `createGitHubIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 409 |
 | `github delete-integration` | `DELETE` | `/github-integration/project/{projectId}` | `deleteGitHubIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `github get-app-info` | `GET` | `/github-integration/app-info` | `getGitHubAppInfo` | `implemented` | 0 |  | 200, 401 |
 | `github get-integration` | `GET` | `/github-integration/project/{projectId}` | `getGitHubIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `github import-issues` | `POST` | `/github-integration/import-issues` | `importGitHubIssues` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
-| `github list-repositories` | `GET` | `/github-integration/repositories/{projectId}` | `listGitHubRepositories` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `github update-integration` | `PATCH` | `/github-integration/project/{projectId}` | `updateGitHubIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `github import-issues` | `POST` | `/github-integration/import-issues` | `importGitHubIssues` | `implemented` | 0 | yes | 200, 202, 400, 401, 403, 404, 409, 429, 502 |
+| `github list-repositories` | `GET` | `/github-integration/repositories/{projectId}` | `listGitHubRepositories` | `implemented` | 3 |  | 200, 400, 401, 403 |
+| `github update-integration` | `PATCH` | `/github-integration/project/{projectId}` | `updateGitHubIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409 |
 | `github verify-installation` | `POST` | `/github-integration/verify` | `verifyGitHubInstallation` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 
 ### `github create-integration` request
@@ -341,6 +341,7 @@ JSON body (required):
 ```text
 JSON body (required):
   projectId (required): string
+  runId (optional): string
 ```
 
 ### `github update-integration` request
@@ -380,14 +381,14 @@ JSON body (required):
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `label attach-task` | `PUT` | `/label/{id}/task` | `attachLabelToTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
-| `label create` | `POST` | `/label` | `createLabel` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
-| `label delete` | `DELETE` | `/label/{id}` | `deleteLabel` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
+| `label attach-task` | `PUT` | `/label/{id}/task` | `attachLabelToTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409 |
+| `label create` | `POST` | `/label` | `createLabel` | `implemented` | 0 | yes | 200, 400, 401, 403, 404, 409 |
+| `label delete` | `DELETE` | `/label/{id}` | `deleteLabel` | `implemented` | 1 |  | 200, 202, 400, 401, 403, 404, 429 |
 | `label detach-task` | `DELETE` | `/label/{id}/task` | `detachLabelFromTask` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
 | `label get` | `GET` | `/label/{id}` | `getLabel` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `label list-task` | `GET` | `/label/task/{taskId}` | `getTaskLabels` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `label list-workspace` | `GET` | `/label/workspace/{workspaceId}` | `getWorkspaceLabels` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `label update` | `PUT` | `/label/{id}` | `updateLabel` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `label update` | `PUT` | `/label/{id}` | `updateLabel` | `implemented` | 1 | yes | 200, 400, 401, 403, 409 |
 
 ### `label attach-task` request
 
@@ -834,6 +835,9 @@ JSON body (required):
 | `project create` | `POST` | `/project` | `createProject` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 | `project delete` | `DELETE` | `/project/{id}` | `deleteProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `project get` | `GET` | `/project/{id}` | `getProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `project get-public` | `GET` | `/public-project/{id}` | `getPublicProject` | `implemented` | 11 |  | 200, 400, 403, 404, 503 |
+| `project get-public-description` | `GET` | `/public-project/{id}/description` | `getPublicProjectDescriptionPage` | `implemented` | 3 |  | 200, 400, 404, 409, 503 |
+| `project get-public-task-description` | `GET` | `/public-project/{id}/task/{taskId}/description` | `getPublicTaskDescriptionPage` | `implemented` | 4 |  | 200, 400, 404, 409, 503 |
 | `project list` | `GET` | `/project` | `listProjects` | `implemented` | 2 |  | 200, 400, 401, 403 |
 | `project reorder` | `PUT` | `/project/reorder` | `reorderProjects` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `project unarchive` | `PUT` | `/project/{id}/unarchive` | `unarchiveProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
@@ -935,9 +939,11 @@ JSON body (required):
 | `task delete` | `DELETE` | `/task/{id}` | `deleteTask` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `task export` | `GET` | `/task/export/{projectId}` | `exportTasks` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `task finalize-image-upload` | `POST` | `/task/image-upload/{id}/finalize` | `finalizeTaskImageUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `task find-description-matches` | `GET` | `/task/description-matches/{projectId}` | `findDeferredTaskDescriptions` | `implemented` | 3 |  | 200, 400, 401, 403, 503 |
 | `task get` | `GET` | `/task/{id}` | `getTask` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `task get-description` | `GET` | `/task/{id}/description` | `getTaskDescriptionPage` | `implemented` | 3 |  | 200, 400, 401, 403, 404, 409, 503 |
 | `task import` | `POST` | `/task/import/{projectId}` | `importTasks` | `implemented` | 1 | yes | 200, 400, 401, 403 |
-| `task list` | `GET` | `/task/tasks/{projectId}` | `listTasks` | `implemented` | 10 |  | 200, 400, 401, 403 |
+| `task list` | `GET` | `/task/tasks/{projectId}` | `listTasks` | `implemented` | 11 |  | 200, 400, 401, 403, 503 |
 | `task move` | `PUT` | `/task/move/{id}` | `moveTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 | `task update` | `PUT` | `/task/{id}` | `updateTask` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `task update-assignee` | `PUT` | `/task/assignee/{id}` | `updateTaskAssignee` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
@@ -1031,9 +1037,9 @@ Path parameters (not JSON body fields):
 
 ```text
 JSON body (required):
-  description (required): string
+  description (optional): string — Omit to preserve the existing description when updating a list summary.
   dueDate (optional): string
-  position (required): number
+  position (required): integer
   priority (required): string (one of: "no-priority", "low", "medium", "high", "urgent")
   projectId (required): string
   startDate (optional): string
@@ -1206,7 +1212,7 @@ JSON body (required):
 | --- | --- | --- | --- | --- | ---: | --- | --- |
 | `user delete-avatar` | `DELETE` | `/user/avatar` | `deleteUserAvatar` | `implemented` | 0 |  | 200, 401 |
 | `user download-avatar` | `GET` | `/user/avatar/{id}` | `getUserAvatar` | `implemented` | 1 |  | 200, 304, 404 |
-| `user upload-avatar` | `PUT` | `/user/avatar` | `uploadUserAvatar` | `implemented` | 0 | yes | 200, 400, 401 |
+| `user upload-avatar` | `PUT` | `/user/avatar` | `uploadUserAvatar` | `implemented` | 0 | yes | 200, 400, 401, 408, 413 |
 
 ### `user upload-avatar` request
 

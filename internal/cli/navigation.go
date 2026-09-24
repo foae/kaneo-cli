@@ -10,14 +10,28 @@ import (
 
 type navigationParam struct {
 	readParam
-	maxLen int
+}
+
+// deviceAuthorizationPageParams mirrors getDeviceAuthorizationPage in
+// api/operations.json.
+var deviceAuthorizationPageParams = []navigationParam{
+	{readParam: readParam{name: "user_code", in: paramQuery, flag: "user-code", help: "Device authorization user code"}},
+	{readParam: readParam{name: "ui", in: paramQuery, flag: "ui", enum: []string{"1"}, help: "Force the web UI redirect"}},
+}
+
+// mcpAuthorizationParams mirrors authorizeMcpOAuthClient in
+// api/operations.json.
+var mcpAuthorizationParams = []navigationParam{
+	{readParam: readParam{name: "response_type", in: paramQuery, flag: "response-type", required: true, enum: []string{"code"}, help: "OAuth response type"}},
+	{readParam: readParam{name: "client_id", in: paramQuery, flag: "client-id", required: true, minLen: 1, maxLen: 128, help: "OAuth client ID"}},
+	{readParam: readParam{name: "redirect_uri", in: paramQuery, flag: "redirect-uri", required: true, maxLen: 2048, help: "OAuth redirect URI"}},
+	{readParam: readParam{name: "code_challenge", in: paramQuery, flag: "code-challenge", required: true, pattern: `^[A-Za-z0-9_-]{43}$`, help: "S256 PKCE code challenge (43 base64url characters)"}},
+	{readParam: readParam{name: "code_challenge_method", in: paramQuery, flag: "code-challenge-method", required: true, enum: []string{"S256"}, help: "PKCE code challenge method"}},
+	{readParam: readParam{name: "state", in: paramQuery, flag: "state", maxLen: 1024, help: "OAuth state"}},
 }
 
 func (a *app) newAuthDeviceAuthorizationPageCommand() *cobra.Command {
-	params := []navigationParam{
-		{readParam: readParam{name: "user_code", in: paramQuery, flag: "user-code", help: "Device authorization user code"}},
-		{readParam: readParam{name: "ui", in: paramQuery, flag: "ui", enum: []string{"1"}, help: "Force the web UI redirect"}},
-	}
+	params := deviceAuthorizationPageParams
 	cmd := &cobra.Command{
 		Use:   "get-device-authorization-page",
 		Short: "Print the device authorization page URL",
@@ -38,14 +52,7 @@ func (a *app) newAuthDeviceAuthorizationPageCommand() *cobra.Command {
 }
 
 func (a *app) newMCPAuthorizationCommand() *cobra.Command {
-	params := []navigationParam{
-		{readParam: readParam{name: "response_type", in: paramQuery, flag: "response-type", required: true, enum: []string{"code"}, help: "OAuth response type"}},
-		{readParam: readParam{name: "client_id", in: paramQuery, flag: "client-id", required: true, help: "OAuth client ID"}},
-		{readParam: readParam{name: "redirect_uri", in: paramQuery, flag: "redirect-uri", required: true, help: "OAuth redirect URI"}, maxLen: 2048},
-		{readParam: readParam{name: "code_challenge", in: paramQuery, flag: "code-challenge", required: true, minLen: 1, help: "S256 PKCE code challenge"}},
-		{readParam: readParam{name: "code_challenge_method", in: paramQuery, flag: "code-challenge-method", required: true, enum: []string{"S256"}, help: "PKCE code challenge method"}},
-		{readParam: readParam{name: "state", in: paramQuery, flag: "state", help: "OAuth state"}},
-	}
+	params := mcpAuthorizationParams
 	cmd := &cobra.Command{
 		Use:   "start-authorization",
 		Short: "Print the MCP authorization URL",
@@ -97,9 +104,6 @@ func navigationQuery(cmd *cobra.Command, params []navigationParam) (url.Values, 
 		value := flag.Value.String()
 		if err := validateParam(param.readParam, value); err != nil {
 			return nil, &usageError{err: err}
-		}
-		if param.maxLen > 0 && len(value) > param.maxLen {
-			return nil, &usageError{err: fmt.Errorf("--%s must be at most %d characters", param.flag, param.maxLen)}
 		}
 		query.Set(param.name, value)
 	}

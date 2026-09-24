@@ -37,6 +37,7 @@ type readParam struct {
 	pattern  string
 	numeric  bool
 	minLen   int
+	maxLen   int
 	help     string
 	// alias is an optional hidden alternative flag name for the same
 	// parameter. It is accepted but never shown in help, so the canonical
@@ -266,6 +267,9 @@ func validateParam(param readParam, value string) error {
 	}
 	if param.minLen > 0 && len(value) < param.minLen {
 		return fmt.Errorf("--%s must be at least %d characters", param.flag, param.minLen)
+	}
+	if param.maxLen > 0 && len(value) > param.maxLen {
+		return fmt.Errorf("--%s must be at most %d characters", param.flag, param.maxLen)
 	}
 	if len(param.enum) > 0 {
 		for _, allowed := range param.enum {

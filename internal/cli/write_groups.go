@@ -247,8 +247,9 @@ var writeSpecs = []writeSpec{
 		group: "github", action: "import-issues",
 		short:       "Import GitHub issues",
 		operationID: "importGitHubIssues", method: "POST",
-		path: "/github-integration/import-issues",
-		body: true,
+		path:  "/github-integration/import-issues",
+		body:  true,
+		notes: `The server may stop before every issue is imported and report saved progress (HTTP 202, or "pending": true). The command then prints the complete result on stdout and exits 5 with error code "incomplete"; repeat it with the returned runId in the request body to continue.`,
 	},
 	{
 		group: "github", action: "update-integration",
@@ -290,6 +291,7 @@ var writeSpecs = []writeSpec{
 		operationID: "deleteLabel", method: "DELETE",
 		path:        "/label/{id}",
 		destructive: true,
+		notes:       `A large label may be removed in batches. When the server reports that more batches remain (HTTP 202), the command prints the response on stdout and exits 5 with error code "incomplete"; repeat the same command to continue.`,
 		params: []readParam{
 			{name: "id", in: paramPath, flag: "id", required: true, help: "Label ID"},
 		},
@@ -351,7 +353,7 @@ var writeSpecs = []writeSpec{
 		path: "/mcp/authorize/request/{requestId}",
 		body: true,
 		params: []readParam{
-			{name: "requestId", in: paramPath, flag: "request-id", required: true},
+			{name: "requestId", in: paramPath, flag: "request-id", required: true, minLen: 1, maxLen: 128},
 		},
 	},
 	{
