@@ -4,7 +4,7 @@ description: Manage Kaneo workspaces, projects, tasks, board columns, and commen
 license: MIT
 compatibility: Requires the separately installed kaneo-cli and network access to the user's Kaneo instance. Stable CLI versions also make a best-effort GitHub update check on the version command. Shell examples use POSIX syntax; adapt filesystem operations to the host.
 metadata:
-  version: "1.7.0"
+  version: "1.8.0"
 ---
 
 # Kaneo CLI
