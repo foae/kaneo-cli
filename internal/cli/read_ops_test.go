@@ -55,6 +55,9 @@ type inventoryParameter struct {
 	Name     string `json:"name"`
 	Required bool   `json:"required"`
 	Schema   *struct {
+		Type      string   `json:"type"`
+		Minimum   *int64   `json:"minimum"`
+		Maximum   *int64   `json:"maximum"`
 		Pattern   string   `json:"pattern"`
 		Enum      []string `json:"enum"`
 		MinLength int      `json:"minLength"`
@@ -83,14 +86,33 @@ func checkParamConstraints(t *testing.T, operationID string, op inventoryOperati
 		if !ok {
 			continue
 		}
-		var pattern string
+		var pattern, schemaType string
 		var enum []string
 		var minLen, maxLen int
+		var minimum, maximum *int64
 		if doc.Schema != nil {
 			pattern, enum, minLen, maxLen = doc.Schema.Pattern, doc.Schema.Enum, doc.Schema.MinLength, doc.Schema.MaxLength
+			schemaType, minimum, maximum = doc.Schema.Type, doc.Schema.Minimum, doc.Schema.Maximum
+		}
+		if schemaType == "integer" {
+			// An integer schema is enforced by the numeric flag plus bounds,
+			// never by a pattern, and the bounds must match exactly.
+			if !param.numeric || !param.bounded {
+				t.Errorf("%s %s: documented integer but CLI param is not numeric and bounded", operationID, param.name)
+			}
+			if param.pattern != "" {
+				t.Errorf("%s %s: integer param sets pattern %q", operationID, param.name, param.pattern)
+			}
+			if minimum == nil || maximum == nil {
+				t.Errorf("%s %s: documented integer lacks minimum or maximum", operationID, param.name)
+			} else if param.minimum != *minimum || param.maximum != *maximum {
+				t.Errorf("%s %s: bounds = [%d,%d], documented [%d,%d]", operationID, param.name, param.minimum, param.maximum, *minimum, *maximum)
+			}
+		} else if param.bounded {
+			t.Errorf("%s %s: bounded param documented as %q, not integer", operationID, param.name, schemaType)
 		}
 		gotPattern := param.pattern
-		if param.numeric {
+		if param.numeric && schemaType != "integer" {
 			if gotPattern != "" {
 				t.Errorf("%s %s: numeric param also sets pattern %q", operationID, param.name, gotPattern)
 			}

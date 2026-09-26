@@ -605,6 +605,21 @@ func (r *bodyHelpRenderer) schemaSummary(raw map[string]any) (string, error) {
 	if format := stringValue(schema["format"]); format != "" {
 		summary += " (format: " + format + ")"
 	}
+	bounds := make([]string, 0, len(schemaBoundKeywords))
+	for _, keyword := range schemaBoundKeywords {
+		value, found := schema[keyword.name]
+		if !found {
+			continue
+		}
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			return "", fmt.Errorf("marshal %s value: %w", keyword.name, err)
+		}
+		bounds = append(bounds, keyword.label+": "+string(encoded))
+	}
+	if len(bounds) > 0 {
+		summary += " (" + strings.Join(bounds, ", ") + ")"
+	}
 	if value, found := schema["default"]; found {
 		encoded, err := json.Marshal(value)
 		if err != nil {
@@ -613,6 +628,22 @@ func (r *bodyHelpRenderer) schemaSummary(raw map[string]any) (string, error) {
 		summary += " (default: " + string(encoded) + ")"
 	}
 	return summary, nil
+}
+
+// schemaBoundKeywords lists the JSON Schema bound keywords rendered in body
+// help, in display order. Values are rendered with their original number text.
+var schemaBoundKeywords = []struct {
+	name  string
+	label string
+}{
+	{name: "minLength", label: "min length"},
+	{name: "maxLength", label: "max length"},
+	{name: "minItems", label: "min items"},
+	{name: "maxItems", label: "max items"},
+	{name: "minimum", label: "minimum"},
+	{name: "exclusiveMinimum", label: "exclusive minimum"},
+	{name: "maximum", label: "maximum"},
+	{name: "exclusiveMaximum", label: "exclusive maximum"},
 }
 
 func (r *bodyHelpRenderer) additionalPropertiesSummary(value any) (string, error) {

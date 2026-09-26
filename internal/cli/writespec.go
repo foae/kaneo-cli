@@ -155,7 +155,7 @@ func (a *app) runWrite(cmd *cobra.Command, spec writeSpec) error {
 // exactly one request is made and the caller decides whether to repeat it.
 func writeMutationResult(out io.Writer, resp *client.Response, operation string) error {
 	switch operation {
-	case "bulkUpdateTasks", "importTasks", "importGitHubIssues", "importGiteaIssues":
+	case "bulkUpdateTasks", "importTasks", "importGitHubIssues", "importGiteaIssues", "importGitlabIssues":
 	case "deleteLabel":
 		if resp.StatusCode != http.StatusAccepted {
 			return writeJSONStream(out, resp)

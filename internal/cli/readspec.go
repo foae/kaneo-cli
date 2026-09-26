@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -36,9 +37,14 @@ type readParam struct {
 	enum     []string
 	pattern  string
 	numeric  bool
-	minLen   int
-	maxLen   int
-	help     string
+	// bounded marks a numeric parameter documented as an integer with an
+	// inclusive [minimum, maximum] range.
+	bounded bool
+	minimum int64
+	maximum int64
+	minLen  int
+	maxLen  int
+	help    string
 	// alias is an optional hidden alternative flag name for the same
 	// parameter. It is accepted but never shown in help, so the canonical
 	// spec-derived name stays the documented one.
@@ -246,6 +252,10 @@ func (a *app) runRead(cmd *cobra.Command, spec readSpec) error {
 		return writeRedactedJSON(cmd.OutOrStdout(), resp, "idToken")
 	case "getGiteaIntegration":
 		return writeRedactedJSON(cmd.OutOrStdout(), resp, "webhookSecret")
+	case "getGitlabIntegration":
+		return writeRedactedJSON(cmd.OutOrStdout(), resp, "webhookSecret")
+	case "listCalendarFeeds":
+		return writeRedactedJSONArray(cmd.OutOrStdout(), resp, "token")
 	}
 	return writeJSONStream(cmd.OutOrStdout(), resp)
 }
@@ -279,7 +289,15 @@ func validateParam(param readParam, value string) error {
 		}
 		return fmt.Errorf("--%s must be one of %s", param.flag, strings.Join(param.enum, ", "))
 	}
-	if param.numeric && !numericPattern.MatchString(value) {
+	if param.bounded {
+		if !numericPattern.MatchString(value) {
+			return boundsError(param)
+		}
+		parsed, err := strconv.ParseInt(value, 10, 64)
+		if err != nil || parsed < param.minimum || parsed > param.maximum {
+			return boundsError(param)
+		}
+	} else if param.numeric && !numericPattern.MatchString(value) {
 		return fmt.Errorf("--%s must be a non-negative integer", param.flag)
 	}
 	if param.pattern != "" {
@@ -292,6 +310,10 @@ func validateParam(param readParam, value string) error {
 		}
 	}
 	return nil
+}
+
+func boundsError(param readParam) error {
+	return fmt.Errorf("--%s must be an integer between %d and %d", param.flag, param.minimum, param.maximum)
 }
 
 // expandPath substitutes each documented path parameter, escaping the value so

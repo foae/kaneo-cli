@@ -21,10 +21,11 @@ import (
 // maxAvatarBytes matches the documented 512 KiB avatar limit.
 const maxAvatarBytes = 512 << 10
 
-// newUploadCommands returns the two operations whose requests are constructed
+// newUploadCommands returns the operations whose requests are constructed
 // from a local file rather than passed through as a JSON body.
 func (a *app) newUploadCommands() []groupedCommand {
 	return []groupedCommand{
+		{group: "project", cmd: a.newProjectBackgroundUploadCommand()},
 		{group: "task", cmd: a.newTaskImageUploadCommand()},
 		{group: "user", cmd: a.newUserUploadAvatarCommand()},
 	}
@@ -327,4 +328,131 @@ func (a *app) runUserUploadAvatar(cmd *cobra.Command) error {
 		return err
 	}
 	return writeJSONStream(cmd.OutOrStdout(), resp)
+}
+
+func (a *app) newProjectBackgroundUploadCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "create-background-upload",
+		Short: "Upload a project background through a presigned URL",
+		Long: "Upload a project background through a presigned URL\n\n" +
+			"Prints only the finalize request body {key, contentType, version, size}, so the output can be piped into " +
+			"'project finalize-background-upload --id <id> --body-file -'. The presigned upload URL is never printed.",
+		Args: noArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return a.runProjectBackgroundUpload(cmd)
+		},
+	}
+	cmd.Flags().String("id", "", "Project ID (required)")
+	cmd.Flags().String("file", "", "Local image file to upload (required)")
+	cmd.Flags().String("content-type", "", "Image content type; defaults from the file extension")
+	return cmd
+}
+
+func (a *app) runProjectBackgroundUpload(cmd *cobra.Command) error {
+	projectID, _ := cmd.Flags().GetString("id")
+	filePath, _ := cmd.Flags().GetString("file")
+	contentType, _ := cmd.Flags().GetString("content-type")
+
+	if projectID == "" {
+		return &usageError{err: errors.New("--id is required")}
+	}
+	if projectID == "." || projectID == ".." {
+		return &usageError{err: errors.New("--id must not be '.' or '..'")}
+	}
+	if filePath == "" {
+		return &usageError{err: errors.New("--file is required")}
+	}
+	if contentType == "" {
+		contentType = contentTypeByExtension(filePath)
+	}
+	if contentType == "" {
+		return &usageError{err: errors.New("--content-type is required for an unknown file extension")}
+	}
+
+	apiPath, err := expandPath("/project/{id}/background-upload", map[string]string{"id": projectID})
+	if err != nil {
+		return &processError{err: err}
+	}
+
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return &processError{err: err}
+	}
+	if !info.Mode().IsRegular() {
+		return &usageError{err: fmt.Errorf("%q is not a regular file", filePath)}
+	}
+	size := info.Size()
+	if size <= 0 {
+		return &usageError{err: fmt.Errorf("%q is empty", filePath)}
+	}
+
+	body, err := json.Marshal(map[string]any{
+		"contentType": contentType,
+		"size":        size,
+	})
+	if err != nil {
+		return &processError{err: err}
+	}
+
+	ctx := cmd.Context()
+	sess, err := a.session(ctx)
+	if err != nil {
+		return err
+	}
+	apiClient, err := sess.newClient(ctx)
+	if err != nil {
+		return err
+	}
+	resp, err := apiClient.Do(ctx, client.Request{
+		Method:      "PUT",
+		Path:        apiPath,
+		Body:        body,
+		ContentType: "application/json",
+		OperationID: "uploadProjectBackground",
+	})
+	if err != nil {
+		return err
+	}
+	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
+	_ = resp.Body.Close()
+	if err != nil {
+		return &processError{err: err}
+	}
+	if len(payload) > maxRequestBody {
+		return &processError{err: fmt.Errorf("presigned upload response exceeds %d bytes", maxRequestBody)}
+	}
+
+	var upload struct {
+		Key       string            `json:"key"`
+		UploadURL string            `json:"uploadUrl"`
+		Version   string            `json:"version"`
+		Headers   map[string]string `json:"headers"`
+	}
+	if err := json.Unmarshal(payload, &upload); err != nil {
+		return &processError{err: client.ErrInvalidJSONResponse}
+	}
+	if upload.Key == "" {
+		return &processError{err: errors.New("server did not return an upload key")}
+	}
+	if upload.Version == "" {
+		return &processError{err: errors.New("server did not return an upload version")}
+	}
+	if upload.UploadURL == "" {
+		return &processError{err: errors.New("server did not return an upload URL")}
+	}
+	if err := a.putToStorage(ctx, sess, upload.UploadURL, upload.Headers, filePath, size); err != nil {
+		return err
+	}
+	// Transfer credentials are consumed internally; stdout is exactly the
+	// finalize request body.
+	result, err := json.Marshal(struct {
+		Key         string `json:"key"`
+		ContentType string `json:"contentType"`
+		Version     string `json:"version"`
+		Size        int64  `json:"size"`
+	}{Key: upload.Key, ContentType: contentType, Version: upload.Version, Size: size})
+	if err != nil {
+		return &processError{err: err}
+	}
+	return writeJSONBytes(cmd.OutOrStdout(), result)
 }

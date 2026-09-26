@@ -2,7 +2,7 @@
 
 # API operation inventory
 
-This inventory contains 167 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `e25fae2994bdafc30fecfeef5d4d3049dac4820eaffc7d63f3b837eba7939b3e`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
+This inventory contains 188 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `25836704bfd031a11a416f19e743f781301678d788e8ca3e894038f88aab7da5`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
 
 Detailed request schemas, query/path parameters, effective security, and responses are in the generated [`api/operations.json`](../../api/operations.json). Schema references resolve against the pinned OpenAPI snapshot.
 
@@ -31,7 +31,7 @@ JSON body (required):
 
 ```text
 JSON body (required):
-  comment (required): string
+  comment (required): string (max length: 10000)
   taskId (required): string
 ```
 
@@ -47,8 +47,14 @@ JSON body (required):
 ```text
 JSON body (required):
   activityId (required): string
-  comment (required): string
+  comment (required): string (max length: 10000)
 ```
+
+## admin
+
+| Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
+| --- | --- | --- | --- | --- | ---: | --- | --- |
+| `admin list-users` | `GET` | `/admin/users` | `listAdminUsers` | `implemented` | 3 |  | 200, 400, 401, 403 |
 
 ## asset
 
@@ -62,6 +68,27 @@ JSON body (required):
 | --- | --- | --- | --- | --- | ---: | --- | --- |
 | `auth get-device-authorization-page` | `GET` | `/auth/device` | `getDeviceAuthorizationPage` | `implemented` | 2 |  | 200, 302 |
 | `auth get-session` | `GET` | `/auth/get-session` | `getSession` | `implemented` | 0 |  | 200 |
+
+## calendar-feed
+
+| Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
+| --- | --- | --- | --- | --- | ---: | --- | --- |
+| `calendar-feed create` | `POST` | `/calendar-feed/project/{projectId}` | `createCalendarFeed` | `implemented` | 1 | yes | 201, 400, 401, 403 |
+| `calendar-feed download` | `GET` | `/calendar-feed/{token}/calendar.ics` | `getCalendarFeed` | `implemented` | 1 |  | 200, 400, 404 |
+| `calendar-feed list` | `GET` | `/calendar-feed/project/{projectId}` | `listCalendarFeeds` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `calendar-feed revoke` | `DELETE` | `/calendar-feed/project/{projectId}/{id}` | `revokeCalendarFeed` | `implemented` | 2 |  | 200, 400, 401, 403, 404 |
+
+### `calendar-feed create` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  labelIds (required): array<string (min length: 1)> (min items: 1, max items: 100)
+    items: string (min length: 1)
+  timeZone (optional): string (default: "UTC")
+```
 
 ## column
 
@@ -128,9 +155,9 @@ Path parameters (not JSON body fields):
 
 ```text
 JSON body (required):
-  content (required): string
+  content (required): string (min length: 1, max length: 10000)
   externalSource (optional): string (one of: "planka", "trello", "jira") — The tool the comment was imported from. Supplying external attribution requires workspace:manage_settings.
-  externalUserName (optional): string — Attribution for an imported comment. Requires workspace:manage_settings and externalSource; otherwise ignored.
+  externalUserName (optional): string (max length: 120) — Attribution for an imported comment. Requires workspace:manage_settings and externalSource; otherwise ignored.
 ```
 
 ### `comment update` request
@@ -140,7 +167,7 @@ Path parameters (not JSON body fields):
 
 ```text
 JSON body (required):
-  content (required): string
+  content (required): string (min length: 1, max length: 10000)
 ```
 
 ## config
@@ -172,7 +199,7 @@ JSON body (required):
     items: string
   projectId (required): string
   required (optional): boolean (default: false)
-  type (required): string (one of: "text", "number", "date", "dropdown", "boolean")
+  type (required): string (one of: "text", "number", "date", "dropdown", "boolean", "multiselect")
 ```
 
 ### `custom-field reorder-project` request
@@ -221,7 +248,7 @@ JSON body (required):
     taskPriorityChanged (optional): boolean
     taskStatusChanged (optional): boolean
     taskTitleChanged (optional): boolean
-  webhookUrl (required): string
+  webhookUrl (required): string (min length: 1)
 ```
 
 ### `discord update-integration` request
@@ -247,7 +274,20 @@ JSON body (required):
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
+| `external-link create` | `POST` | `/external-link/task/{taskId}` | `createExternalLink` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `external-link delete` | `DELETE` | `/external-link/task/{taskId}/{id}` | `deleteExternalLink` | `implemented` | 2 |  | 200, 400, 401, 403, 404 |
 | `external-link list-task` | `GET` | `/external-link/task/{taskId}` | `getExternalLinksByTask` | `implemented` | 1 |  | 200, 400, 401, 403 |
+
+### `external-link create` request
+
+Path parameters (not JSON body fields):
+- `taskId` (required): string
+
+```text
+JSON body (required):
+  title (optional): string (max length: 200)
+  url (required): string (format: uri) — An HTTP or HTTPS URL
+```
 
 ## gitea
 
@@ -259,7 +299,7 @@ JSON body (required):
 | `gitea import-issues` | `POST` | `/gitea-integration/import-issues` | `importGiteaIssues` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
 | `gitea list-repositories` | `POST` | `/gitea-integration/repositories` | `listGiteaRepositories` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 | `gitea update-integration` | `PATCH` | `/gitea-integration/project/{projectId}` | `updateGiteaIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
-| `gitea verify-access` | `POST` | `/gitea-integration/verify` | `verifyGiteaAccess` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+| `gitea verify-access` | `POST` | `/gitea-integration/verify` | `verifyGiteaAccess` | `implemented` | 0 | yes | 200, 400, 401, 403, 500 |
 
 ### `gitea create-integration` request
 
@@ -269,9 +309,9 @@ Path parameters (not JSON body fields):
 ```text
 JSON body (required):
   accessToken (optional): string — Omit to keep the token already stored for this project.
-  baseUrl (required): string
-  repositoryName (required): string
-  repositoryOwner (required): string
+  baseUrl (required): string (min length: 1)
+  repositoryName (required): string (min length: 1)
+  repositoryOwner (required): string (min length: 1)
 ```
 
 ### `gitea import-issues` request
@@ -285,9 +325,9 @@ JSON body (required):
 
 ```text
 JSON body (required):
-  accessToken (required): string
+  accessToken (required): string (min length: 1)
   baseUrl (required): string (format: uri)
-  projectId (required): string
+  projectId (required): string (min length: 1)
 ```
 
 ### `gitea update-integration` request
@@ -305,11 +345,11 @@ JSON body (required):
 
 ```text
 JSON body (required):
-  accessToken (required): string
+  accessToken (optional): string (min length: 1) — Omit to verify with this project's saved token. The base URL must match the saved integration.
   baseUrl (required): string (format: uri)
-  projectId (required): string
-  repositoryName (required): string
-  repositoryOwner (required): string
+  projectId (required): string (min length: 1)
+  repositoryName (required): string (min length: 1)
+  repositoryOwner (required): string (min length: 1)
 ```
 
 ## github
@@ -332,16 +372,16 @@ Path parameters (not JSON body fields):
 
 ```text
 JSON body (required):
-  repositoryName (required): string
-  repositoryOwner (required): string
+  repositoryName (required): string (min length: 1, max length: 100)
+  repositoryOwner (required): string (min length: 1, max length: 100)
 ```
 
 ### `github import-issues` request
 
 ```text
 JSON body (required):
-  projectId (required): string
-  runId (optional): string
+  projectId (required): string (min length: 1, max length: 128)
+  runId (optional): string (min length: 1, max length: 128)
 ```
 
 ### `github update-integration` request
@@ -359,9 +399,73 @@ JSON body (required):
 
 ```text
 JSON body (required):
+  projectId (required): string (min length: 1)
+  repositoryName (required): string (min length: 1, max length: 100)
+  repositoryOwner (required): string (min length: 1, max length: 100)
+```
+
+## gitlab
+
+| Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
+| --- | --- | --- | --- | --- | ---: | --- | --- |
+| `gitlab create-integration` | `POST` | `/gitlab-integration/project/{projectId}` | `createGitlabIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 409 |
+| `gitlab delete-integration` | `DELETE` | `/gitlab-integration/project/{projectId}` | `deleteGitlabIntegration` | `implemented` | 1 |  | 200, 400, 401, 403, 404 |
+| `gitlab get-integration` | `GET` | `/gitlab-integration/project/{projectId}` | `getGitlabIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `gitlab import-issues` | `POST` | `/gitlab-integration/import-issues` | `importGitlabIssues` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
+| `gitlab list-projects` | `POST` | `/gitlab-integration/projects` | `listGitlabProjects` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+| `gitlab update-integration` | `PATCH` | `/gitlab-integration/project/{projectId}` | `updateGitlabIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `gitlab verify-access` | `POST` | `/gitlab-integration/verify` | `verifyGitlabAccess` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+
+### `gitlab create-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  accessToken (optional): string — Omit to keep the stored token only when the GitLab base URL is unchanged. A changed URL requires a new token.
+  baseUrl (required): string (format: uri)
+  projectPath (required): string (min length: 1)
+  tokenType (optional): string (one of: "private", "bearer") — `private` sends the token in PRIVATE-TOKEN, which is what personal, project and group access tokens expect. `bearer` sends it in Authorization, for an OAuth2 token you already hold. Defaults to `private`.
+```
+
+### `gitlab import-issues` request
+
+```text
+JSON body (required):
   projectId (required): string
-  repositoryName (required): string
-  repositoryOwner (required): string
+```
+
+### `gitlab list-projects` request
+
+```text
+JSON body (required):
+  accessToken (required): string (min length: 1)
+  baseUrl (required): string (format: uri)
+  projectId (required): string (min length: 1)
+  tokenType (optional): string (one of: "private", "bearer") — `private` sends the token in PRIVATE-TOKEN, which is what personal, project and group access tokens expect. `bearer` sends it in Authorization, for an OAuth2 token you already hold. Defaults to `private`.
+```
+
+### `gitlab update-integration` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  commentTaskLinkOnGitlabIssue (optional): boolean
+  isActive (optional): boolean
+```
+
+### `gitlab verify-access` request
+
+```text
+JSON body (required):
+  accessToken (required): string (min length: 1)
+  baseUrl (required): string (format: uri)
+  projectId (required): string (min length: 1)
+  projectPath (required): string (min length: 1) — Full path of the GitLab project, including any nested groups, for example acme/platform/web.
+  tokenType (optional): string (one of: "private", "bearer") — `private` sends the token in PRIVATE-TOKEN, which is what personal, project and group access tokens expect. `bearer` sends it in Authorization, for an OAuth2 token you already hold. Defaults to `private`.
 ```
 
 ## instance
@@ -445,7 +549,7 @@ JSON body (required):
     taskPriorityChanged (optional): boolean
     taskStatusChanged (optional): boolean
     taskTitleChanged (optional): boolean
-  webhookUrl (required): string
+  webhookUrl (required): string (min length: 1)
 ```
 
 ### `mattermost update-integration` request
@@ -479,7 +583,7 @@ JSON body (required):
 ### `mcp decide-authorization-request` request
 
 Path parameters (not JSON body fields):
-- `requestId` (required): string
+- `requestId` (required): string (min length: 1, max length: 128)
 
 ```text
 JSON body (required):
@@ -490,12 +594,12 @@ JSON body (required):
 
 ```text
 JSON body (required):
-  client_name (optional): string
-  grant_types (optional): array<string (one of: "authorization_code", "refresh_token")>
+  client_name (optional): string (max length: 100)
+  grant_types (optional): array<string (one of: "authorization_code", "refresh_token")> (max items: 2)
     items: string (one of: "authorization_code", "refresh_token")
-  redirect_uris (required): array<string>
-    items: string
-  response_types (optional): array<string (one of: "code")>
+  redirect_uris (required): array<string (max length: 2048)> (min items: 1, max items: 10)
+    items: string (max length: 2048)
+  response_types (optional): array<string (one of: "code")> (min items: 1, max items: 1)
     items: string (one of: "code")
   token_endpoint_auth_method (optional): string (one of: "none")
 ```
@@ -537,7 +641,7 @@ JSON body (required):
 ```text
 JSON body (required):
   dueDateReminderEnabled (optional): boolean
-  dueDateReminderLeadTimeMinutes (optional): integer — Between 5 minutes and 30 days.
+  dueDateReminderLeadTimeMinutes (optional): integer (minimum: 5, maximum: 43200) — Between 5 minutes and 30 days.
   emailEnabled (optional): boolean
   gotifyEnabled (optional): boolean
   gotifyServerUrl (optional): string or null
@@ -596,7 +700,7 @@ JSON body (required):
 | `org get-full` | `GET` | `/auth/organization/get-full-organization` | `getOrganizationFullOrganization` | `implemented` | 0 |  | 200, 401 |
 | `org get-invitation` | `GET` | `/auth/organization/get-invitation` | `getOrganizationInvitation` | `implemented` | 1 |  | 200, 401 |
 | `org get-role` | `GET` | `/auth/organization/get-role` | `getOrganizationRole` | `implemented` | 0 |  | 200, 401 |
-| `org invite-member` | `POST` | `/auth/organization/invite-member` | `inviteOrganizationMember` | `implemented` | 0 | yes | 200, 401 |
+| `org invite-member` | `POST` | `/auth/organization/invite-member` | `inviteOrganizationMember` | `implemented` | 0 | yes | 200, 401, 502 |
 | `org leave` | `POST` | `/auth/organization/leave` | `leaveOrganization` | `implemented` | 0 | yes | 200, 401 |
 | `org list` | `GET` | `/auth/organization/list` | `listOrganization` | `implemented` | 0 |  | 200, 401 |
 | `org list-invitations` | `GET` | `/auth/organization/list-invitations` | `listOrganizationInvitations` | `implemented` | 0 |  | 200, 401 |
@@ -833,12 +937,17 @@ JSON body (required):
 | --- | --- | --- | --- | --- | ---: | --- | --- |
 | `project archive` | `PUT` | `/project/{id}/archive` | `archiveProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `project create` | `POST` | `/project` | `createProject` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+| `project create-background-upload` | `PUT` | `/project/{id}/background-upload` | `uploadProjectBackground` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 503 |
 | `project delete` | `DELETE` | `/project/{id}` | `deleteProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `project delete-background` | `DELETE` | `/project/{id}/background` | `deleteProjectBackground` | `implemented` | 1 |  | 204, 400, 401, 403 |
+| `project download-background` | `GET` | `/project/{id}/background` | `getProjectBackground` | `implemented` | 1 |  | 200, 304, 400, 401, 403, 404 |
+| `project finalize-background-upload` | `POST` | `/project/{id}/background-upload/finalize` | `finalizeProjectBackgroundUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 500 |
 | `project get` | `GET` | `/project/{id}` | `getProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `project get-public` | `GET` | `/public-project/{id}` | `getPublicProject` | `implemented` | 11 |  | 200, 400, 403, 404, 503 |
 | `project get-public-description` | `GET` | `/public-project/{id}/description` | `getPublicProjectDescriptionPage` | `implemented` | 3 |  | 200, 400, 404, 409, 503 |
 | `project get-public-task-description` | `GET` | `/public-project/{id}/task/{taskId}/description` | `getPublicTaskDescriptionPage` | `implemented` | 4 |  | 200, 400, 404, 409, 503 |
 | `project list` | `GET` | `/project` | `listProjects` | `implemented` | 2 |  | 200, 400, 401, 403 |
+| `project move` | `PUT` | `/project/{id}/move` | `moveProject` | `implemented` | 1 | yes | 200, 400, 401, 402, 403, 404, 409 |
 | `project reorder` | `PUT` | `/project/reorder` | `reorderProjects` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `project unarchive` | `PUT` | `/project/{id}/unarchive` | `unarchiveProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `project update` | `PUT` | `/project/{id}` | `updateProject` | `implemented` | 1 | yes | 200, 400, 401, 403 |
@@ -853,14 +962,48 @@ JSON body (required):
   workspaceId (required): string
 ```
 
+### `project create-background-upload` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  contentType (required): string
+  size (required): number
+```
+
+### `project finalize-background-upload` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  contentType (required): string
+  key (required): string
+  size (required): number
+  version (required): string
+```
+
+### `project move` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  workspaceId (required): string (min length: 1)
+```
+
 ### `project reorder` request
 
 ```text
 JSON body (required):
-  projects (required): array<object>
+  projects (required): array<object> (min items: 1)
     items: object
       id (required): string
-      position (required): integer
+      position (required): integer (minimum: 0)
 ```
 
 ### `project update` request
@@ -907,7 +1050,7 @@ JSON body (required):
     taskPriorityChanged (optional): boolean
     taskStatusChanged (optional): boolean
     taskTitleChanged (optional): boolean
-  webhookUrl (required): string
+  webhookUrl (required): string (min length: 1)
 ```
 
 ### `slack update-integration` request
@@ -937,6 +1080,7 @@ JSON body (required):
 | `task create` | `POST` | `/task/{projectId}` | `createTask` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `task create-image-upload` | `PUT` | `/task/image-upload/{id}` | `createTaskImageUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 503 |
 | `task delete` | `DELETE` | `/task/{id}` | `deleteTask` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `task duplicate` | `POST` | `/task/duplicate/{id}` | `duplicateTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409, 503 |
 | `task export` | `GET` | `/task/export/{projectId}` | `exportTasks` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `task finalize-image-upload` | `POST` | `/task/image-upload/{id}/finalize` | `finalizeTaskImageUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 | `task find-description-matches` | `GET` | `/task/description-matches/{projectId}` | `findDeferredTaskDescriptions` | `implemented` | 3 |  | 200, 400, 401, 403, 503 |
@@ -958,7 +1102,7 @@ JSON body (required):
 ```text
 JSON body (required):
   operation (required): string (one of: "updateStatus", "updatePriority", "updateAssignee", "delete", "addLabel", "removeLabel", "updateDueDate")
-  taskIds (required): array<string>
+  taskIds (required): array<string> (min items: 1)
     items: string
   value (optional): string or null — The new value for the chosen operation. Unused by `delete`; null clears an assignee or due date.
 ```
@@ -986,6 +1130,16 @@ JSON body (required):
 ### `task create-image-upload` request
 
 Dedicated upload contract: pass the local image with `--file`; the CLI obtains a presigned storage destination, uploads the file without API credentials, and finalizes the image against the task.
+
+### `task duplicate` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  title (optional): string
+```
 
 ### `task finalize-image-upload` request
 
@@ -1039,7 +1193,7 @@ Path parameters (not JSON body fields):
 JSON body (required):
   description (optional): string — Omit to preserve the existing description when updating a list summary.
   dueDate (optional): string
-  position (required): integer
+  position (required): integer (minimum: 0, maximum: 2147483646)
   priority (required): string (one of: "no-priority", "low", "medium", "high", "urgent")
   projectId (required): string
   startDate (optional): string
@@ -1141,8 +1295,8 @@ Path parameters (not JSON body fields):
 
 ```text
 JSON body (required):
-  botToken (required): string — A Telegram bot token, in the form 123456789:AA...
-  chatId (required): string
+  botToken (required): string (min length: 1) — A Telegram bot token, in the form 123456789:AA...
+  chatId (required): string (min length: 1)
   chatLabel (optional): string
   events (optional): object
     taskCommentCreated (optional): boolean
@@ -1212,6 +1366,7 @@ JSON body (required):
 | --- | --- | --- | --- | --- | ---: | --- | --- |
 | `user delete-avatar` | `DELETE` | `/user/avatar` | `deleteUserAvatar` | `implemented` | 0 |  | 200, 401 |
 | `user download-avatar` | `GET` | `/user/avatar/{id}` | `getUserAvatar` | `implemented` | 1 |  | 200, 304, 404 |
+| `user get-current` | `GET` | `/user/me` | `getCurrentUser` | `implemented` | 0 |  | 200, 401, 404 |
 | `user upload-avatar` | `PUT` | `/user/avatar` | `uploadUserAvatar` | `implemented` | 0 | yes | 200, 400, 401, 408, 413 |
 
 ### `user upload-avatar` request
@@ -1234,7 +1389,7 @@ Path parameters (not JSON body fields):
 
 ```text
 JSON body (required):
-  dueDateReminderLeadTimeMinutes (optional): integer — Between 5 minutes and 30 days.
+  dueDateReminderLeadTimeMinutes (optional): integer (minimum: 5, maximum: 43200) — Between 5 minutes and 30 days.
   events (optional): object
     dueDateReminder (optional): boolean
     taskAssigneeChanged (optional): boolean
@@ -1249,7 +1404,7 @@ JSON body (required):
     taskTitleChanged (optional): boolean
     taskUnassigned (optional): boolean
   secret (optional): string — Optional HMAC secret used to sign outgoing deliveries.
-  webhookUrl (required): string
+  webhookUrl (required): string (min length: 1)
 ```
 
 ### `webhook update-integration` request
@@ -1259,7 +1414,7 @@ Path parameters (not JSON body fields):
 
 ```text
 JSON body (required):
-  dueDateReminderLeadTimeMinutes (optional): integer — Between 5 minutes and 30 days.
+  dueDateReminderLeadTimeMinutes (optional): integer (minimum: 5, maximum: 43200) — Between 5 minutes and 30 days.
   events (optional): object
     dueDateReminder (optional): boolean
     taskAssigneeChanged (optional): boolean

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "operation_count": 167,
+  "operation_count": 188,
   "source": {
     "openapi_path": "api/openapi.json",
-    "sha256": "e25fae2994bdafc30fecfeef5d4d3049dac4820eaffc7d63f3b837eba7939b3e"
+    "sha256": "25836704bfd031a11a416f19e743f781301678d788e8ca3e894038f88aab7da5"
   },
   "operations": [
     {
@@ -427,6 +427,96 @@
             }
           },
           "description": "No access to the task's workspace"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/admin/users",
+      "operation_id": "listAdminUsers",
+      "tags": [
+        "Admin"
+      ],
+      "summary": "List instance users",
+      "description": "Page through every user account on this instance, optionally filtered by a case-insensitive name or email search. Requires an instance administrator session; API keys are rejected.",
+      "command": {
+        "group": "admin",
+        "action": "list-users",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "description": "Case-insensitive match against user name or email.",
+          "in": "query",
+          "name": "search",
+          "required": false,
+          "schema": {
+            "description": "Case-insensitive match against user name or email.",
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "maximum": 1000000,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "limit",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserList"
+              }
+            }
+          },
+          "description": "Users matching the search"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid search, page, or limit"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The caller is not an instance administrator or is authenticated with an API key"
         }
       }
     },
@@ -1469,7 +1559,7 @@
         "Organization Management"
       ],
       "summary": "Invite Organization Member",
-      "description": "Create an invitation to an organization",
+      "description": "Create or resend an invitation. Email delivery failures return 502; the invitation remains pending and can be resent after correcting SMTP settings.",
       "command": {
         "group": "org",
         "action": "invite-member",
@@ -1584,6 +1674,31 @@
         },
         "401": {
           "description": "Missing or invalid credentials"
+        },
+        "502": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "INVITATION_EMAIL_FAILED"
+                    ],
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Invitation saved, but email delivery failed"
         }
       }
     },
@@ -2795,6 +2910,338 @@
       }
     },
     {
+      "method": "GET",
+      "path": "/calendar-feed/project/{projectId}",
+      "operation_id": "listCalendarFeeds",
+      "tags": [
+        "Calendar feeds"
+      ],
+      "summary": "List project calendar feeds",
+      "description": "List secret calendar subscription links. Requires project sharing permission.",
+      "command": {
+        "group": "calendar-feed",
+        "action": "list",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/CalendarFeed"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Calendar feeds"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid request or unknown project"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Authentication required"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access or missing project sharing permission"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/calendar-feed/project/{projectId}",
+      "operation_id": "createCalendarFeed",
+      "tags": [
+        "Calendar feeds"
+      ],
+      "summary": "Create a calendar feed",
+      "description": "Create a calendar subscription matching any selected label. Tasks need a start or due date. All-day dates use the supplied time zone. Creating a missing workspace label definition also requires label:create permission.",
+      "command": {
+        "group": "calendar-feed",
+        "action": "create",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "labelIds": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "maxItems": 100,
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "timeZone": {
+                  "default": "UTC",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "labelIds"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarFeed"
+              }
+            }
+          },
+          "description": "Calendar feed created"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid request or unknown project"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Authentication required"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, missing project:share permission, or missing label:create permission for a new workspace label definition"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/calendar-feed/project/{projectId}/{id}",
+      "operation_id": "revokeCalendarFeed",
+      "tags": [
+        "Calendar feeds"
+      ],
+      "summary": "Revoke a calendar feed",
+      "description": "Revoke a calendar subscription link, preventing further access through it.",
+      "command": {
+        "group": "calendar-feed",
+        "action": "revoke",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "success": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "success"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Calendar feed revoked"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid request or unknown project"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Authentication required"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access or missing project sharing permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Calendar feed not found in this project"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/calendar-feed/{token}/calendar.ics",
+      "operation_id": "getCalendarFeed",
+      "tags": [
+        "Calendar feeds"
+      ],
+      "summary": "Subscribe to a calendar feed",
+      "description": "Read scheduled project tasks using a secret calendar feed link. Anyone with the link can read matching task titles, descriptions, and dates. Responses are streamed; descriptions longer than 4096 characters and titles or calendar names longer than 1024 characters are truncated with an ellipsis.",
+      "command": {
+        "group": "calendar-feed",
+        "action": "download",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "token",
+          "required": true,
+          "schema": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          }
+        }
+      ],
+      "security": [],
+      "responses": {
+        "200": {
+          "content": {
+            "text/calendar": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "iCalendar feed"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid feed token"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Calendar feed not found or revoked"
+        }
+      }
+    },
+    {
       "method": "PUT",
       "path": "/column/reorder/{projectId}",
       "operation_id": "reorderColumns",
@@ -3341,6 +3788,7 @@
             "schema": {
               "properties": {
                 "content": {
+                  "maxLength": 10000,
                   "minLength": 1,
                   "type": "string"
                 }
@@ -3503,6 +3951,7 @@
             "schema": {
               "properties": {
                 "content": {
+                  "maxLength": 10000,
                   "minLength": 1,
                   "type": "string"
                 },
@@ -3643,7 +4092,8 @@
                     "number",
                     "date",
                     "dropdown",
-                    "boolean"
+                    "boolean",
+                    "multiselect"
                   ],
                   "type": "string"
                 }
@@ -4604,7 +5054,7 @@
         "External Links"
       ],
       "summary": "Get task external links",
-      "description": "Get all links from a task to resources in connected integrations, such as GitHub or Gitea issues.",
+      "description": "Get manually added resource links and links from connected integrations, such as GitHub or Gitea issues.",
       "command": {
         "group": "external-link",
         "action": "list-task",
@@ -4661,6 +5111,192 @@
             }
           },
           "description": "No access to the task's workspace"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/external-link/task/{taskId}",
+      "operation_id": "createExternalLink",
+      "tags": [
+        "External Links"
+      ],
+      "summary": "Create an external link",
+      "description": "Add a resource link to a task",
+      "command": {
+        "group": "external-link",
+        "action": "create",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "taskId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "title": {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                "url": {
+                  "description": "An HTTP or HTTPS URL",
+                  "format": "uri",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "url"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatedExternalLink"
+              }
+            }
+          },
+          "description": "External link created successfully"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid external link data"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unauthorized"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No permission to update the task"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/external-link/task/{taskId}/{id}",
+      "operation_id": "deleteExternalLink",
+      "tags": [
+        "External Links"
+      ],
+      "summary": "Remove a manual resource link",
+      "description": "Remove a manually added link from a task. Integration-managed links cannot be removed through this endpoint.",
+      "command": {
+        "group": "external-link",
+        "action": "delete",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "taskId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletedExternalLink"
+              }
+            }
+          },
+          "description": "Resource link removed"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unknown task or invalid link data"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unauthorized"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No permission to update the task"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Manual resource link not found on this task"
         }
       }
     },
@@ -5575,7 +6211,7 @@
               }
             }
           },
-          "description": "Invalid body, or unknown project"
+          "description": "Invalid body, unknown project, or invalid Gitea credentials"
         },
         "401": {
           "description": "Missing or invalid credentials"
@@ -5600,7 +6236,7 @@
         "Gitea"
       ],
       "summary": "Verify Gitea access",
-      "description": "Check that the base URL is a Gitea instance and that the token can reach the repository with the permissions Kaneo needs. Always 200 -- problems are reported in the body.",
+      "description": "Check that the base URL is a Gitea instance and that the token can reach the repository with the permissions Kaneo needs. Repository permission failures are reported in the body; invalid credentials and upstream errors return an error status. Omit accessToken to use the saved token for the unchanged base URL.",
       "command": {
         "group": "gitea",
         "action": "verify-access",
@@ -5612,6 +6248,7 @@
             "schema": {
               "properties": {
                 "accessToken": {
+                  "description": "Omit to verify with this project's saved token. The base URL must match the saved integration.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -5635,7 +6272,6 @@
               "required": [
                 "projectId",
                 "baseUrl",
-                "accessToken",
                 "repositoryOwner",
                 "repositoryName"
               ],
@@ -5669,10 +6305,17 @@
               }
             }
           },
-          "description": "Invalid body, or unknown project"
+          "description": "Invalid body, unknown project, or invalid Gitea credentials"
         },
         "401": {
-          "description": "Missing or invalid credentials"
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Kaneo authentication required"
         },
         "403": {
           "content": {
@@ -5683,6 +6326,16 @@
             }
           },
           "description": "No workspace access, or missing workspace:manage_settings"
+        },
+        "500": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Gitea verification failed"
         }
       }
     },
@@ -6353,6 +7006,637 @@
         },
         "401": {
           "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing workspace:manage_settings"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/gitlab-integration/import-issues",
+      "operation_id": "importGitlabIssues",
+      "tags": [
+        "GitLab"
+      ],
+      "summary": "Import GitLab issues",
+      "description": "Import the linked project's open issues as tasks. Issues that already have a task are refreshed rather than duplicated. Requires task:create and task:update permissions.",
+      "command": {
+        "group": "gitlab",
+        "action": "import-issues",
+        "status": "implemented"
+      },
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "projectId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "projectId"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GitlabImportResult"
+              }
+            }
+          },
+          "description": "Import summary"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "projectId is required"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing task:create or task:update permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project not found"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/gitlab-integration/project/{projectId}",
+      "operation_id": "deleteGitlabIntegration",
+      "tags": [
+        "GitLab"
+      ],
+      "summary": "Delete GitLab integration",
+      "description": "Unlink a project from its GitLab project.",
+      "command": {
+        "group": "gitlab",
+        "action": "delete-integration",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GitlabDeleteResult"
+              }
+            }
+          },
+          "description": "The integration was removed"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unknown project, or its workspace could not be determined"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing workspace:manage_settings"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "GitLab integration not found"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/gitlab-integration/project/{projectId}",
+      "operation_id": "getGitlabIntegration",
+      "tags": [
+        "GitLab"
+      ],
+      "summary": "Get GitLab integration",
+      "description": "Get the GitLab integration for a project, or null when none is configured. The masked access token and the webhook secret are included only for callers with workspace:manage_settings.",
+      "command": {
+        "group": "gitlab",
+        "action": "get-integration",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GitlabIntegration"
+              }
+            }
+          },
+          "description": "GitLab integration details, or null"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unknown project, or its workspace could not be determined"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No access to the project's workspace"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/gitlab-integration/project/{projectId}",
+      "operation_id": "updateGitlabIntegration",
+      "tags": [
+        "GitLab"
+      ],
+      "summary": "Update GitLab integration",
+      "description": "Update the GitLab integration. Omitted fields keep their current value.",
+      "command": {
+        "group": "gitlab",
+        "action": "update-integration",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "commentTaskLinkOnGitlabIssue": {
+                  "type": "boolean"
+                },
+                "isActive": {
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GitlabIntegration"
+              }
+            }
+          },
+          "description": "The updated integration"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The resulting config failed validation"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing workspace:manage_settings"
+        },
+        "404": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GitlabIntegrationNotFound"
+              }
+            }
+          },
+          "description": "Integration not found"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/gitlab-integration/project/{projectId}",
+      "operation_id": "createGitlabIntegration",
+      "tags": [
+        "GitLab"
+      ],
+      "summary": "Create GitLab integration",
+      "description": "Link a project to a GitLab project. Kaneo generates the secret GitLab must send with each webhook; add the webhook in GitLab afterwards. Use the verify route first to confirm the token really reaches the project.",
+      "command": {
+        "group": "gitlab",
+        "action": "create-integration",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "accessToken": {
+                  "description": "Omit to keep the stored token only when the GitLab base URL is unchanged. A changed URL requires a new token.",
+                  "type": "string"
+                },
+                "baseUrl": {
+                  "format": "uri",
+                  "type": "string"
+                },
+                "projectPath": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "tokenType": {
+                  "description": "`private` sends the token in PRIVATE-TOKEN, which is what personal, project and group access tokens expect. `bearer` sends it in Authorization, for an OAuth2 token you already hold. Defaults to `private`.",
+                  "enum": [
+                    "private",
+                    "bearer"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "baseUrl",
+                "projectPath"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GitlabIntegration"
+              }
+            }
+          },
+          "description": "The stored integration"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid body, or unknown project"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing workspace:manage_settings"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "That GitLab project is already linked to another Kaneo project"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/gitlab-integration/projects",
+      "operation_id": "listGitlabProjects",
+      "tags": [
+        "GitLab"
+      ],
+      "summary": "List GitLab projects",
+      "description": "List the projects a GitLab token is a member of, for picking one to link. Sent as a POST because the token travels in the body rather than the URL.",
+      "command": {
+        "group": "gitlab",
+        "action": "list-projects",
+        "status": "implemented"
+      },
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "accessToken": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "baseUrl": {
+                  "format": "uri",
+                  "type": "string"
+                },
+                "projectId": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "tokenType": {
+                  "description": "`private` sends the token in PRIVATE-TOKEN, which is what personal, project and group access tokens expect. `bearer` sends it in Authorization, for an OAuth2 token you already hold. Defaults to `private`.",
+                  "enum": [
+                    "private",
+                    "bearer"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "projectId",
+                "baseUrl",
+                "accessToken"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GitlabProjectList"
+              }
+            }
+          },
+          "description": "Accessible projects"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid body, or unknown project"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "GitLab rejected the token, or the instance is unreachable"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing workspace:manage_settings"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/gitlab-integration/verify",
+      "operation_id": "verifyGitlabAccess",
+      "tags": [
+        "GitLab"
+      ],
+      "summary": "Verify GitLab access",
+      "description": "Check that the base URL is a GitLab instance and that the token can reach the project with the permissions Kaneo needs. An unreachable instance, a missing project, or insufficient permissions are reported in a 200 body so the form can explain them; a token GitLab rejects outright is a 401.",
+      "command": {
+        "group": "gitlab",
+        "action": "verify-access",
+        "status": "implemented"
+      },
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "accessToken": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "baseUrl": {
+                  "format": "uri",
+                  "type": "string"
+                },
+                "projectId": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "projectPath": {
+                  "description": "Full path of the GitLab project, including any nested groups, for example acme/platform/web.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "tokenType": {
+                  "description": "`private` sends the token in PRIVATE-TOKEN, which is what personal, project and group access tokens expect. `bearer` sends it in Authorization, for an OAuth2 token you already hold. Defaults to `private`.",
+                  "enum": [
+                    "private",
+                    "bearer"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "projectId",
+                "baseUrl",
+                "accessToken",
+                "projectPath"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GitlabVerificationResult"
+              }
+            }
+          },
+          "description": "Verification result"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid body, or unknown project"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "GitLab rejected the token"
         },
         "403": {
           "content": {
@@ -9085,6 +10369,486 @@
       }
     },
     {
+      "method": "DELETE",
+      "path": "/project/{id}/background",
+      "operation_id": "deleteProjectBackground",
+      "tags": [
+        "Projects"
+      ],
+      "summary": "Delete project background",
+      "description": "Remove the current project board background image.",
+      "command": {
+        "group": "project",
+        "action": "delete-background",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "204": {
+          "description": "Project background removed"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unknown project, or its workspace could not be determined"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing project:update permission"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/project/{id}/background",
+      "operation_id": "getProjectBackground",
+      "tags": [
+        "Projects"
+      ],
+      "summary": "Download project background",
+      "description": "Download the current project board background image.",
+      "command": {
+        "group": "project",
+        "action": "download-background",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "image/*": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "description": "The project background image"
+        },
+        "304": {
+          "description": "Not modified"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unknown project, or its workspace could not be determined"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No access to the project's workspace"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project background not found"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/project/{id}/background-upload",
+      "operation_id": "uploadProjectBackground",
+      "tags": [
+        "Projects"
+      ],
+      "summary": "Prepare project background upload",
+      "description": "Create a presigned background image upload URL for a project.",
+      "command": {
+        "group": "project",
+        "action": "create-background-upload",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "contentType": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "contentType",
+                "size"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectBackgroundUpload"
+              }
+            }
+          },
+          "description": "Background image upload URL"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid image upload request, or unknown project"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing project:update permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project not found"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Image uploads are not configured"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/project/{id}/background-upload/finalize",
+      "operation_id": "finalizeProjectBackgroundUpload",
+      "tags": [
+        "Projects"
+      ],
+      "summary": "Finalize project background upload",
+      "description": "Save an uploaded image as the project's board background.",
+      "command": {
+        "group": "project",
+        "action": "finalize-background-upload",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "contentType": {
+                  "type": "string"
+                },
+                "key": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "number"
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key",
+                "contentType",
+                "version",
+                "size"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectBackgroundFinalize"
+              }
+            }
+          },
+          "description": "Finalized project background"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid image upload request, or unknown project"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing project:update permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project not found"
+        },
+        "500": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Failed to save the project background"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/project/{id}/move",
+      "operation_id": "moveProject",
+      "tags": [
+        "Projects"
+      ],
+      "summary": "Move a project to another workspace",
+      "description": "Move a project and its tasks. Requires update and delete permission in the source, plus project creation and workspace settings management permission in the destination. Remove cross-project task relationships before moving.",
+      "command": {
+        "group": "project",
+        "action": "move",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "workspaceId": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "workspaceId"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovedProject"
+              }
+            }
+          },
+          "description": "Project moved"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid destination or same workspace"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unauthorized"
+        },
+        "402": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Destination workspace plan has expired"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Missing workspace access or permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project not found in the source workspace"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project key conflict or cross-project task relationships"
+        }
+      }
+    },
+    {
       "method": "PUT",
       "path": "/project/{id}/unarchive",
       "operation_id": "unarchiveProject",
@@ -9201,8 +10965,9 @@
           "name": "page",
           "required": false,
           "schema": {
-            "pattern": "^\\d+$",
-            "type": "string"
+            "maximum": 1000000,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -9210,8 +10975,9 @@
           "name": "relatedPage",
           "required": false,
           "schema": {
-            "pattern": "^\\d+$",
-            "type": "string"
+            "maximum": 1000000,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -9219,8 +10985,9 @@
           "name": "limit",
           "required": false,
           "schema": {
-            "pattern": "^\\d+$",
-            "type": "string"
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -9350,8 +11117,9 @@
           "required": false,
           "schema": {
             "default": 0,
-            "pattern": "^\\d+$",
-            "type": "string"
+            "maximum": 2000000000,
+            "minimum": 0,
+            "type": "integer"
           }
         },
         {
@@ -9454,8 +11222,9 @@
           "required": false,
           "schema": {
             "default": 0,
-            "pattern": "^\\d+$",
-            "type": "string"
+            "maximum": 2000000000,
+            "minimum": 0,
+            "type": "integer"
           }
         },
         {
@@ -10722,6 +12491,123 @@
       }
     },
     {
+      "method": "POST",
+      "path": "/task/duplicate/{id}",
+      "operation_id": "duplicateTask",
+      "tags": [
+        "Tasks"
+      ],
+      "summary": "Duplicate a task",
+      "description": "Copy a task into the same project and column, including custom fields, labels, description assets and same-workspace parent links. Copying parent links also requires task:update. Comments, time entries and child tasks are not copied.",
+      "command": {
+        "group": "task",
+        "action": "duplicate",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "title": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Task"
+              }
+            }
+          },
+          "description": "The duplicated task"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid task fields or request"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unauthorized"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, missing task:create, or missing task:update when copying parent links"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Task or project not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Task column has reached its capacity"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unable to copy task attachments"
+        }
+      }
+    },
+    {
       "method": "GET",
       "path": "/task/export/{projectId}",
       "operation_id": "exportTasks",
@@ -11465,8 +13351,9 @@
           "name": "page",
           "required": false,
           "schema": {
-            "pattern": "^\\d+$",
-            "type": "string"
+            "maximum": 1000000,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -11474,8 +13361,9 @@
           "name": "relatedPage",
           "required": false,
           "schema": {
-            "pattern": "^\\d+$",
-            "type": "string"
+            "maximum": 1000000,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -11483,8 +13371,9 @@
           "name": "limit",
           "required": false,
           "schema": {
-            "pattern": "^\\d+$",
-            "type": "string"
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         {
@@ -11945,8 +13834,9 @@
           "required": false,
           "schema": {
             "default": 0,
-            "pattern": "^\\d+$",
-            "type": "string"
+            "maximum": 2000000000,
+            "minimum": 0,
+            "type": "integer"
           }
         },
         {
@@ -13042,6 +14932,58 @@
         },
         "404": {
           "description": "Avatar not found"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/user/me",
+      "operation_id": "getCurrentUser",
+      "tags": [
+        "User"
+      ],
+      "summary": "Get current user",
+      "description": "Return the currently authenticated user.",
+      "command": {
+        "group": "user",
+        "action": "get-current",
+        "status": "implemented"
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurrentUser"
+              }
+            }
+          },
+          "description": "Current user"
+        },
+        "401": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unauthorized"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "User not found"
         }
       }
     },
