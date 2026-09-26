@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -95,7 +96,7 @@ func TestBaselineV228WritesHitDocumentedPaths(t *testing.T) {
 	}{
 		{"calendar-feed-create", []string{"calendar-feed", "create", "--project-id", "p1"}, "POST", "/api/calendar-feed/project/p1", true},
 		{"calendar-feed-revoke", []string{"calendar-feed", "revoke", "--project-id", "p1", "--id", "f/1", "--yes"}, "DELETE", "/api/calendar-feed/project/p1/f%2F1", false},
-		{"project-move", []string{"project", "move", "--id", "p1"}, "PUT", "/api/project/p1/move", true},
+		{"project-move", []string{"project", "move", "--id", "p1", "--yes"}, "PUT", "/api/project/p1/move", true},
 		{"project-delete-background", []string{"project", "delete-background", "--id", "p1", "--yes"}, "DELETE", "/api/project/p1/background", false},
 		{"project-finalize-background", []string{"project", "finalize-background-upload", "--id", "p1"}, "POST", "/api/project/p1/background-upload/finalize", true},
 		{"task-duplicate", []string{"task", "duplicate", "--id", "t1"}, "POST", "/api/task/duplicate/t1", true},
@@ -117,7 +118,12 @@ func TestBaselineV228WritesHitDocumentedPaths(t *testing.T) {
 				args = append(append([]string{}, args...), "--body-file", "-")
 			}
 			status, stdout, stderr := env.run(args...)
-			if status != 0 || stdout != "{\"imported\":1,\"updated\":0,\"skipped\":0}\n" {
+			wantOut := "{\"imported\":1,\"updated\":0,\"skipped\":0}\n"
+			if tt.name == "gitlab-update" {
+				// The redacting writer re-encodes the object with sorted keys.
+				wantOut = "{\"imported\":1,\"skipped\":0,\"updated\":0}\n"
+			}
+			if status != 0 || stdout != wantOut {
 				t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
 			}
 			if len(*requests) != 1 {
@@ -304,6 +310,16 @@ func TestGitlabGetIntegrationRedactsWebhookSecret(t *testing.T) {
 	}
 }
 
+// writeTokenFile stores a synthetic secret in a private file for --token-file.
+func writeTokenFile(t *testing.T, content string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "feed-token")
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func TestCalendarFeedDownload(t *testing.T) {
 	const ics = "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n"
 	server, requests := bodyServer(t, http.StatusOK, "text/calendar", ics)
@@ -312,19 +328,34 @@ func TestCalendarFeedDownload(t *testing.T) {
 		t.Fatal(err)
 	}
 	dest := filepath.Join(t.TempDir(), "feed.ics")
+	tokenFile := writeTokenFile(t, "  "+feedToken+"\n")
 
-	if status, stdout, stderr := env.run("calendar-feed", "download", "--token", feedToken, "--output", dest); status != 0 || stdout != "" {
+	checkStderr := func(stderr string) {
+		t.Helper()
+		if strings.Contains(stderr, feedToken) {
+			t.Fatalf("stderr leaked the feed token: %q", stderr)
+		}
+	}
+	status, stdout, stderr := env.run("calendar-feed", "download", "--token-file", tokenFile, "--output", dest)
+	if status != 0 || stdout != "" {
 		t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
+	}
+	checkStderr(stderr)
+	if !strings.Contains(stderr, "warning: sending credentials over plain HTTP") {
+		t.Fatalf("plain-HTTP feed download did not warn: %q", stderr)
 	}
 	if data, err := os.ReadFile(dest); err != nil || string(data) != ics {
 		t.Fatalf("file = %q, err=%v", data, err)
 	}
-	if status, _, stderr := env.run("calendar-feed", "download", "--token", feedToken, "--output", dest); status != 2 || !strings.Contains(stderr, "--force") {
+	if status, _, stderr := env.run("calendar-feed", "download", "--token-file", tokenFile, "--output", dest); status != 2 || !strings.Contains(stderr, "--force") {
 		t.Fatalf("overwrite: status=%d stderr=%q", status, stderr)
 	}
-	if status, stdout, stderr := env.run("calendar-feed", "download", "--token", feedToken, "--output", "-"); status != 0 || stdout != ics {
-		t.Fatalf("stdout: status=%d stdout=%q stderr=%q", status, stdout, stderr)
+	env.setStdin(feedToken + "\n")
+	status, stdout, stderr = env.run("calendar-feed", "download", "--token-file", "-", "--output", "-")
+	if status != 0 || stdout != ics {
+		t.Fatalf("stdin: status=%d stdout=%q stderr=%q", status, stdout, stderr)
 	}
+	checkStderr(stderr)
 	if len(*requests) != 2 {
 		t.Fatalf("requests = %+v", *requests)
 	}
@@ -337,10 +368,29 @@ func TestCalendarFeedDownload(t *testing.T) {
 		}
 	}
 
-	for _, token := range []string{"short", strings.ToUpper(feedToken), feedToken + "0"} {
-		if status, _, stderr := env.run("calendar-feed", "download", "--token", token, "--output", "-"); status != 2 {
-			t.Fatalf("%s: status=%d stderr=%q", token, status, stderr)
+	for _, token := range []string{"short", strings.ToUpper(feedToken), feedToken + "0", "", "zz" + feedToken[2:]} {
+		status, _, stderr := env.run("calendar-feed", "download", "--token-file", writeTokenFile(t, token), "--output", "-")
+		if status != 2 {
+			t.Fatalf("%q: status=%d stderr=%q", token, status, stderr)
 		}
+		if token != "" && strings.Contains(stderr, token) {
+			t.Fatalf("%q: rejection echoed the value: %q", token, stderr)
+		}
+	}
+	if runtime.GOOS != "windows" {
+		lax := writeTokenFile(t, feedToken)
+		if err := os.Chmod(lax, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if status, _, stderr := env.run("calendar-feed", "download", "--token-file", lax, "--output", "-"); status != 2 {
+			t.Fatalf("group-readable token file: status=%d stderr=%q", status, stderr)
+		}
+	}
+	if status, _, stderr := env.run("calendar-feed", "download", "--output", "-"); status != 2 {
+		t.Fatalf("missing --token-file: status=%d stderr=%q", status, stderr)
+	}
+	if status, _, stderr := env.run("calendar-feed", "download", "--token", feedToken, "--output", "-"); status != 2 {
+		t.Fatalf("argv --token accepted: status=%d stderr=%q", status, stderr)
 	}
 	if len(*requests) != 2 {
 		t.Fatalf("invalid token issued requests: %+v", *requests)
@@ -351,7 +401,7 @@ func TestCalendarFeedDownloadNotFoundHidesToken(t *testing.T) {
 	server, _ := bodyServer(t, http.StatusNotFound, "text/plain", "Calendar feed not found")
 	env := newTestEnv(t)
 	env.setAPIURL(server.URL + "/api")
-	status, stdout, stderr := env.run("calendar-feed", "download", "--token", feedToken, "--output", "-")
+	status, stdout, stderr := env.run("calendar-feed", "download", "--token-file", writeTokenFile(t, feedToken), "--output", "-")
 	if status == 0 || stdout != "" {
 		t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
 	}

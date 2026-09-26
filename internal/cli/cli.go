@@ -22,6 +22,10 @@ import (
 
 const commandName = "kaneo-cli"
 
+// providerRejectedCode reports that a third-party provider, not Kaneo, rejected
+// a submitted provider credential.
+const providerRejectedCode = "provider_rejected"
+
 type errorResponse struct {
 	Error commandError `json:"error"`
 }
@@ -243,6 +247,9 @@ func (a *app) writeError(err error) {
 // safeMessage avoids rendering an underlying error that may embed a
 // secret-bearing URL for transport and timeout failures.
 func safeMessage(err error) string {
+	if errors.Is(err, context.Canceled) {
+		return "operation interrupted"
+	}
 	var transport *client.TransportError
 	if errors.As(err, &transport) {
 		return transport.Error()
@@ -338,6 +345,9 @@ func exitCode(err error) int {
 	}
 	var apiErr *client.Error
 	if errors.As(err, &apiErr) {
+		if apiErr.Code == providerRejectedCode {
+			return 5
+		}
 		if apiErr.StatusCode == http.StatusUnauthorized || apiErr.StatusCode == http.StatusForbidden {
 			return 3
 		}

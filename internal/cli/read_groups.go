@@ -549,8 +549,9 @@ var readSpecs = []readSpec{
 		path:        "/calendar-feed/{token}/calendar.ics",
 		public:      true,
 		binary:      true,
+		sensitive:   true,
 		params: []readParam{
-			{name: "token", in: paramPath, flag: "token", required: true, pattern: `^[a-f0-9]{64}$`, help: "Secret calendar feed token"},
+			{name: "token", in: paramPath, flag: "token-file", required: true, secretFile: true, pattern: `^[a-f0-9]{64}$`, help: "Read the secret calendar feed token from this file, or - for stdin"},
 		},
 	},
 	{

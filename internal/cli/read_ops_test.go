@@ -62,6 +62,11 @@ type inventoryParameter struct {
 		Enum      []string `json:"enum"`
 		MinLength int      `json:"minLength"`
 		MaxLength int      `json:"maxLength"`
+		// The CLI supports none of these keywords, so a documented parameter
+		// using any of them must fail the cross-check rather than be ignored.
+		ExclusiveMinimum json.RawMessage `json:"exclusiveMinimum"`
+		ExclusiveMaximum json.RawMessage `json:"exclusiveMaximum"`
+		MultipleOf       json.RawMessage `json:"multipleOf"`
 	} `json:"schema"`
 }
 
@@ -94,6 +99,17 @@ func checkParamConstraints(t *testing.T, operationID string, op inventoryOperati
 			pattern, enum, minLen, maxLen = doc.Schema.Pattern, doc.Schema.Enum, doc.Schema.MinLength, doc.Schema.MaxLength
 			schemaType, minimum, maximum = doc.Schema.Type, doc.Schema.Minimum, doc.Schema.Maximum
 		}
+		if doc.Schema != nil {
+			for keyword, raw := range map[string]json.RawMessage{
+				"exclusiveMinimum": doc.Schema.ExclusiveMinimum,
+				"exclusiveMaximum": doc.Schema.ExclusiveMaximum,
+				"multipleOf":       doc.Schema.MultipleOf,
+			} {
+				if value := strings.TrimSpace(string(raw)); value != "" && value != "null" && value != "false" {
+					t.Errorf("%s %s: documented %s=%s is not supported by the CLI", operationID, param.name, keyword, value)
+				}
+			}
+		}
 		if schemaType == "integer" {
 			// An integer schema is enforced by the numeric flag plus bounds,
 			// never by a pattern, and the bounds must match exactly.
@@ -105,6 +121,8 @@ func checkParamConstraints(t *testing.T, operationID string, op inventoryOperati
 			}
 			if minimum == nil || maximum == nil {
 				t.Errorf("%s %s: documented integer lacks minimum or maximum", operationID, param.name)
+			} else if *minimum < 0 {
+				t.Errorf("%s %s: documented minimum %d is negative, but numeric input rejects negatives", operationID, param.name, *minimum)
 			} else if param.minimum != *minimum || param.maximum != *maximum {
 				t.Errorf("%s %s: bounds = [%d,%d], documented [%d,%d]", operationID, param.name, param.minimum, param.maximum, *minimum, *maximum)
 			}
@@ -312,6 +330,7 @@ func TestSecretReadRedaction(t *testing.T) {
 	}{
 		{"oauth", []string{"oauth", "get-id-token"}, "idToken"},
 		{"gitea", []string{"gitea", "get-integration", "--project-id", "p1"}, "webhookSecret"},
+		{"gitlab", []string{"gitlab", "get-integration", "--project-id", "p1"}, "webhookSecret"},
 	} {
 		t.Run(command.name, func(t *testing.T) {
 			for _, test := range []struct {

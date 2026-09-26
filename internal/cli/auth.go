@@ -205,43 +205,51 @@ func (a *app) newAuthGetSessionCommand() *cobra.Command {
 // readAPIKey reads a secret from stdin or a protected file. It never accepts a
 // secret as an argument and refuses a file readable by other users on Unix.
 func readAPIKey(stdin io.Reader, path string) (string, error) {
+	return readSecret(stdin, path, "API key")
+}
+
+// readSecret reads a bounded secret from stdin ("-") or a protected file,
+// refusing symlinks and, on Unix, files accessible by group or others. The
+// result is trimmed of surrounding whitespace. Errors name the input by what
+// and never include its content.
+func readSecret(stdin io.Reader, path, what string) (string, error) {
 	var data []byte
 	var err error
 	if path == "-" {
 		data, err = io.ReadAll(io.LimitReader(stdin, maxAPIKeyBytes+1))
 		if err != nil {
-			return "", fmt.Errorf("read API key from stdin: %w", err)
+			return "", fmt.Errorf("read %s from stdin: %w", what, err)
 		}
 		if len(data) > maxAPIKeyBytes {
-			return "", errors.New("API key input is too large")
+			return "", fmt.Errorf("%s input is too large", what)
 		}
 	} else {
 		info, statErr := os.Lstat(path)
 		if statErr != nil {
-			return "", fmt.Errorf("read API key file: %w", statErr)
+			return "", fmt.Errorf("read %s file: %w", what, statErr)
 		}
 		if info.Mode()&os.ModeSymlink != 0 {
-			return "", fmt.Errorf("API key file %s must not be a symlink", path)
+			return "", fmt.Errorf("%s file %s must not be a symlink", what, path)
 		}
 		if runtime.GOOS != "windows" && info.Mode().Perm()&0o077 != 0 {
-			return "", fmt.Errorf("API key file %s must not be accessible by group or others; use chmod 600", path)
+			return "", fmt.Errorf("%s file %s must not be accessible by group or others; use chmod 600", what, path)
 		}
 		handle, openErr := os.Open(path)
 		if openErr != nil {
-			return "", fmt.Errorf("read API key file: %w", openErr)
+			return "", fmt.Errorf("read %s file: %w", what, openErr)
 		}
 		defer func() { _ = handle.Close() }()
 		data, err = io.ReadAll(io.LimitReader(handle, maxAPIKeyBytes+1))
 		if err != nil {
-			return "", fmt.Errorf("read API key file: %w", err)
+			return "", fmt.Errorf("read %s file: %w", what, err)
 		}
 		if len(data) > maxAPIKeyBytes {
-			return "", errors.New("API key file is too large")
+			return "", fmt.Errorf("%s file is too large", what)
 		}
 	}
 	secret := strings.TrimSpace(string(data))
 	if secret == "" {
-		return "", errors.New("API key input was empty")
+		return "", fmt.Errorf("%s input was empty", what)
 	}
 	return secret, nil
 }

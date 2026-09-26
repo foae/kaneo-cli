@@ -65,6 +65,7 @@ func (a *app) newWriteCommand(spec writeSpec) *cobra.Command {
 		if len(param.enum) > 0 {
 			help = strings.TrimSpace(help + " (one of: " + strings.Join(param.enum, ", ") + ")")
 		}
+		help = withRangeHelp(param, help)
 		if param.required {
 			help = strings.TrimSpace(help + " (required)")
 		}
@@ -144,7 +145,7 @@ func (a *app) runWrite(cmd *cobra.Command, spec writeSpec) error {
 		SecretBody:  generatedSecretBodyOperations[spec.operationID],
 	})
 	if err != nil {
-		return err
+		return providerRejection(spec.operationID, err)
 	}
 	return writeMutationResult(cmd.OutOrStdout(), resp, spec.operationID)
 }
@@ -155,6 +156,8 @@ func (a *app) runWrite(cmd *cobra.Command, spec writeSpec) error {
 // exactly one request is made and the caller decides whether to repeat it.
 func writeMutationResult(out io.Writer, resp *client.Response, operation string) error {
 	switch operation {
+	case "updateGitlabIntegration":
+		return writeRedactedJSON(out, resp, "webhookSecret")
 	case "bulkUpdateTasks", "importTasks", "importGitHubIssues", "importGiteaIssues", "importGitlabIssues":
 	case "deleteLabel":
 		if resp.StatusCode != http.StatusAccepted {
@@ -171,7 +174,7 @@ func writeMutationResult(out io.Writer, resp *client.Response, operation string)
 	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return err
+			return context.Canceled
 		}
 		if client.IsTimeout(err) {
 			return &client.TimeoutError{Err: err}
@@ -287,4 +290,31 @@ func contentTypeFor(body []byte) string {
 		return ""
 	}
 	return "application/json"
+}
+
+// providerRejectedOperations lists operations whose documented 401 means the
+// third-party provider rejected the submitted access token (or was unreachable),
+// not that the Kaneo credential failed.
+var providerRejectedOperations = map[string]bool{
+	"verifyGitlabAccess": true,
+	"listGitlabProjects": true,
+}
+
+// providerRejection rewrites a 401 from a provider-verification operation into a
+// stable provider_rejected error with a fixed message. The response body is
+// never echoed because these requests carry a provider credential.
+func providerRejection(operationID string, err error) error {
+	if !providerRejectedOperations[operationID] {
+		return err
+	}
+	var apiErr *client.Error
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusUnauthorized {
+		return err
+	}
+	return &client.Error{
+		StatusCode:  apiErr.StatusCode,
+		Code:        providerRejectedCode,
+		Message:     "GitLab rejected the access token, or the GitLab instance is unreachable; the Kaneo credential was accepted",
+		OperationID: apiErr.OperationID,
+	}
 }

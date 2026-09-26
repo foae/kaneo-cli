@@ -276,7 +276,7 @@ func readBoundedJSON(ctx context.Context, apiClient *client.Client, request clie
 	_ = resp.Body.Close()
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, err
+			return nil, context.Canceled
 		}
 		if client.IsTimeout(err) {
 			return nil, &client.TimeoutError{Err: err}

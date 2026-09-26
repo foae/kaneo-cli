@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 
@@ -49,6 +50,10 @@ type readParam struct {
 	// parameter. It is accepted but never shown in help, so the canonical
 	// spec-derived name stays the documented one.
 	alias string
+	// secretFile marks a secret parameter that is never accepted on argv: the
+	// flag names a protected file, or - for stdin, whose trimmed content is the
+	// value. Validation errors name the flag and never echo the value.
+	secretFile bool
 }
 
 // readSpec is one read-only operation mapped to a CLI command.
@@ -70,6 +75,9 @@ type readSpec struct {
 	// binary marks an operation whose 200 response is a non-JSON stream that
 	// must be written to an explicit destination.
 	binary bool
+	// sensitive marks an operation whose request URL carries a secret without an
+	// Authorization header, so plain HTTP still triggers the credential warning.
+	sensitive bool
 	// oneRequired lists flag names of which at least one must be supplied.
 	oneRequired []string
 	// mutuallyExclusive lists flag names that may not be combined.
@@ -108,6 +116,7 @@ func (a *app) newReadCommand(spec readSpec) *cobra.Command {
 		if len(param.enum) > 0 {
 			help = strings.TrimSpace(help + " (one of: " + strings.Join(param.enum, ", ") + ")")
 		}
+		help = withRangeHelp(param, help)
 		if param.required {
 			// A key-resolution target is still a required wire parameter, but
 			// the key flag can supply it, so the help must not claim otherwise.
@@ -207,6 +216,13 @@ func (a *app) runRead(cmd *cobra.Command, spec readSpec) error {
 			}
 			continue
 		}
+		if param.secretFile {
+			secret, err := readSecret(a.streams.in, value, "--"+param.flag)
+			if err != nil {
+				return &usageError{err: err}
+			}
+			value = secret
+		}
 		if err := validateParam(param, value); err != nil {
 			return &usageError{err: err}
 		}
@@ -239,6 +255,7 @@ func (a *app) runRead(cmd *cobra.Command, spec readSpec) error {
 		Path:        apiPath,
 		Query:       query,
 		OperationID: spec.operationID,
+		Sensitive:   spec.sensitive,
 	})
 	if err != nil {
 		return err
@@ -275,10 +292,10 @@ func validateParam(param readParam, value string) error {
 	if param.in == paramPath && (value == "" || value == "." || value == "..") {
 		return fmt.Errorf("--%s must identify a nonempty path segment other than '.' or '..'", param.flag)
 	}
-	if param.minLen > 0 && len(value) < param.minLen {
+	if param.minLen > 0 && utf8.RuneCountInString(value) < param.minLen {
 		return fmt.Errorf("--%s must be at least %d characters", param.flag, param.minLen)
 	}
-	if param.maxLen > 0 && len(value) > param.maxLen {
+	if param.maxLen > 0 && utf8.RuneCountInString(value) > param.maxLen {
 		return fmt.Errorf("--%s must be at most %d characters", param.flag, param.maxLen)
 	}
 	if len(param.enum) > 0 {
@@ -310,6 +327,14 @@ func validateParam(param readParam, value string) error {
 		}
 	}
 	return nil
+}
+
+// withRangeHelp appends a bounded parameter's documented inclusive range.
+func withRangeHelp(param readParam, help string) string {
+	if !param.bounded {
+		return help
+	}
+	return strings.TrimSpace(fmt.Sprintf("%s (integer %d-%d)", help, param.minimum, param.maximum))
 }
 
 func boundsError(param readParam) error {
@@ -403,7 +428,7 @@ func copyBinary(dst io.Writer, src io.Reader) (int64, error) {
 		return written, nil
 	}
 	if errors.Is(err, context.Canceled) {
-		return written, err
+		return written, context.Canceled
 	}
 	if client.IsTimeout(err) {
 		return written, &client.TimeoutError{Err: err}

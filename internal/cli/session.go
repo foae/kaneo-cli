@@ -140,7 +140,7 @@ func writeJSONStream(out io.Writer, resp *client.Response) error {
 	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return err
+			return context.Canceled
 		}
 		if client.IsTimeout(err) {
 			return &client.TimeoutError{Err: err}
@@ -185,7 +185,7 @@ func writeRedactedJSONPath(out io.Writer, resp *client.Response, path ...string)
 	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return err
+			return context.Canceled
 		}
 		if client.IsTimeout(err) {
 			return &client.TimeoutError{Err: err}
@@ -229,7 +229,7 @@ func writeRedactedJSONArray(out io.Writer, resp *client.Response, field string) 
 	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return err
+			return context.Canceled
 		}
 		if client.IsTimeout(err) {
 			return &client.TimeoutError{Err: err}

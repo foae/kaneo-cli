@@ -926,7 +926,7 @@ var writeSpecs = []writeSpec{
 		operationID: "createCalendarFeed", method: "POST",
 		path:  "/calendar-feed/project/{projectId}",
 		body:  true,
-		notes: `The response contains the secret feed token. Anyone with the token can read the feed, so store it like a password. This is the only command that shows it: 'calendar-feed list' redacts it. Use 'calendar-feed download --token' to fetch the feed.`,
+		notes: `The response contains the secret feed token. Anyone with the token can read the feed, so store it like a password. This is the only command that shows it: 'calendar-feed list' redacts it. Use 'calendar-feed download --token-file' to fetch the feed.`,
 		params: []readParam{
 			{name: "projectId", in: paramPath, flag: "project-id", required: true},
 		},
@@ -1039,8 +1039,9 @@ var writeSpecs = []writeSpec{
 		group: "project", action: "move",
 		short:       "Move project",
 		operationID: "moveProject", method: "PUT",
-		path: "/project/{id}/move",
-		body: true,
+		path:        "/project/{id}/move",
+		body:        true,
+		destructive: true,
 		params: []readParam{
 			{name: "id", in: paramPath, flag: "id", required: true},
 		},

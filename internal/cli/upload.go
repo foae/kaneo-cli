@@ -230,7 +230,7 @@ func (a *app) putToStorage(ctx context.Context, sess *session, rawURL string, he
 	resp, err := storage.Do(req)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return err
+			return context.Canceled
 		}
 		if errors.Is(err, context.DeadlineExceeded) || client.IsTimeout(err) {
 			return &client.TimeoutError{Err: err}

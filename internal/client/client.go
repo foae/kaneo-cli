@@ -199,7 +199,7 @@ func originOf(u *url.URL) string {
 
 func translateTransportError(err error) error {
 	if errors.Is(err, context.Canceled) {
-		return err
+		return context.Canceled
 	}
 	var redirect *RedirectError
 	if errors.As(err, &redirect) {
