@@ -13,10 +13,12 @@ func TestGeneratedSecretBodyOperations(t *testing.T) {
 		"createDiscordIntegration",
 		"createGenericWebhookIntegration",
 		"createGiteaIntegration",
+		"createGitlabIntegration",
 		"createMattermostIntegration",
 		"createSlackIntegration",
 		"createTelegramIntegration",
 		"listGiteaRepositories",
+		"listGitlabProjects",
 		"updateDiscordIntegration",
 		"updateGenericWebhookIntegration",
 		"updateMattermostIntegration",
@@ -24,6 +26,7 @@ func TestGeneratedSecretBodyOperations(t *testing.T) {
 		"updateSlackIntegration",
 		"updateTelegramIntegration",
 		"verifyGiteaAccess",
+		"verifyGitlabAccess",
 	}
 	got := make([]string, 0, len(generatedSecretBodyOperations))
 	for operationID, secret := range generatedSecretBodyOperations {

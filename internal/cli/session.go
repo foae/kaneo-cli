@@ -140,7 +140,7 @@ func writeJSONStream(out io.Writer, resp *client.Response) error {
 	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return err
+			return context.Canceled
 		}
 		if client.IsTimeout(err) {
 			return &client.TimeoutError{Err: err}
@@ -185,7 +185,7 @@ func writeRedactedJSONPath(out io.Writer, resp *client.Response, path ...string)
 	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return err
+			return context.Canceled
 		}
 		if client.IsTimeout(err) {
 			return &client.TimeoutError{Err: err}
@@ -211,6 +211,53 @@ func writeRedactedJSONPath(out io.Writer, resp *client.Response, path ...string)
 		return client.ErrInvalidJSONResponse
 	}
 	return writeJSONValue(out, object)
+}
+
+// writeRedactedJSONArray redacts one top-level field of every element of a JSON
+// array, with the same guarantees as writeRedactedJSONPath: the body is
+// buffered and size-bounded before anything is written, every element is
+// re-encoded from its decoded object so a duplicate key cannot carry an
+// unredacted copy, and RawMessage preserves unrelated values including precise
+// numbers. A bare null body prints null. An element whose field is absent or
+// null is left unchanged. A non-array top level or a non-object element is
+// rejected and nothing is printed, because it could itself be the secret.
+func writeRedactedJSONArray(out io.Writer, resp *client.Response, field string) error {
+	defer func() { _ = resp.Body.Close() }()
+	if resp.Empty() {
+		return nil
+	}
+	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBody+1))
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return context.Canceled
+		}
+		if client.IsTimeout(err) {
+			return &client.TimeoutError{Err: err}
+		}
+		return &processError{err: errors.New("could not read secret-bearing response")}
+	}
+	if len(payload) > maxRequestBody {
+		return &processError{err: errors.New("secret-bearing response exceeds size limit")}
+	}
+	// A bare null unmarshals into a nil slice without error and re-encodes to
+	// null; any other non-array body fails to unmarshal and is rejected.
+	var elements []json.RawMessage
+	if err := json.Unmarshal(payload, &elements); err != nil {
+		return client.ErrInvalidJSONResponse
+	}
+	if elements == nil {
+		return writeJSONValue(out, nil)
+	}
+	redacted := make([]map[string]json.RawMessage, len(elements))
+	for i, raw := range elements {
+		var object map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &object); err != nil || object == nil {
+			return client.ErrInvalidJSONResponse
+		}
+		redactPath(object, []string{field})
+		redacted[i] = object
+	}
+	return writeJSONValue(out, redacted)
 }
 
 // redactOutcome distinguishes a redaction that was applied, a body that safely

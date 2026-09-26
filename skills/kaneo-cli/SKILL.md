@@ -4,7 +4,7 @@ description: Manage Kaneo workspaces, projects, tasks, board columns, and commen
 license: MIT
 compatibility: Requires the separately installed kaneo-cli and network access to the user's Kaneo instance. Stable CLI versions also make a best-effort GitHub update check on the version command. Shell examples use POSIX syntax; adapt filesystem operations to the host.
 metadata:
-  version: "1.8.0"
+  version: "1.9.0"
 ---
 
 # Kaneo CLI
@@ -28,7 +28,7 @@ API successes are JSON on stdout, without a wrapper; no-content success has empt
 
 Prefer credentials already configured by the user. `KANEO_TOKEN` is an invocation-only override: obtain it through an approved secret manager or environment, never literal command arguments, chat, logs, or checked-in files. Persistent login accepts `auth login --api-key-file PATH` (or `-` for stdin); only perform login when requested. The OS keyring is preferred; the CLI warns if it falls back to unencrypted local storage. Do not silently accept that storage tradeoff for the user. `auth logout` is local credential removal only; the pinned API exposes no server-side revocation endpoint.
 
-Unencrypted-storage and credential-bearing HTTP warnings are remembered across CLI invocations, not repeated on every call. Silence is not evidence of encryption: use HTTPS and an OS keyring for that. New profiles or destinations warn independently; restoring the keyring resets the fallback-storage warning. Do not print environment contents or credential files. Use `auth get-session` only if identity verification is needed; the CLI redacts `session.token` from its output, so the response is safe to read for identity, but still do not indiscriminately paste responses around. Never dump full HTTP responses for debugging. Browser handoff commands print a URL; exit zero does not mean authorization completed.
+Unencrypted-storage and credential-bearing HTTP warnings are remembered across CLI invocations, not repeated on every call. Silence is not evidence of encryption: use HTTPS and an OS keyring for that. New profiles or destinations warn independently; restoring the keyring resets the fallback-storage warning. Do not print environment contents or credential files. Use `user get-current` (on Kaneo 2.28 and later) or `auth get-session` only if identity verification is needed; the CLI redacts `session.token` from the latter's output, so both responses are safe to read for identity, but still do not indiscriminately paste responses around. Never dump full HTTP responses for debugging. Browser handoff commands print a URL; exit zero does not mean authorization completed.
 
 `--body-file` accepts a JSON **object**, not plain Markdown or a JSON string. It validates that object before the request and sends its bytes unchanged; omission, `null`, `false`, `0`, and `""` differ. Prefer a JSON-aware serializer into stdin:
 
@@ -53,7 +53,7 @@ kaneo-cli task get --key "$TASK_KEY" --workspace-id "$WORKSPACE_ID"
 kaneo-cli comment list-task --task-id "$TASK_ID"
 ```
 
-The pinned `task list` response is a board plus `pagination`. That board holds tasks in **three** places: `data.columns[].tasks`, `data.plannedTasks` (the UI's Backlog board) and `data.archivedTasks`. A walk over `data.columns[]` alone silently misses the other two, so a hand-rolled display-key lookup reports "not found" for a task that exists; this is a further reason to resolve keys with `task get --key`. Narrow the response to one container with `--status`, which accepts a column slug or the reserved values `planned` and `archived`. The board is paginated on Kaneo 2.26 and later: with no `--page` or `--limit` a response holds at most 50 tasks, and `--limit` raises that to at most 100. Kaneo 2.25 returned everything on one page when both were omitted. Read `pagination.totalPages` from the first response and inspect pages 1 through that value before deciding. Each task page is itself incomplete when `pagination.relatedTotalPages` exceeds 1: labels, external links and column metadata arrive at most 100 per kind, so repeat that page with `--related-page` 2 through that value. A description over 64 KiB arrives as null with `descriptionDeferred: true`; read it with `task get-description`, following `nextOffset` until it is null. Walk pages with `--sort-by number --sort-order asc`: the default `position` order has ties, so consecutive pages under it can skip or repeat tasks. Responses above 8 MiB fail before stdout—this is a failure, not an empty list; request a smaller `--limit` and walk the pages. Never stop after an arbitrary first page.
+The pinned `task list` response is a board plus `pagination`. That board holds tasks in **three** places: `data.columns[].tasks`, `data.plannedTasks` (the UI's Backlog board) and `data.archivedTasks`. A walk over `data.columns[]` alone silently misses the other two, so a hand-rolled display-key lookup reports "not found" for a task that exists; this is a further reason to resolve keys with `task get --key`. Narrow the response to one container with `--status`, which accepts a column slug or the reserved values `planned` and `archived`. The board is paginated on Kaneo 2.26 and later: with no `--page` or `--limit` a response holds at most 50 tasks, and `--limit` raises that to at most 100. The CLI rejects a `--page` or `--related-page` outside 1–1000000 and a `--limit` outside 1–100 before sending anything. Kaneo 2.25 returned everything on one page when both were omitted. Read `pagination.totalPages` from the first response and inspect pages 1 through that value before deciding. Each task page is itself incomplete when `pagination.relatedTotalPages` exceeds 1: labels, external links and column metadata arrive at most 100 per kind, so repeat that page with `--related-page` 2 through that value. A description over 64 KiB arrives as null with `descriptionDeferred: true`; read it with `task get-description`, following `nextOffset` until it is null. Walk pages with `--sort-by number --sort-order asc`: the default `position` order has ties, so consecutive pages under it can skip or repeat tasks. Responses above 8 MiB fail before stdout—this is a failure, not an empty list; request a smaller `--limit` and walk the pages. Never stop after an arbitrary first page.
 
 Resolve a display key with `task get --key` rather than by hand. `--id` and `--key` are mutually exclusive and exactly one is required, and `--key` additionally requires `--workspace-id`. Resolution is exact and client-side: the workspace's projects are matched on slug, case-insensitively, then that project's board is matched on the task `number` across its columns and its archived and planned buckets, walking the board pages sorted by number until the target is found or passed, so a task past the first page still resolves. If the board keeps changing size while it is walked, resolution fails with exit 1 and a message asking for a retry rather than claiming the task is absent; retry it. A key that is not a project slug followed by a positive number, a slug or number with no match, and a slug or number matching more than one candidate are all usage errors (exit 2) that name the problem and point back at `--id`; the CLI never guesses a task. Archived projects and archived tasks both resolve, so a key never silently fails because its work was archived.
 
@@ -102,7 +102,7 @@ printf '%s' "$backlog_body" | kaneo-cli task update-status --id "$TASK_ID" --bod
 
 ## Add a comment
 
-`content` is a required string property, not a JSON string or unquoted Markdown document:
+`content` is a required string property of 1 to 10000 characters, not a JSON string or unquoted Markdown document:
 
 ```sh
 comment_body="$(python3 -c 'import json; print(json.dumps({"content":"Verified the fix.\n\nThe original reproduction now passes."}))')" || exit $?
@@ -110,6 +110,8 @@ printf '%s' "$comment_body" | kaneo-cli comment create-task --task-id "$TASK_ID"
 ```
 
 Post only evidence actually obtained. Read comments back if verification is needed.
+
+To attach a web link to a task, `external-link create --task-id "$TASK_ID"` takes `{"url":...,"title":...}` (an HTTP or HTTPS URL; `title` optional, at most 200 characters). `external-link list-task` returns manual links alongside integration-managed ones; `external-link delete` removes only manual links and requires `--yes`.
 
 ## Relations, labels, and task transfer
 
@@ -120,6 +122,8 @@ relation_body="$(SOURCE_TASK_ID="$SOURCE_TASK_ID" TARGET_TASK_ID="$TARGET_TASK_I
 printf '%s' "$relation_body" | kaneo-cli task-relation create --body-file -
 ```
 
+`task duplicate --id "$TASK_ID"` copies a task into the same project and column, with its custom fields, labels, description assets and same-workspace parent links; comments, time entries and child tasks are not copied. Its body is required: send `{}`, or `{"title":...}` to name the copy.
+
 For labels, `--id` is the label ID; the body identifies the task with `taskId`. Resolve the label in the intended workspace first:
 
 ```sh
@@ -129,7 +133,9 @@ printf '%s' "$label_body" | kaneo-cli label attach-task --id "$LABEL_ID" --body-
 
 Export returns `{"project":{"name","slug","description","exportedAt"},"tasks":[...]}`. Each exported task includes `title`, `description`, `status`, `priority`, nullable dates/user ID, and label names/colors. Import instead accepts `{"tasks":[...]}`; each item requires `title` and `status`, and may contain only the documented description, priority, dates, and user ID fields. Exported labels have no IDs and are not an import field, so resolve and attach destination labels separately.
 
-Before transfer, discover `DESTINATION_WORKSPACE_ID`, list both projects' columns, and list destination members. Every source column slug must exist at the destination. Every non-null exported `userId` must identify a destination workspace member. If either check fails, stop: explicitly remap missing status slugs and invalid assignee IDs to destination values, or remove assignees only with authorization, before importing.
+To move a whole project with its tasks into another workspace, prefer `project move --id "$PROJECT_ID"` (it requires `--yes`) with `{"workspaceId":...}` over export and import. It requires project update and delete permission at the source plus project creation and workspace-settings permission at the destination, and fails with HTTP 409 while cross-project task relations exist or the project key collides; remove those relations only with authorization. Its response reports `unassignedTaskCount`: assignees who are not members of the destination lose their tasks' assignment. Verify the result with `project get`.
+
+For an export-and-import transfer, first discover `DESTINATION_WORKSPACE_ID`, list both projects' columns, and list destination members. Every source column slug must exist at the destination. Every non-null exported `userId` must identify a destination workspace member. If either check fails, stop: explicitly remap missing status slugs and invalid assignee IDs to destination values, or remove assignees only with authorization, before importing.
 
 ```sh
 source_columns="$(kaneo-cli column list --project-id "$SOURCE_PROJECT_ID")" || exit $?
@@ -188,7 +194,7 @@ fi
 
 The 8 MiB ordinary-response limit applies to export: its failure writes no partial stdout, and the `|| exit $?` above must stop the transfer. Export has no documented pagination; never invent one or transfer a partial export.
 
-Import reports per-task outcomes and can return its complete JSON result on stdout while exiting nonzero for partial failure; `github import-issues` and `label delete` likewise exit 5 with code `incomplete` when the server has only finished part of the work, so repeat them as the error message says rather than treating stdout as final; inspect every item and preserve that status. Do not promise preserved task numbering, import/result ordering, label identity, or any other unreturned mapping.
+Import reports per-task outcomes and can return its complete JSON result on stdout while exiting nonzero for partial failure; `gitlab import-issues` exits 5 with code `partial_failure` when its `errors` list is non-empty, and `github import-issues` and `label delete` exit 5 with code `incomplete` when the server has only finished part of the work, so repeat them as the error message says rather than treating stdout as final; inspect every item and preserve that status. Do not promise preserved task numbering, import/result ordering, label identity, or any other unreturned mapping.
 
 ## Destructive changes and failures
 

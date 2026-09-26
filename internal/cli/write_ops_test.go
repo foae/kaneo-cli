@@ -23,6 +23,7 @@ var fullyCoveredOperations = map[string]string{
 	"authorizeMcpOAuthClient":    "dedicated browser URL handoff",
 	"createTaskImageUpload":      "dedicated task create-image-upload",
 	"uploadUserAvatar":           "dedicated user upload-avatar",
+	"uploadProjectBackground":    "dedicated project create-background-upload",
 }
 
 func TestWriteSpecsMatchInventory(t *testing.T) {

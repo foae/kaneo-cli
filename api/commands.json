@@ -1173,6 +1173,153 @@
       "group": "task",
       "action": "get-description",
       "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/calendar-feed/{token}/calendar.ics",
+      "group": "calendar-feed",
+      "action": "download",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/calendar-feed/project/{projectId}",
+      "group": "calendar-feed",
+      "action": "list",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/calendar-feed/project/{projectId}",
+      "group": "calendar-feed",
+      "action": "create",
+      "status": "implemented"
+    },
+    {
+      "method": "DELETE",
+      "path": "/calendar-feed/project/{projectId}/{id}",
+      "group": "calendar-feed",
+      "action": "revoke",
+      "status": "implemented"
+    },
+    {
+      "method": "PUT",
+      "path": "/project/{id}/move",
+      "group": "project",
+      "action": "move",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/project/{id}/background",
+      "group": "project",
+      "action": "download-background",
+      "status": "implemented"
+    },
+    {
+      "method": "DELETE",
+      "path": "/project/{id}/background",
+      "group": "project",
+      "action": "delete-background",
+      "status": "implemented"
+    },
+    {
+      "method": "PUT",
+      "path": "/project/{id}/background-upload",
+      "group": "project",
+      "action": "create-background-upload",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/project/{id}/background-upload/finalize",
+      "group": "project",
+      "action": "finalize-background-upload",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/task/duplicate/{id}",
+      "group": "task",
+      "action": "duplicate",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/gitlab-integration/projects",
+      "group": "gitlab",
+      "action": "list-projects",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/gitlab-integration/verify",
+      "group": "gitlab",
+      "action": "verify-access",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/gitlab-integration/project/{projectId}",
+      "group": "gitlab",
+      "action": "get-integration",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/gitlab-integration/project/{projectId}",
+      "group": "gitlab",
+      "action": "create-integration",
+      "status": "implemented"
+    },
+    {
+      "method": "PATCH",
+      "path": "/gitlab-integration/project/{projectId}",
+      "group": "gitlab",
+      "action": "update-integration",
+      "status": "implemented"
+    },
+    {
+      "method": "DELETE",
+      "path": "/gitlab-integration/project/{projectId}",
+      "group": "gitlab",
+      "action": "delete-integration",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/gitlab-integration/import-issues",
+      "group": "gitlab",
+      "action": "import-issues",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/external-link/task/{taskId}",
+      "group": "external-link",
+      "action": "create",
+      "status": "implemented"
+    },
+    {
+      "method": "DELETE",
+      "path": "/external-link/task/{taskId}/{id}",
+      "group": "external-link",
+      "action": "delete",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/user/me",
+      "group": "user",
+      "action": "get-current",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/users",
+      "group": "admin",
+      "action": "list-users",
+      "status": "implemented"
     }
   ]
 }
