@@ -2,7 +2,7 @@
 
 # API operation inventory
 
-This inventory contains 188 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `25836704bfd031a11a416f19e743f781301678d788e8ca3e894038f88aab7da5`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
+This inventory contains 188 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `fa3d41a7a0caa201b2ee6307b8b36e1567c316983884b5e217b7b477c0492928`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
 
 Detailed request schemas, query/path parameters, effective security, and responses are in the generated [`api/operations.json`](../../api/operations.json). Schema references resolve against the pinned OpenAPI snapshot.
 

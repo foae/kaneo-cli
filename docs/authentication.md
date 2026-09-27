@@ -1,6 +1,6 @@
 # Authentication and named profiles
 
-**Implemented locally:** named profiles, keyring-first credential storage with a warned plaintext fallback, API-key input, the RFC 8628 device flow and local logout. The pinned API baseline does not expose a server-side revocation endpoint, so `auth logout` only removes the local credential. Source: [official authentication guide](https://kaneo.app/docs/api-reference/authentication), pinned alongside the API baseline. Kaneo documents API keys and RFC 8628 device authorization; `kaneo-cli` is a documented default client ID. Self-hosted administrators can restrict allowed client IDs.
+**Implemented locally:** named profiles, keyring-first credential storage with a warned plaintext fallback, API-key input, the RFC 8628 device flow and local logout. The pinned API baseline does not expose a server-side revocation endpoint, so `auth logout` only removes the local credential. Source: [official authentication guide](https://kaneo.app/docs/api-reference/authentication), pinned alongside the API baseline. Kaneo documents API keys and device authorization (the RFC 8628 device-code grant); `kaneo-cli` is a documented default client ID. Self-hosted administrators can restrict allowed client IDs.
 
 ## Profiles and precedence
 

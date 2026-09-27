@@ -3,7 +3,7 @@
   "operation_count": 188,
   "source": {
     "openapi_path": "api/openapi.json",
-    "sha256": "25836704bfd031a11a416f19e743f781301678d788e8ca3e894038f88aab7da5"
+    "sha256": "fa3d41a7a0caa201b2ee6307b8b36e1567c316983884b5e217b7b477c0492928"
   },
   "operations": [
     {
