@@ -4,7 +4,7 @@ description: Maintainer workflow for kaneo-cli. Refresh the pinned Kaneo OpenAPI
 license: MIT
 disable-model-invocation: true
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Update kaneo-cli to the latest Kaneo API
@@ -35,7 +35,7 @@ Everything else is yours to decide, including **naming new commands**. Follow th
    - tag spec equals pinned SHA → **already current**. Also check the authentication guide (`supplements.device_authorization.snapshot_url`) against its pinned SHA. If both match, report "already current at vX" and stop: no branch, no PR.
    - official spec differs from the tag spec → contract conflict (live docs ahead of or behind the release): stop and ask.
    - otherwise continue with that tag as the target.
-4. Create branch `feat/api-baseline-vX.Y.Z`.
+4. Create branch `<type>/api-baseline-vX.Y.Z`, where `<type>` is the commit type step 6.1 will use (`feat`, `fix` or `docs`). If step 2 changes the classification, rename the branch before pushing.
 
 ## 2. Semantic diff
 
@@ -45,7 +45,7 @@ Diff the pinned `api/openapi.json` against the target by `operationId` and metho
 - per changed operation: parameters (required, pattern, min/max length, enum, numeric bounds), request-body schemas and media types, response codes and shapes (new status codes such as 202 continuation), security overrides (public vs. authenticated), descriptions that state behavior (pagination, limits, async work);
 - changed shared `components/schemas` and which operations reference them.
 
-Confirm each behavioral claim in the upstream source at the target commit (`apps/api/src/...`) when the schema is incomplete, as the 2.27.0 refresh did for pagination and continuation. Classify each change as additive, tightening, behavior-free (descriptions, examples, guide wording), or breaking. Breaking stops the run. When every change is behavior-free, the refresh is a `docs:` change: pin the new snapshot and provenance and skip implementation, stamping and step 7, because nothing is released. Report that no release was due.
+Confirm each behavioral claim in the upstream source at the target commit (`apps/api/src/...`) when the schema is incomplete, as the 2.27.0 refresh did for pagination and continuation. Classify each change as additive, tightening, behavior-free (descriptions, examples, guide wording), or breaking. Breaking stops the run. An additive response field the CLI passes through unchanged (no flag, validation, redaction or rendering depends on it) counts as behavior-free for the CLI. When every change is behavior-free, the refresh is a `docs:` change: pin the new snapshot and provenance and skip implementation, stamping and step 7, because nothing is released. Report that no release was due.
 
 ## 3. Update baseline and CLI
 
