@@ -1,8 +1,8 @@
 # Vendored API reference
 
-`api/openapi.json` is an exact snapshot of the official `https://kaneo.app/docs/openapi.json` fetched on 2026-09-26, matching upstream release tag `v2.28.3`. Its SHA-256, upstream source relationship, and the complete upstream MIT notice are recorded in [`api/provenance.json`](../../api/provenance.json).
+`api/openapi.json` is an exact snapshot of the official `https://kaneo.app/docs/openapi.json` fetched on 2026-09-27, matching upstream release tag `v2.29.0`. Its SHA-256, upstream source relationship, and the complete upstream MIT notice are recorded in [`api/provenance.json`](../../api/provenance.json).
 
-The relationship is verified rather than inferred from this repository's license: the upstream [`usekaneo/kaneo`](https://github.com/usekaneo/kaneo) `apps/docs/docs.json` config points its API Reference at `openapi.json`, and the current official document matched `apps/docs/openapi.json` at upstream commit `100027a7f9ccce4f5d650f0e45770b9f36dfad2e` (tag `v2.28.3`) by SHA-256.
+The relationship is verified rather than inferred from this repository's license: the upstream [`usekaneo/kaneo`](https://github.com/usekaneo/kaneo) `apps/docs/docs.json` config points its API Reference at `openapi.json`, and the current official document matched `apps/docs/openapi.json` at upstream commit `0893b0269463493b35f6bde0fff0307d3c3b9792` (tag `v2.29.0`) by SHA-256.
 
 ## Inventory
 
@@ -24,7 +24,7 @@ go run ./internal/cmd/specinventory --check
 
 ## Device authorization supplement
 
-The official [authentication guide](https://kaneo.app/docs/api-reference/authentication) documents an RFC 8628 device flow for CLI and external-app browser sign-in. Its provenance, factual summary, and unresolved differences from the OpenAPI snapshot are intentionally separate in `api/provenance.json` under `supplements.device_authorization`; it does not contribute to the OpenAPI operation count. In particular, the guide documents `POST /api/auth/device/code` and `POST /api/auth/device/token`, while the snapshot only describes `GET /auth/device`.
+The official [authentication guide](https://kaneo.app/docs/api-reference/authentication) documents a device authorization flow (the RFC 8628 device-code grant) for interactive clients. Its provenance, factual summary, and unresolved differences from the OpenAPI snapshot are intentionally separate in `api/provenance.json` under `supplements.device_authorization`; it does not contribute to the OpenAPI operation count. In particular, the guide documents `POST /api/auth/device/code` and `POST /api/auth/device/token`, while the snapshot only describes `GET /auth/device`.
 
 The exact guide is pinned at [`api/authentication.md`](../../api/authentication.md), with its own retrieval date and SHA-256 in provenance. It supplies the JSON code-request and token-poll examples without pretending to be a complete schema.
 
