@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -179,6 +180,9 @@ func TestStagedUploadRejectsInvalidInputsBeforeNetwork(t *testing.T) {
 }
 
 func TestTaskUploadsRejectFIFOFilesBeforeNetwork(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX FIFOs are not available to native Windows processes")
+	}
 	mkfifo, err := exec.LookPath("mkfifo")
 	if err != nil {
 		t.Skip("mkfifo is unavailable on this platform")
