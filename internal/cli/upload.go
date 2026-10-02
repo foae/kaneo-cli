@@ -27,6 +27,7 @@ func (a *app) newUploadCommands() []groupedCommand {
 	return []groupedCommand{
 		{group: "project", cmd: a.newProjectBackgroundUploadCommand()},
 		{group: "task", cmd: a.newTaskImageUploadCommand()},
+		{group: "task", cmd: a.newTaskStagedUploadCommand()},
 		{group: "user", cmd: a.newUserUploadAvatarCommand()},
 	}
 }
@@ -73,41 +74,90 @@ func contentTypeByExtension(name string) string {
 	}
 }
 
+type taskUploadSpec struct {
+	action       string
+	short        string
+	idFlag       string
+	idLabel      string
+	pathParam    string
+	path         string
+	method       string
+	operationID  string
+	allowComment bool
+}
+
 func (a *app) newTaskImageUploadCommand() *cobra.Command {
+	return a.newTaskUploadCommand(taskUploadSpec{
+		action:       "create-image-upload",
+		short:        "Upload a task image through a presigned URL",
+		idFlag:       "id",
+		idLabel:      "Task ID",
+		pathParam:    "id",
+		path:         "/task/image-upload/{id}",
+		method:       http.MethodPut,
+		operationID:  "createTaskImageUpload",
+		allowComment: true,
+	})
+}
+
+func (a *app) newTaskStagedUploadCommand() *cobra.Command {
+	return a.newTaskUploadCommand(taskUploadSpec{
+		action:      "stage-asset-upload",
+		short:       "Upload a staged task attachment through a presigned URL",
+		idFlag:      "project-id",
+		idLabel:     "Project ID",
+		pathParam:   "projectId",
+		path:        "/task/draft-upload/{projectId}",
+		method:      http.MethodPost,
+		operationID: "stageTaskAssetUpload",
+	})
+}
+
+func (a *app) newTaskUploadCommand(spec taskUploadSpec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-image-upload",
-		Short: "Upload a task image through a presigned URL",
+		Use:   spec.action,
+		Short: spec.short,
 		Args:  noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return a.runTaskImageUpload(cmd)
+			return a.runTaskUpload(cmd, spec)
 		},
 	}
-	cmd.Flags().String("id", "", "Task ID (required)")
-	cmd.Flags().String("file", "", "Local image file to upload (required)")
-	cmd.Flags().String("surface", "", "Where the image is used: description or comment (required)")
+	noun := "attachment"
+	surfaces := "description"
+	if spec.allowComment {
+		noun = "image"
+		surfaces = "description or comment"
+	}
+	cmd.Flags().String(spec.idFlag, "", spec.idLabel+" (required)")
+	cmd.Flags().String("file", "", "Local "+noun+" file to upload (required)")
+	cmd.Flags().String("surface", "", "Where the "+noun+" is used: "+surfaces+" (required)")
 	cmd.Flags().String("filename", "", "Filename to record; defaults to the file's base name")
-	cmd.Flags().String("content-type", "", "Image content type; defaults from the file extension")
+	cmd.Flags().String("content-type", "", strings.ToUpper(noun[:1])+noun[1:]+" content type; defaults from the file extension")
 	return cmd
 }
 
-func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
-	taskID, _ := cmd.Flags().GetString("id")
+func (a *app) runTaskUpload(cmd *cobra.Command, spec taskUploadSpec) error {
+	id, _ := cmd.Flags().GetString(spec.idFlag)
 	filePath, _ := cmd.Flags().GetString("file")
 	surface, _ := cmd.Flags().GetString("surface")
 	filename, _ := cmd.Flags().GetString("filename")
 	contentType, _ := cmd.Flags().GetString("content-type")
 
-	if taskID == "" {
-		return &usageError{err: errors.New("--id is required")}
+	if id == "" {
+		return &usageError{err: fmt.Errorf("--%s is required", spec.idFlag)}
 	}
-	if taskID == "." || taskID == ".." {
-		return &usageError{err: errors.New("--id must not be '.' or '..'")}
+	if id == "." || id == ".." {
+		return &usageError{err: fmt.Errorf("--%s must not be '.' or '..'", spec.idFlag)}
 	}
 	if filePath == "" {
 		return &usageError{err: errors.New("--file is required")}
 	}
-	if surface != "description" && surface != "comment" {
-		return &usageError{err: errors.New("--surface must be description or comment")}
+	if surface != "description" && (!spec.allowComment || surface != "comment") {
+		surfaces := "description"
+		if spec.allowComment {
+			surfaces = "description or comment"
+		}
+		return &usageError{err: fmt.Errorf("--surface must be %s", surfaces)}
 	}
 	if filename == "" {
 		filename = filepath.Base(filePath)
@@ -119,7 +169,7 @@ func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
 		return &usageError{err: errors.New("--content-type is required for an unknown file extension")}
 	}
 
-	apiPath, err := expandPath("/task/image-upload/{id}", map[string]string{"id": taskID})
+	apiPath, err := expandPath(spec.path, map[string]string{spec.pathParam: id})
 	if err != nil {
 		return &processError{err: err}
 	}
@@ -128,8 +178,8 @@ func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
 	if err != nil {
 		return &processError{err: err}
 	}
-	if info.IsDir() {
-		return &usageError{err: fmt.Errorf("%q is a directory", filePath)}
+	if !info.Mode().IsRegular() {
+		return &usageError{err: fmt.Errorf("%q is not a regular file", filePath)}
 	}
 	size := info.Size()
 
@@ -153,11 +203,11 @@ func (a *app) runTaskImageUpload(cmd *cobra.Command) error {
 		return err
 	}
 	resp, err := apiClient.Do(ctx, client.Request{
-		Method:      "PUT",
+		Method:      spec.method,
 		Path:        apiPath,
 		Body:        body,
 		ContentType: "application/json",
-		OperationID: "createTaskImageUpload",
+		OperationID: spec.operationID,
 	})
 	if err != nil {
 		return err

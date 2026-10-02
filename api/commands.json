@@ -1320,6 +1320,34 @@
       "group": "admin",
       "action": "list-users",
       "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/task/by-ticket-id/{ticketId}",
+      "group": "task",
+      "action": "get-by-ticket-id",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/task/reorder",
+      "group": "task",
+      "action": "reorder",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/task/draft-upload/{projectId}",
+      "group": "task",
+      "action": "stage-asset-upload",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/task/draft-upload/{projectId}/finalize",
+      "group": "task",
+      "action": "finalize-staged-asset",
+      "status": "implemented"
     }
   ]
 }

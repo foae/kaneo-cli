@@ -2,7 +2,7 @@
 
 # API operation inventory
 
-This inventory contains 188 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `fa3d41a7a0caa201b2ee6307b8b36e1567c316983884b5e217b7b477c0492928`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
+This inventory contains 192 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `b4ab5c1f32ab57078863a330d5910d6ee05c1c893f5729abcaabfe200449c862`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
 
 Detailed request schemas, query/path parameters, effective security, and responses are in the generated [`api/operations.json`](../../api/operations.json). Schema references resolve against the pinned OpenAPI snapshot.
 
@@ -964,14 +964,7 @@ JSON body (required):
 
 ### `project create-background-upload` request
 
-Path parameters (not JSON body fields):
-- `id` (required): string
-
-```text
-JSON body (required):
-  contentType (required): string
-  size (required): number
-```
+Dedicated upload contract: pass `--id` and `--file`; the CLI uploads without API credentials and prints only key, contentType, version and size. Finalize separately with `project finalize-background-upload`.
 
 ### `project finalize-background-upload` request
 
@@ -1076,19 +1069,23 @@ JSON body (required):
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `task bulk-update` | `PATCH` | `/task/bulk` | `bulkUpdateTasks` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
+| `task bulk-update` | `PATCH` | `/task/bulk` | `bulkUpdateTasks` | `implemented` | 0 | yes | 200, 400, 401, 403, 404, 409 |
 | `task create` | `POST` | `/task/{projectId}` | `createTask` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `task create-image-upload` | `PUT` | `/task/image-upload/{id}` | `createTaskImageUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 503 |
-| `task delete` | `DELETE` | `/task/{id}` | `deleteTask` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `task delete` | `DELETE` | `/task/{id}` | `deleteTask` | `implemented` | 1 |  | 200, 400, 401, 403, 409 |
 | `task duplicate` | `POST` | `/task/duplicate/{id}` | `duplicateTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409, 503 |
 | `task export` | `GET` | `/task/export/{projectId}` | `exportTasks` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `task finalize-image-upload` | `POST` | `/task/image-upload/{id}/finalize` | `finalizeTaskImageUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `task finalize-staged-asset` | `POST` | `/task/draft-upload/{projectId}/finalize` | `finalizeStagedTaskAsset` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409, 503 |
 | `task find-description-matches` | `GET` | `/task/description-matches/{projectId}` | `findDeferredTaskDescriptions` | `implemented` | 3 |  | 200, 400, 401, 403, 503 |
-| `task get` | `GET` | `/task/{id}` | `getTask` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `task get` | `GET` | `/task/{id}` | `getTask` | `implemented` | 2 |  | 200, 400, 401, 403 |
+| `task get-by-ticket-id` | `GET` | `/task/by-ticket-id/{ticketId}` | `getTaskByTicketId` | `implemented` | 3 |  | 200, 400, 401, 404, 409 |
 | `task get-description` | `GET` | `/task/{id}/description` | `getTaskDescriptionPage` | `implemented` | 3 |  | 200, 400, 401, 403, 404, 409, 503 |
 | `task import` | `POST` | `/task/import/{projectId}` | `importTasks` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `task list` | `GET` | `/task/tasks/{projectId}` | `listTasks` | `implemented` | 11 |  | 200, 400, 401, 403, 503 |
-| `task move` | `PUT` | `/task/move/{id}` | `moveTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `task move` | `PUT` | `/task/move/{id}` | `moveTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409 |
+| `task reorder` | `POST` | `/task/reorder` | `reorderTasks` | `implemented` | 0 | yes | 200, 400, 401, 403, 404, 409 |
+| `task stage-asset-upload` | `POST` | `/task/draft-upload/{projectId}` | `stageTaskAssetUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 503 |
 | `task update` | `PUT` | `/task/{id}` | `updateTask` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `task update-assignee` | `PUT` | `/task/assignee/{id}` | `updateTaskAssignee` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
 | `task update-description` | `PUT` | `/task/description/{id}` | `updateTaskDescription` | `implemented` | 1 | yes | 200, 400, 401, 403 |
@@ -1119,6 +1116,8 @@ JSON body (required):
       fieldId (required): string
       value (required): string
   description (required): string
+  draftAssetIds (optional): array<string> (max items: 100)
+    items: string
   dueDate (optional): string
   priority (required): string (one of: "no-priority", "low", "medium", "high", "urgent")
   startDate (optional): string
@@ -1129,7 +1128,7 @@ JSON body (required):
 
 ### `task create-image-upload` request
 
-Dedicated upload contract: pass the local image with `--file`; the CLI obtains a presigned storage destination, uploads the file without API credentials, and finalizes the image against the task.
+Dedicated upload contract: pass the local file with `--file`; the CLI obtains a presigned storage destination, uploads without API credentials, and prints only the key. Finalize separately with `task finalize-image-upload`.
 
 ### `task duplicate` request
 
@@ -1153,6 +1152,20 @@ JSON body (required):
   key (required): string — The key returned when the URL was issued.
   size (required): number
   surface (required): string (one of: "description", "comment") — Where the image is used, which decides how it is scoped.
+```
+
+### `task finalize-staged-asset` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string
+
+```text
+JSON body (required):
+  contentType (required): string
+  filename (required): string
+  key (required): string — The key returned when the URL was issued.
+  size (required): number
+  surface (required): string (one of: "description")
 ```
 
 ### `task import` request
@@ -1183,6 +1196,27 @@ JSON body (required):
   destinationProjectId (required): string
   destinationStatus (optional): string — Defaults to the destination project's first column.
 ```
+
+### `task reorder` request
+
+```text
+JSON body (required):
+  expectedTasks (optional): array<object> — Previous complete contents of the affected columns; stale snapshots return 409
+    items: object
+      id (required): string
+      position (required): integer or null (minimum: 0, maximum: 2147483646)
+      status (required): string
+  projectId (required): string
+  tasks (required): array<object> (min items: 1)
+    items: object
+      id (required): string
+      position (required): integer (minimum: 0, maximum: 2147483646)
+      status (optional): string
+```
+
+### `task stage-asset-upload` request
+
+Dedicated upload contract: pass `--project-id`, `--file` and `--surface description`; the CLI uploads without API credentials and prints only the key. Finalize with `task finalize-staged-asset`, then pass its asset ID in `task create`'s `draftAssetIds`.
 
 ### `task update` request
 

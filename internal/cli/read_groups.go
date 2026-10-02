@@ -416,6 +416,7 @@ var readSpecs = []readSpec{
 		path:        "/task/{id}",
 		params: []readParam{
 			{name: "id", in: paramPath, flag: "id", required: true},
+			{name: "view", in: paramQuery, flag: "view", enum: []string{"detail", "board"}},
 		},
 		oneRequired:       []string{"id", "key"},
 		mutuallyExclusive: []string{"id", "key"},
@@ -425,6 +426,17 @@ var readSpecs = []readSpec{
 			target:    "id",
 			help:      "Task display key such as KAN-12; requires --workspace-id",
 			scopeHelp: "Workspace ID that contains the key's project; used only with --key",
+		},
+	},
+	{
+		group: "task", action: "get-by-ticket-id",
+		short:       "Get task by ticket ID",
+		operationID: "getTaskByTicketId",
+		path:        "/task/by-ticket-id/{ticketId}",
+		params: []readParam{
+			{name: "ticketId", in: paramPath, flag: "ticket-id", required: true, maxLen: 128},
+			{name: "workspaceId", in: paramQuery, flag: "workspace-id", minLen: 1},
+			{name: "projectId", in: paramQuery, flag: "project-id", minLen: 1},
 		},
 	},
 	{

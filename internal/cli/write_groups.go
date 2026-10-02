@@ -196,8 +196,9 @@ var writeSpecs = []writeSpec{
 		group: "gitea", action: "import-issues",
 		short:       "Import Gitea issues",
 		operationID: "importGiteaIssues", method: "POST",
-		path: "/gitea-integration/import-issues",
-		body: true,
+		path:  "/gitea-integration/import-issues",
+		body:  true,
+		notes: `Requires task:update permission in addition to task:create.`,
 	},
 	{
 		group: "gitea", action: "list-repositories",
@@ -249,7 +250,7 @@ var writeSpecs = []writeSpec{
 		operationID: "importGitHubIssues", method: "POST",
 		path:  "/github-integration/import-issues",
 		body:  true,
-		notes: `The server may stop before every issue is imported and report saved progress (HTTP 202, or "pending": true). The command then prints the complete result on stdout and exits 5 with error code "incomplete"; repeat it with the returned runId in the request body to continue.`,
+		notes: `Requires task:update permission in addition to task:create. The server may stop before every issue is imported and report saved progress (HTTP 202, or "pending": true). The command then prints the complete result on stdout and exits 5 with error code "incomplete"; repeat it with the returned runId in the request body to continue.`,
 	},
 	{
 		group: "github", action: "update-integration",
@@ -681,7 +682,7 @@ var writeSpecs = []writeSpec{
 		operationID: "createTask", method: "POST",
 		path:  "/task/{projectId}",
 		body:  true,
-		notes: `status is a column slug from 'column list', or the reserved value "planned" or "archived" to file the task straight into the Backlog or Archive.`,
+		notes: `status is a column slug from 'column list', or the reserved value "planned" or "archived" to file the task straight into the Backlog or Archive. Optional draftAssetIds attaches finalized staged assets to the new task.`,
 		params: []readParam{
 			{name: "projectId", in: paramPath, flag: "project-id", required: true},
 		},
@@ -705,6 +706,24 @@ var writeSpecs = []writeSpec{
 		params: []readParam{
 			{name: "id", in: paramPath, flag: "id", required: true},
 		},
+	},
+	{
+		group: "task", action: "finalize-staged-asset",
+		short:       "Finalize a staged task attachment",
+		operationID: "finalizeStagedTaskAsset", method: "POST",
+		path: "/task/draft-upload/{projectId}/finalize",
+		body: true,
+		params: []readParam{
+			{name: "projectId", in: paramPath, flag: "project-id", required: true},
+		},
+	},
+	{
+		group: "task", action: "reorder",
+		short:       "Reorder or move task cards",
+		operationID: "reorderTasks", method: "POST",
+		path:  "/task/reorder",
+		body:  true,
+		notes: `Updates positions and optional column status while preserving all non-position task fields except the requested status. expectedTasks is the previous complete snapshot of affected columns; stale snapshots return HTTP 409. Refresh before reordering; the command never retries.`,
 	},
 	{
 		group: "task", action: "import",
@@ -989,7 +1008,7 @@ var writeSpecs = []writeSpec{
 		operationID: "importGitlabIssues", method: "POST",
 		path:  "/gitlab-integration/import-issues",
 		body:  true,
-		notes: `When the result reports a non-empty errors array, the command prints the complete result on stdout and exits 5 with error code "partial_failure".`,
+		notes: `Requires task:update permission in addition to task:create. When the result reports a non-empty errors array, the command prints the complete result on stdout and exits 5 with error code "partial_failure".`,
 	},
 	{
 		group: "gitlab", action: "list-projects",

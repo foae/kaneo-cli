@@ -119,3 +119,6 @@ Respect the polling interval returned by the server. On `slow_down`, increase th
 ## Keep credentials private
 
 Use a different key for each integration so you can revoke one without interrupting the others. If a key leaks, revoke it immediately and replace it in the affected service. Device access tokens are secrets too.
+
+
+This documentation is built and hosted on [Mintlify](https://mintlify.com), a developer documentation platform.

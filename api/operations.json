@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "operation_count": 188,
+  "operation_count": 192,
   "source": {
     "openapi_path": "api/openapi.json",
-    "sha256": "fa3d41a7a0caa201b2ee6307b8b36e1567c316983884b5e217b7b477c0492928"
+    "sha256": "b4ab5c1f32ab57078863a330d5910d6ee05c1c893f5729abcaabfe200449c862"
   },
   "operations": [
     {
@@ -5799,7 +5799,7 @@
               }
             }
           },
-          "description": "No workspace access, or missing task:create permission"
+          "description": "No workspace access, or missing task:create or task:update permission"
         },
         "404": {
           "content": {
@@ -6460,7 +6460,7 @@
               }
             }
           },
-          "description": "No workspace access, or missing task:create permission"
+          "description": "No workspace access, or missing task:create or task:update permission"
         },
         "404": {
           "content": {
@@ -12230,6 +12230,116 @@
             }
           },
           "description": "No tasks found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Tasks changed projects; retry the operation"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/task/by-ticket-id/{ticketId}",
+      "operation_id": "getTaskByTicketId",
+      "tags": [
+        "Tasks"
+      ],
+      "summary": "Get task by ticket ID",
+      "description": "Get a single task by its project key and number, such as KAN-12. If the ticket ID matches multiple accessible tasks, provide workspaceId or projectId to select one.",
+      "command": {
+        "group": "task",
+        "action": "get-by-ticket-id",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "description": "Project key and task number, e.g. KAN-12.",
+          "in": "path",
+          "name": "ticketId",
+          "required": true,
+          "schema": {
+            "description": "Project key and task number, e.g. KAN-12.",
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "description": "Select a workspace if the ticket ID exists in more than one.",
+          "in": "query",
+          "name": "workspaceId",
+          "required": false,
+          "schema": {
+            "description": "Select a workspace if the ticket ID exists in more than one.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "description": "Select a project if the ticket ID exists more than once.",
+          "in": "query",
+          "name": "projectId",
+          "required": false,
+          "schema": {
+            "description": "Select a project if the ticket ID exists more than once.",
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskWithAssignee"
+              }
+            }
+          },
+          "description": "Task details"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid ticket ID"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No accessible task has this ticket ID"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Ticket ID matches multiple accessible tasks"
         }
       }
     },
@@ -12407,6 +12517,256 @@
             }
           },
           "description": "No workspace access, or missing task:update permission"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/task/draft-upload/{projectId}",
+      "operation_id": "stageTaskAssetUpload",
+      "tags": [
+        "Tasks"
+      ],
+      "summary": "Stage a task attachment",
+      "description": "Upload an attachment before submitting a task. Staged assets are private to the uploader and expire after 24 hours.",
+      "command": {
+        "group": "task",
+        "action": "stage-asset-upload",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "contentType": {
+                  "type": "string"
+                },
+                "filename": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "number"
+                },
+                "surface": {
+                  "enum": [
+                    "description"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "filename",
+                "contentType",
+                "size",
+                "surface"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskImageUpload"
+              }
+            }
+          },
+          "description": "Presigned upload"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid upload"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Missing task:create permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project not found"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Storage unavailable"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/task/draft-upload/{projectId}/finalize",
+      "operation_id": "finalizeStagedTaskAsset",
+      "tags": [
+        "Tasks"
+      ],
+      "summary": "Finalize a staged task attachment",
+      "command": {
+        "group": "task",
+        "action": "finalize-staged-asset",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "contentType": {
+                  "type": "string"
+                },
+                "filename": {
+                  "type": "string"
+                },
+                "key": {
+                  "description": "The key returned when the URL was issued.",
+                  "type": "string"
+                },
+                "size": {
+                  "type": "number"
+                },
+                "surface": {
+                  "enum": [
+                    "description"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key",
+                "filename",
+                "contentType",
+                "size",
+                "surface"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskImageAsset"
+              }
+            }
+          },
+          "description": "Staged attachment"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid upload"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Missing task:create permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Upload already attached"
+        },
+        "503": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Storage unavailable"
         }
       }
     },
@@ -13123,6 +13483,16 @@
             }
           },
           "description": "Task or destination project not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Task or project moved concurrently; retry the move"
         }
       }
     },
@@ -13213,6 +13583,171 @@
             }
           },
           "description": "No workspace access, or missing task:update permission"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/task/reorder",
+      "operation_id": "reorderTasks",
+      "tags": [
+        "Tasks"
+      ],
+      "summary": "Reorder or move cards",
+      "description": "Atomically update positions and optional column status for cards in one project. Other task fields are preserved.",
+      "command": {
+        "group": "task",
+        "action": "reorder",
+        "status": "implemented"
+      },
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "expectedTasks": {
+                  "description": "Previous complete contents of the affected columns; stale snapshots return 409",
+                  "items": {
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "position": {
+                        "maximum": 2147483646,
+                        "minimum": 0,
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "status": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "position",
+                      "status"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "projectId": {
+                  "type": "string"
+                },
+                "tasks": {
+                  "items": {
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "position": {
+                        "maximum": 2147483646,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "status": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "position"
+                    ],
+                    "type": "object"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "projectId",
+                "tasks"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "position": {
+                      "type": "number"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "position",
+                    "status"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Updated card positions and statuses"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid positions or column"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Missing task:update permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Tasks do not belong to the project"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Board changed or task moved; refresh before reordering"
         }
       }
     },
@@ -13617,6 +14152,16 @@
             }
           },
           "description": "No workspace access, or missing task:delete permission"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Task changed projects; retry the operation"
         }
       }
     },
@@ -13628,7 +14173,7 @@
         "Tasks"
       ],
       "summary": "Get task",
-      "description": "Get a single task by ID, with its assignee's name resolved.",
+      "description": "Get a single task by ID, with its assignee name. The board view omits descriptions above 64 KiB and includes task and same-project parent subtask progress.",
       "command": {
         "group": "task",
         "action": "get",
@@ -13640,6 +14185,18 @@
           "name": "id",
           "required": true,
           "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "view",
+          "required": false,
+          "schema": {
+            "enum": [
+              "detail",
+              "board"
+            ],
             "type": "string"
           }
         }
@@ -13969,6 +14526,13 @@
                 },
                 "description": {
                   "type": "string"
+                },
+                "draftAssetIds": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 100,
+                  "type": "array"
                 },
                 "dueDate": {
                   "type": "string"
