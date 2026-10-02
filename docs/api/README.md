@@ -1,8 +1,8 @@
 # Vendored API reference
 
-`api/openapi.json` is an exact snapshot of the official `https://kaneo.app/docs/openapi.json` fetched on 2026-09-27, matching upstream release tag `v2.29.0`. Its SHA-256, upstream source relationship, and the complete upstream MIT notice are recorded in [`api/provenance.json`](../../api/provenance.json).
+`api/openapi.json` is an exact snapshot of the official `https://kaneo.app/docs/openapi.json` fetched on 2026-10-02, matching upstream release tag `v2.30.1`. Its SHA-256, upstream source relationship, and the complete upstream MIT notice are recorded in [`api/provenance.json`](../../api/provenance.json).
 
-The relationship is verified rather than inferred from this repository's license: the upstream [`usekaneo/kaneo`](https://github.com/usekaneo/kaneo) `apps/docs/docs.json` config points its API Reference at `openapi.json`, and the current official document matched `apps/docs/openapi.json` at upstream commit `0893b0269463493b35f6bde0fff0307d3c3b9792` (tag `v2.29.0`) by SHA-256.
+The relationship is verified rather than inferred from this repository's license: the upstream [`usekaneo/kaneo`](https://github.com/usekaneo/kaneo) `apps/docs/docs.json` config points its API Reference at `openapi.json`, and the current official document matched `apps/docs/openapi.json` at upstream commit `0a23a40767de7ebb4e530206976b9831e4994002` (tag `v2.30.1` and verified main) by SHA-256.
 
 ## Inventory
 

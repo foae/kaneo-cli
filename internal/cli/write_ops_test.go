@@ -22,6 +22,7 @@ var fullyCoveredOperations = map[string]string{
 	"getDeviceAuthorizationPage": "dedicated browser URL handoff",
 	"authorizeMcpOAuthClient":    "dedicated browser URL handoff",
 	"createTaskImageUpload":      "dedicated task create-image-upload",
+	"stageTaskAssetUpload":       "dedicated task stage-asset-upload",
 	"uploadUserAvatar":           "dedicated user upload-avatar",
 	"uploadProjectBackground":    "dedicated project create-background-upload",
 }

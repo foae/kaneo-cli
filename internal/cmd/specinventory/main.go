@@ -364,8 +364,10 @@ func renderDocument(inventory generatedInventory) (string, error) {
 }
 
 var dedicatedUploadReferences = map[string]string{
-	"createTaskImageUpload": "Dedicated upload contract: pass the local image with `--file`; the CLI obtains a presigned storage destination, uploads the file without API credentials, and finalizes the image against the task.",
-	"uploadUserAvatar":      "Dedicated upload contract: pass the local avatar with `--file`; the CLI reads the local file and sends its detected content type and base64 data as the documented avatar request.",
+	"createTaskImageUpload":   "Dedicated upload contract: pass the local file with `--file`; the CLI obtains a presigned storage destination, uploads without API credentials, and prints only the key. Finalize separately with `task finalize-image-upload`.",
+	"stageTaskAssetUpload":    "Dedicated upload contract: pass `--project-id`, `--file` and `--surface description`; the CLI uploads without API credentials and prints only the key. Finalize with `task finalize-staged-asset`, then pass its asset ID in `task create`'s `draftAssetIds`.",
+	"uploadProjectBackground": "Dedicated upload contract: pass `--id` and `--file`; the CLI uploads without API credentials and prints only key, contentType, version and size. Finalize separately with `project finalize-background-upload`.",
+	"uploadUserAvatar":        "Dedicated upload contract: pass the local avatar with `--file`; the CLI reads the local file and sends its detected content type and base64 data as the documented avatar request.",
 }
 
 type bodyHelpRenderer struct {

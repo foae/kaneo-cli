@@ -416,3 +416,25 @@ Live scenarios, each observed through a locally built binary:
 - Regression smoke with the API key: `instance get-status`, `user get-current`, `auth get-session`, `project create`, `project list`, `task create` and `task list` all exited 0.
 
 Fixture-only: none of the changed surface. The device flow was not re-run live. The guide's flow is unchanged, and the better-auth patch bump leaves the device-authorization, bearer and api-key sources identical. `just check`, `just race`, `just vuln` and `just cross` passed.
+
+## API baseline refresh to Kaneo 2.30.1 (2026-10-02)
+
+Environment: Linux amd64. API snapshot SHA-256 `b4ab5c1f32ab57078863a330d5910d6ee05c1c893f5729acabfe200449c862`, identical between the official document and upstream tag `v2.30.1`, commit `0a23a40767de7ebb4e530206976b9831e4994002` (also the verified main commit). The documentation configuration still points to this snapshot; the upstream license is unchanged. The authentication guide only adds a Mintlify attribution; the authentication flow and better-auth 1.6.26 pin are unchanged.
+
+Disposable Kaneo image: `ghcr.io/usekaneo/kaneo@sha256:fed2e27bd6d0f0aa6b72f7ff453385c3067f1c7e2b8af7737686c523c960c114`; `/app/package.json` reported `2.30.1`. PostgreSQL and locally built MinIO retain the pins in `integration/compose.yaml`. The prior acceptance stack was removed before startup, the fresh instance reported no users/admin, and HTTP signup/API-key bootstrap created disposable credentials held only in memory. The built CLI used an isolated configuration directory and explicit loopback API URL with inherited `KANEO_*` settings removed. Containers and volumes were removed after acceptance.
+
+Delta: 188 → 192 operations; none removed. Added `getTaskByTicketId`, `reorderTasks`, `stageTaskAssetUpload`, and `finalizeStagedTaskAsset`, mapped to `task get-by-ticket-id`, `task reorder`, `task stage-asset-upload`, and `task finalize-staged-asset`. Changed operation objects: `getTask` adds `view=detail|board`; `createTask` adds `draftAssetIds`; `bulkUpdateTasks`, `deleteTask`, and `moveTask` document concurrent-state HTTP 409; `importGitHubIssues` and `importGiteaIssues` require both create and update permission. Shared `BoardPagination` adds optional public revision tokens; `TaskWithAssignee` adds optional subtask and parent progress. These response fields pass through unchanged. The maintainer explicitly approved the permission break and a major CLI release; migration instructions are in the CLI contract and consumer skill.
+
+Live scenarios through the built executable:
+
+- Ticket lookup returned the same task as the existing `task get --key` resolver. A missing ticket returned HTTP 404/exit 5; duplicate accessible ticket IDs returned HTTP 409, and project scope selected the intended task.
+- `task get --view board` deferred a 65,537-byte description to null with `descriptionDeferred: true`; detail view preserved every byte. A completed child task produced `{completed:1,total:1}` for its parent, and the child's `parentSubtaskCounts` identified that parent.
+- `task reorder` changed positions without changing description or priority. Replaying the stale `expectedTasks` snapshot returned HTTP 409/exit 5 and empty stdout.
+- Staging uploaded a PNG and printed only the key. Finalization returned an asset ID/URL; creating a task with that URL in the description and its ID in `draftAssetIds` attached it. An authenticated download matched the original bytes exactly. Referencing the already attached asset in another create returned HTTP 400. Unreferenced IDs were ignored, matching [create-task.ts at the pinned revision](https://github.com/usekaneo/kaneo/blob/0a23a40767de7ebb4e530206976b9831e4994002/apps/api/src/task/controllers/create-task.ts).
+- The existing `task create-image-upload` command still uploaded successfully and emitted only its key after the shared transfer refactor.
+- Task move and bulk priority update succeeded and were confirmed by reads. Delete succeeded; the subsequent missing-ID read retained the previously recorded HTTP 400 `Workspace ID could not be determined` behavior (see the 2026-09-22 evidence), not the ticket endpoint's 404.
+- Authenticated task listing and anonymous public-project reads succeeded; the public board emitted `revision` and `relatedRevision`.
+
+Fixture-only: concurrent move/delete/bulk conflicts, staged-finalization conflict, transfer failures/redirects and credential isolation, pre-request input boundaries, and GitHub/Gitea import permission errors. No external-provider import was run: real provider credentials/integrations are unavailable. Device authorization was not rerun; its contract is unchanged. No native macOS/Windows/ARM runtime acceptance is claimed.
+
+`just check`, `just race`, `just vuln` (no vulnerabilities), and `just cross` passed. Cross-builds are compilation evidence only. Focused CLI fixtures passed as part of the shared checks.
