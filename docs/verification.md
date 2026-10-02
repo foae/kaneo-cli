@@ -440,3 +440,5 @@ Fixture-only: concurrent move/delete/bulk conflicts, staged-finalization conflic
 `just check`, `just race`, `just vuln` (no vulnerabilities), and `just cross` passed. Cross-builds are compilation evidence only. Focused CLI fixtures passed as part of the shared checks.
 
 Independent review of the committed refresh found no confirmed actionable defects in query validation/dispatch, JSON mutations, staged-upload safety, existing-upload compatibility, migration guidance, or the recorded coverage. The consumer skill was stamped to `2.0.0`; the release planner selected `v2.0.0` and the subsequent `just check` passed.
+
+Post-merge [CI run 37051156202](https://github.com/foae/kaneo-cli/actions/runs/37051156202) passed Linux/macOS checks but failed the FIFO fixture on Windows: `mkfifo` was present, yet native Go could not access the created path. Publication was skipped. The fixture now skips native Windows explicitly because POSIX FIFO semantics are unavailable there; regular-file, directory and missing-file checks remain cross-platform. No production behavior changed.
