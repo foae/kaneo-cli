@@ -887,7 +887,16 @@ func buildSecretBodyOperations(document map[string]any, operations []generatedOp
 		if schema == nil {
 			continue
 		}
-		found, err := renderer.hasSecretProperty(schema, make(map[string]bool))
+		// These root fields are state-comparison hashes, not credentials.
+		// Keep scanning every other field, including nested credentials.
+		comparisonProperty := ""
+		switch operation.OperationID {
+		case "saveIntegrationSyncRules":
+			comparisonProperty = "previewToken"
+		case "resumeIntegrationSync":
+			comparisonProperty = "token"
+		}
+		found, err := renderer.hasSecretProperty(schema, make(map[string]bool), comparisonProperty)
 		if err != nil {
 			return nil, fmt.Errorf("scan request body for %s: %w", operation.OperationID, err)
 		}
@@ -899,8 +908,9 @@ func buildSecretBodyOperations(document map[string]any, operations []generatedOp
 }
 
 // hasSecretProperty walks a schema, following local references once each along
-// a branch so a cyclic document cannot loop.
-func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references map[string]bool) (bool, error) {
+// a branch so a cyclic document cannot loop. comparisonProperty exempts only
+// the named property at this object level, never properties of child objects.
+func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references map[string]bool, comparisonProperty string) (bool, error) {
 	if reference := stringValue(schema["$ref"]); reference != "" {
 		if references[reference] {
 			return false, nil
@@ -910,7 +920,7 @@ func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references m
 		if err != nil {
 			return false, err
 		}
-		found, err := r.hasSecretProperty(target, references)
+		found, err := r.hasSecretProperty(target, references, comparisonProperty)
 		delete(references, reference)
 		if err != nil || found {
 			return found, err
@@ -918,14 +928,14 @@ func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references m
 	}
 	properties := objectValues(schema["properties"])
 	for _, name := range sortedKeys(properties) {
-		if secretProperty(name) {
+		if secretProperty(name) && name != comparisonProperty {
 			return true, nil
 		}
 		property := objectValues(properties[name])
 		if property == nil {
 			return false, fmt.Errorf("property %q is not a schema object", name)
 		}
-		found, err := r.hasSecretProperty(property, references)
+		found, err := r.hasSecretProperty(property, references, "")
 		if err != nil || found {
 			return found, err
 		}
@@ -945,7 +955,7 @@ func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references m
 		if memberSchema == nil {
 			continue
 		}
-		found, err := r.hasSecretProperty(memberSchema, references)
+		found, err := r.hasSecretProperty(memberSchema, references, "")
 		if err != nil || found {
 			return found, err
 		}

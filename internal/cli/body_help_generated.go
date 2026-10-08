@@ -116,8 +116,6 @@ var generatedSecretBodyOperations = map[string]bool{
 	"createTelegramIntegration":       true,
 	"listGiteaRepositories":           true,
 	"listGitlabProjects":              true,
-	"resumeIntegrationSync":           true,
-	"saveIntegrationSyncRules":        true,
 	"updateDiscordIntegration":        true,
 	"updateGenericWebhookIntegration": true,
 	"updateMattermostIntegration":     true,

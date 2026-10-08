@@ -121,3 +121,34 @@ func TestRenderBodyHelpRendersSchemaBounds(t *testing.T) {
 		t.Errorf("rendered help contains pattern or float formatting:\n%s", help)
 	}
 }
+
+func TestComparisonTokenExceptionDoesNotHideCredentials(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		properties map[string]any
+		wantSecret bool
+	}{
+		{"comparison only", map[string]any{"token": map[string]any{"type": "string"}}, false},
+		{"other credential", map[string]any{
+			"token":    map[string]any{"type": "string"},
+			"password": map[string]any{"type": "string"},
+		}, true},
+		{"nested token", map[string]any{
+			"token": map[string]any{"type": "string"},
+			"provider": map[string]any{"type": "object", "properties": map[string]any{
+				"token": map[string]any{"type": "string"},
+			}},
+		}, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			renderer := bodyHelpRenderer{}
+			secret, err := renderer.hasSecretProperty(
+				map[string]any{"type": "object", "properties": test.properties},
+				make(map[string]bool), "token",
+			)
+			if err != nil || secret != test.wantSecret {
+				t.Fatalf("secret=%v err=%v, want secret=%v", secret, err, test.wantSecret)
+			}
+		})
+	}
+}

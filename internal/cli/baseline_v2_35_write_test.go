@@ -94,6 +94,9 @@ func TestBaselineV235SyncFailuresDoNotRetry(t *testing.T) {
 			if err := json.Unmarshal([]byte(lines[len(lines)-1]), &response); err != nil || response.Error.Status != tt.httpStatus {
 				t.Fatalf("diagnostic=%q error=%v", stderr, err)
 			}
+			if response.Error.Message != tt.message {
+				t.Fatalf("message=%q want %q", response.Error.Message, tt.message)
+			}
 			if tt.httpStatus == http.StatusConflict && response.Error.Code != "conflict" {
 				t.Fatalf("error=%+v stderr=%q", response.Error, stderr)
 			}
