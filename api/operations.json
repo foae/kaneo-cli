@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "operation_count": 192,
+  "operation_count": 209,
   "source": {
     "openapi_path": "api/openapi.json",
-    "sha256": "b4ab5c1f32ab57078863a330d5910d6ee05c1c893f5729abcaabfe200449c862"
+    "sha256": "7dace2b05cc27a8b239676e4b4d6c296e2e8c19f1bed8467d819cb73f68d3103"
   },
   "operations": [
     {
@@ -364,13 +364,82 @@
     },
     {
       "method": "GET",
+      "path": "/activity/workspace/{workspaceId}",
+      "operation_id": "getWorkspaceActivities",
+      "tags": [
+        "Activity"
+      ],
+      "summary": "Get recent workspace activity",
+      "description": "Get the 20 most recent task events across a workspace's active projects from the last 30 days, newest first. Each event carries a short plain-text excerpt instead of its full content.",
+      "command": {
+        "group": "activity",
+        "action": "list-workspace",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/WorkspaceActivity"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Recent activity in the workspace"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Workspace ID could not be determined"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing project:read or task:read permission"
+        }
+      }
+    },
+    {
+      "method": "GET",
       "path": "/activity/{taskId}",
       "operation_id": "getActivities",
       "tags": [
         "Activity"
       ],
       "summary": "Get task activity",
-      "description": "Get a task's full activity feed, newest first: comments alongside system events such as status and assignee changes.",
+      "description": "Get a task's activity feed, newest first: comments alongside system events such as status and assignee changes. Set limit to request a bounded preview; omit it for the full feed.",
       "command": {
         "group": "activity",
         "action": "list-task",
@@ -383,6 +452,18 @@
           "required": true,
           "schema": {
             "type": "string"
+          }
+        },
+        {
+          "description": "Maximum number of recent activities; omit for the full feed.",
+          "in": "query",
+          "name": "limit",
+          "required": false,
+          "schema": {
+            "description": "Maximum number of recent activities; omit for the full feed.",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
           }
         }
       ],
@@ -517,6 +598,648 @@
             }
           },
           "description": "The caller is not an instance administrator or is authenticated with an API key"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/admin/workspaces",
+      "operation_id": "listAdminWorkspaces",
+      "tags": [
+        "Admin"
+      ],
+      "summary": "List instance workspaces",
+      "description": "Page through every workspace on this instance with its owners, member count and project count, optionally filtered by a case-insensitive name or slug search. Requires an instance administrator session; API keys are rejected.",
+      "command": {
+        "group": "admin",
+        "action": "list-workspaces",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "description": "Case-insensitive match against workspace name or slug.",
+          "in": "query",
+          "name": "search",
+          "required": false,
+          "schema": {
+            "description": "Case-insensitive match against workspace name or slug.",
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "maximum": 1000000,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "limit",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminWorkspaceList"
+              }
+            }
+          },
+          "description": "Workspaces matching the search"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid search, page, or limit"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The caller is not an instance administrator or is authenticated with an API key"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/admin/workspaces/{workspaceId}/members",
+      "operation_id": "listAdminWorkspaceMembers",
+      "tags": [
+        "Admin"
+      ],
+      "summary": "List workspace members",
+      "description": "List every member of a workspace with their role, whether or not the administrator belongs to it.",
+      "command": {
+        "group": "admin",
+        "action": "list-workspace-members",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/AdminWorkspaceMember"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Workspace members"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The caller is not an instance administrator or is authenticated with an API key"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Workspace not found"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/admin/workspaces/{workspaceId}/members",
+      "operation_id": "addAdminWorkspaceMember",
+      "tags": [
+        "Admin"
+      ],
+      "summary": "Add a user to a workspace",
+      "description": "Add an existing user to a workspace with a role. They start with access to every project. Returns the updated member list.",
+      "command": {
+        "group": "admin",
+        "action": "add-workspace-member",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "role": {
+                  "description": "A built-in role (viewer, member, admin) or one of the workspace's custom roles. Use the ownership endpoint to make someone the owner.",
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "userId": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "userId",
+                "role"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/AdminWorkspaceMember"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Updated workspace members"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unknown role, or the owner role was requested"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The caller is not an instance administrator or is authenticated with an API key"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Workspace or user not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The user is already a member"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/admin/workspaces/{workspaceId}/members/{userId}",
+      "operation_id": "removeAdminWorkspaceMember",
+      "tags": [
+        "Admin"
+      ],
+      "summary": "Remove a workspace member",
+      "description": "Remove a member from a workspace. Their account stays. The only owner can't be removed. Returns the updated member list.",
+      "command": {
+        "group": "admin",
+        "action": "remove-workspace-member",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "userId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/AdminWorkspaceMember"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Updated workspace members"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The caller is not an instance administrator or is authenticated with an API key"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Workspace or member not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The member is the only owner"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/admin/workspaces/{workspaceId}/members/{userId}/role",
+      "operation_id": "updateAdminWorkspaceMemberRole",
+      "tags": [
+        "Admin"
+      ],
+      "summary": "Change a workspace member's role",
+      "description": "Change a member's role. Use the ownership transfer to make someone the owner; the only owner's role can't be changed. Returns the updated member list.",
+      "command": {
+        "group": "admin",
+        "action": "update-workspace-member-role",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "userId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "role": {
+                  "description": "A built-in role (viewer, member, admin) or one of the workspace's custom roles. Use the ownership endpoint to make someone the owner.",
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "role"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/AdminWorkspaceMember"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Updated workspace members"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Unknown role, or the owner role was requested"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The caller is not an instance administrator or is authenticated with an API key"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Workspace or member not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The member is the only owner"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/admin/workspaces/{workspaceId}/owner",
+      "operation_id": "transferAdminWorkspaceOwnership",
+      "tags": [
+        "Admin"
+      ],
+      "summary": "Transfer workspace ownership",
+      "description": "Make an existing member the only owner of a workspace, for example when the previous owner has left. Previous owners become admins. Returns the updated member list.",
+      "command": {
+        "group": "admin",
+        "action": "transfer-workspace-ownership",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "userId": {
+                  "description": "An existing member who becomes the only owner. Previous owners become admins.",
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "userId"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/AdminWorkspaceMember"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Updated workspace members"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The member is already the only owner"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The caller is not an instance administrator or is authenticated with an API key"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Workspace or member not found"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/admin/workspaces/{workspaceId}/roles",
+      "operation_id": "listAdminWorkspaceRoles",
+      "tags": [
+        "Admin"
+      ],
+      "summary": "List assignable workspace roles",
+      "description": "List the roles an administrator can give members of a workspace: the built-in viewer, member and admin roles plus the workspace's custom roles. Ownership is changed with the ownership transfer instead.",
+      "command": {
+        "group": "admin",
+        "action": "list-workspace-roles",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "Role names an administrator can assign in the workspace.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Assignable role names"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The caller is not an instance administrator or is authenticated with an API key"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Workspace not found"
         }
       }
     },
@@ -1422,6 +2145,21 @@
                   "organizationSlug": {
                     "type": "string"
                   },
+                  "projectAccess": {
+                    "description": "\"all\" gives access to every project once accepted; \"selected\" limits the member to projectIds.",
+                    "enum": [
+                      "all",
+                      "selected"
+                    ],
+                    "type": "string"
+                  },
+                  "projectIds": {
+                    "description": "Projects the invitation grants when projectAccess is \"selected\". Only projects the viewer can access are listed.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
                   "role": {
                     "type": "string"
                   },
@@ -1439,7 +2177,9 @@
                   "expiresAt",
                   "organizationName",
                   "organizationSlug",
-                  "inviterEmail"
+                  "inviterEmail",
+                  "projectAccess",
+                  "projectIds"
                 ],
                 "type": "object"
               }
@@ -1578,6 +2318,21 @@
                   "description": "The organization ID to invite the user to",
                   "type": "string"
                 },
+                "projectAccess": {
+                  "description": "\"all\" (the default) gives access to every project. \"selected\" limits the new member to projectIds once they accept.",
+                  "enum": [
+                    "all",
+                    "selected"
+                  ],
+                  "type": "string"
+                },
+                "projectIds": {
+                  "description": "Projects the new member can access when projectAccess is \"selected\". They must belong to the workspace, and an inviter whose own access is limited can only choose projects they can access.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
                 "resend": {
                   "description": "Resend the invitation email, if the user is already invited. Eg: true",
                   "type": "boolean"
@@ -1649,6 +2404,21 @@
                   "organizationId": {
                     "type": "string"
                   },
+                  "projectAccess": {
+                    "description": "\"all\" gives access to every project once accepted; \"selected\" limits the member to projectIds.",
+                    "enum": [
+                      "all",
+                      "selected"
+                    ],
+                    "type": "string"
+                  },
+                  "projectIds": {
+                    "description": "Projects the invitation grants when projectAccess is \"selected\". Only projects the viewer can access are listed.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
                   "role": {
                     "type": "string"
                   },
@@ -1664,7 +2434,9 @@
                   "inviterId",
                   "status",
                   "expiresAt",
-                  "createdAt"
+                  "createdAt",
+                  "projectAccess",
+                  "projectIds"
                 ],
                 "type": "object"
               }
@@ -1799,6 +2571,16 @@
         "action": "list-invitations",
         "status": "implemented"
       },
+      "parameters": [
+        {
+          "in": "query",
+          "name": "organizationId",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
       "security": [
         {
           "bearerAuth": []
@@ -1806,6 +2588,69 @@
       ],
       "responses": {
         "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "properties": {
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "inviterId": {
+                      "type": "string"
+                    },
+                    "organizationId": {
+                      "type": "string"
+                    },
+                    "projectAccess": {
+                      "description": "\"all\" gives access to every project once accepted; \"selected\" limits the member to projectIds.",
+                      "enum": [
+                        "all",
+                        "selected"
+                      ],
+                      "type": "string"
+                    },
+                    "projectIds": {
+                      "description": "Projects the invitation grants when projectAccess is \"selected\". Only projects the viewer can access are listed.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "role": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "email",
+                    "role",
+                    "organizationId",
+                    "inviterId",
+                    "status",
+                    "expiresAt",
+                    "createdAt",
+                    "projectAccess",
+                    "projectIds"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            }
+          },
           "description": "Success"
         },
         "401": {
@@ -6043,6 +6888,16 @@
             }
           },
           "description": "Integration not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration changed; refresh before updating settings"
         }
       }
     },
@@ -7332,6 +8187,16 @@
             }
           },
           "description": "Integration not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration changed; refresh before updating settings"
         }
       }
     },
@@ -7675,6 +8540,844 @@
             }
           },
           "description": "Instance status"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/integration-sync/project/{projectId}/{provider}",
+      "operation_id": "getIntegrationSyncRules",
+      "tags": [
+        "Integration sync"
+      ],
+      "summary": "Get sync rules and current task scope",
+      "description": "Workspace members with project and task read permissions can inspect saved rules. Rules remain active when advanced mode is hidden. Paused issue links are preserved; eligible paused tasks require review before resuming.",
+      "command": {
+        "group": "integration-sync",
+        "action": "get-rules",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "provider",
+          "required": true,
+          "schema": {
+            "enum": [
+              "github",
+              "gitea",
+              "gitlab"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "after",
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationSyncPreview"
+              }
+            }
+          },
+          "description": "Saved rules and scope"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid rule or workspace label"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access or required permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration or linked task not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Configuration, impact or comparison changed; review again"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/integration-sync/project/{projectId}/{provider}",
+      "operation_id": "saveIntegrationSyncRules",
+      "tags": [
+        "Integration sync"
+      ],
+      "summary": "Apply a previewed sync rule",
+      "description": "Save shared integration rules only if the preview is still current. Excluded links are paused, never deleted. Newly matching unlinked tasks are exported through the integration event path. Paused links require explicit review to resume.",
+      "command": {
+        "group": "integration-sync",
+        "action": "save-rules",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "provider",
+          "required": true,
+          "schema": {
+            "enum": [
+              "github",
+              "gitea",
+              "gitlab"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "previewToken": {
+                  "maxLength": 64,
+                  "minLength": 64,
+                  "type": "string"
+                },
+                "rules": {
+                  "properties": {
+                    "incoming": {
+                      "description": "Exact repository label names controlling which issues can be imported.",
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "mode": {
+                              "enum": [
+                                "all"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mode"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "labels": {
+                              "items": {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "maxItems": 50,
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "match": {
+                              "enum": [
+                                "any",
+                                "all"
+                              ],
+                              "type": "string"
+                            },
+                            "mode": {
+                              "enum": [
+                                "labels"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mode",
+                            "match",
+                            "labels"
+                          ],
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "outgoing": {
+                      "description": "Kaneo workspace label IDs controlling task sync. Missing labels pause sync.",
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "mode": {
+                              "enum": [
+                                "all"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mode"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "labels": {
+                              "items": {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "maxItems": 50,
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "match": {
+                              "enum": [
+                                "any",
+                                "all"
+                              ],
+                              "type": "string"
+                            },
+                            "mode": {
+                              "enum": [
+                                "labels"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mode",
+                            "match",
+                            "labels"
+                          ],
+                          "type": "object"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "outgoing",
+                    "incoming"
+                  ],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "rules",
+                "previewToken"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationSyncPreview"
+              }
+            }
+          },
+          "description": "Saved rules and current scope"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid rule or workspace label"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access or required permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration or linked task not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Configuration, impact or comparison changed; review again"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/integration-sync/project/{projectId}/{provider}/links/{linkId}/resume",
+      "operation_id": "resumeIntegrationSync",
+      "tags": [
+        "Integration sync"
+      ],
+      "summary": "Resume a reviewed issue link",
+      "description": "Explicitly choose the current Kaneo or repository title, description and open/closed state. Existing links are reused; historical comments are not replayed. The task must still match its outgoing rule. A changed comparison requires another review.",
+      "command": {
+        "group": "integration-sync",
+        "action": "resume",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "provider",
+          "required": true,
+          "schema": {
+            "enum": [
+              "github",
+              "gitea",
+              "gitlab"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "linkId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "source": {
+                  "enum": [
+                    "kaneo",
+                    "provider"
+                  ],
+                  "type": "string"
+                },
+                "token": {
+                  "maxLength": 64,
+                  "minLength": 64,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "token",
+                "source"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "success": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "success"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Sync resumed"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid rule or workspace label"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access or required permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration or linked task not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Comparison changed or synchronization is busy; review or retry"
+        },
+        "502": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "External issue unavailable; sync remains paused"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/integration-sync/project/{projectId}/{provider}/links/{linkId}/review",
+      "operation_id": "reviewIntegrationSyncResume",
+      "tags": [
+        "Integration sync"
+      ],
+      "summary": "Compare a paused task with its external issue",
+      "command": {
+        "group": "integration-sync",
+        "action": "review-resume",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "provider",
+          "required": true,
+          "schema": {
+            "enum": [
+              "github",
+              "gitea",
+              "gitlab"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "linkId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationSyncResumePreview"
+              }
+            }
+          },
+          "description": "Current values and comparison token"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid rule or workspace label"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access or required permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration or linked task not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Configuration, impact or comparison changed; review again"
+        },
+        "502": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "External issue unavailable; sync remains paused"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/integration-sync/project/{projectId}/{provider}/preview",
+      "operation_id": "previewIntegrationSyncRules",
+      "tags": [
+        "Integration sync"
+      ],
+      "summary": "Preview a sync rule change",
+      "description": "Returns matching tasks, new exports, paused links and a token bound to the current integration and impact. Outgoing labels are workspace label IDs; incoming labels are exact repository label names.",
+      "command": {
+        "group": "integration-sync",
+        "action": "preview-rules",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "projectId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "provider",
+          "required": true,
+          "schema": {
+            "enum": [
+              "github",
+              "gitea",
+              "gitlab"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "rules": {
+                  "properties": {
+                    "incoming": {
+                      "description": "Exact repository label names controlling which issues can be imported.",
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "mode": {
+                              "enum": [
+                                "all"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mode"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "labels": {
+                              "items": {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "maxItems": 50,
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "match": {
+                              "enum": [
+                                "any",
+                                "all"
+                              ],
+                              "type": "string"
+                            },
+                            "mode": {
+                              "enum": [
+                                "labels"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mode",
+                            "match",
+                            "labels"
+                          ],
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "outgoing": {
+                      "description": "Kaneo workspace label IDs controlling task sync. Missing labels pause sync.",
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "mode": {
+                              "enum": [
+                                "all"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mode"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "labels": {
+                              "items": {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "maxItems": 50,
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "match": {
+                              "enum": [
+                                "any",
+                                "all"
+                              ],
+                              "type": "string"
+                            },
+                            "mode": {
+                              "enum": [
+                                "labels"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mode",
+                            "match",
+                            "labels"
+                          ],
+                          "type": "object"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "outgoing",
+                    "incoming"
+                  ],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "rules"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationSyncPreview"
+              }
+            }
+          },
+          "description": "Proposed rule impact"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid rule or workspace label"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access or required permission"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Integration or linked task not found"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Configuration, impact or comparison changed; review again"
         }
       }
     },
@@ -9174,12 +10877,25 @@
         "Notifications"
       ],
       "summary": "List notifications",
-      "description": "Get every notification for the current user, read and unread.",
+      "description": "Get up to 50 notifications for the current user, read and unread. Optionally limit them to one workspace before applying the limit.",
       "command": {
         "group": "notification",
         "action": "list",
         "status": "implemented"
       },
+      "parameters": [
+        {
+          "description": "Limit notifications to resources currently in this workspace, plus user-wide notifications with no resource. Omit to include all workspaces.",
+          "in": "query",
+          "name": "workspaceId",
+          "required": false,
+          "schema": {
+            "description": "Limit notifications to resources currently in this workspace, plus user-wide notifications with no resource. Omit to include all workspaces.",
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
       "security": [
         {
           "bearerAuth": []
@@ -9656,12 +11372,25 @@
         "Notifications"
       ],
       "summary": "Clear all",
-      "description": "Permanently delete every notification for the current user. This cannot be undone.",
+      "description": "Permanently delete notifications for the current user, optionally limited to one workspace. This cannot be undone.",
       "command": {
         "group": "notification",
         "action": "clear-all",
         "status": "implemented"
       },
+      "parameters": [
+        {
+          "description": "Limit notifications to resources currently in this workspace, plus user-wide notifications with no resource. Omit to include all workspaces.",
+          "in": "query",
+          "name": "workspaceId",
+          "required": false,
+          "schema": {
+            "description": "Limit notifications to resources currently in this workspace, plus user-wide notifications with no resource. Omit to include all workspaces.",
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
       "security": [
         {
           "bearerAuth": []
@@ -9691,12 +11420,25 @@
         "Notifications"
       ],
       "summary": "Mark all read",
-      "description": "Mark every notification for the current user as read.",
+      "description": "Mark notifications for the current user as read, optionally limited to one workspace.",
       "command": {
         "group": "notification",
         "action": "mark-all-read",
         "status": "implemented"
       },
+      "parameters": [
+        {
+          "description": "Limit notifications to resources currently in this workspace, plus user-wide notifications with no resource. Omit to include all workspaces.",
+          "in": "query",
+          "name": "workspaceId",
+          "required": false,
+          "schema": {
+            "description": "Limit notifications to resources currently in this workspace, plus user-wide notifications with no resource. Omit to include all workspaces.",
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      ],
       "security": [
         {
           "bearerAuth": []
@@ -9968,6 +11710,16 @@
             }
           },
           "description": "No workspace access, or missing project:create permission"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Another project in the workspace uses this key"
         }
       }
     },
@@ -10070,7 +11822,7 @@
               }
             }
           },
-          "description": "No workspace access, or missing project:update permission"
+          "description": "No workspace access, missing project:update permission, or no access to a listed project"
         }
       }
     },
@@ -10300,6 +12052,16 @@
             }
           },
           "description": "No workspace access, missing project:update, or missing project:share when visibility changes"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Another project in the workspace uses the new key"
         }
       }
     },
@@ -10910,6 +12672,16 @@
             }
           },
           "description": "No workspace access, or missing project:update permission"
+        },
+        "409": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Another project in the workspace uses this key"
         }
       }
     },
@@ -12030,6 +13802,86 @@
       }
     },
     {
+      "method": "GET",
+      "path": "/task/assigned",
+      "operation_id": "listAssignedTasks",
+      "tags": [
+        "Tasks"
+      ],
+      "summary": "List my assigned tasks",
+      "description": "Get the open tasks assigned to the caller across a workspace's active projects. Completed and archived tasks are excluded. Ordered by due date (undated last), then priority. At most 100 tasks are returned; total counts all of them. Set countOnly=true to return just that total without loading task rows or labels.",
+      "command": {
+        "group": "task",
+        "action": "list-assigned",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "query",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "description": "Return only the total, with an empty tasks array, without loading task rows or labels.",
+          "in": "query",
+          "name": "countOnly",
+          "required": false,
+          "schema": {
+            "description": "Return only the total, with an empty tasks array, without loading task rows or labels.",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignedTasks"
+              }
+            }
+          },
+          "description": "Open tasks assigned to the caller"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid workspace ID or query parameters"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing project:read or task:read permission"
+        }
+      }
+    },
+    {
       "method": "PUT",
       "path": "/task/assignee/{id}",
       "operation_id": "updateTaskAssignee",
@@ -12251,7 +14103,7 @@
         "Tasks"
       ],
       "summary": "Get task by ticket ID",
-      "description": "Get a single task by its project key and number, such as KAN-12. If the ticket ID matches multiple accessible tasks, provide workspaceId or projectId to select one.",
+      "description": "Get a single task by its project key and number, such as KAN-12. A match in an active project takes precedence, then the most recently archived project. If the ticket ID still matches multiple accessible tasks, narrow the lookup to a workspace with workspaceId or workspaceSlug, or to a single project with projectId.",
       "command": {
         "group": "task",
         "action": "get-by-ticket-id",
@@ -12281,6 +14133,18 @@
           }
         },
         {
+          "description": "Select a workspace by its slug instead of its ID.",
+          "in": "query",
+          "name": "workspaceSlug",
+          "required": false,
+          "schema": {
+            "description": "Select a workspace by its slug instead of its ID.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
           "description": "Select a project if the ticket ID exists more than once.",
           "in": "query",
           "name": "projectId",
@@ -12302,7 +14166,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TaskWithAssignee"
+                "$ref": "#/components/schemas/TaskByTicketId"
               }
             }
           },
@@ -15783,7 +17647,7 @@
         "Workspaces"
       ],
       "summary": "Get workspace members",
-      "description": "Get all members of a workspace, with their role.",
+      "description": "Get all members of a workspace, with their role. Pass projectId to get only the members who can access that project.",
       "command": {
         "group": "workspace",
         "action": "list-members",
@@ -15795,6 +17659,16 @@
           "name": "workspaceId",
           "required": true,
           "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "description": "Only return members who can access this project, for example to fill an assignee picker.",
+          "in": "query",
+          "name": "projectId",
+          "required": false,
+          "schema": {
+            "description": "Only return members who can access this project, for example to fill an assignee picker.",
             "type": "string"
           }
         }
@@ -15817,6 +17691,264 @@
             }
           },
           "description": "List of workspace members"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Workspace ID could not be determined"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No access to the workspace or to the project"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Project not found in this workspace"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/workspace/{workspaceId}/members/{userId}/project-access",
+      "operation_id": "updateMemberProjectAccess",
+      "tags": [
+        "Workspaces"
+      ],
+      "summary": "Update member project access",
+      "description": "Give a member access to every project, or limit them to selected projects. Owners always access every project, and you can't change your own access or give access to projects you can't access yourself.",
+      "command": {
+        "group": "workspace",
+        "action": "update-member-project-access",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "path",
+          "name": "userId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_body": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "projectAccess": {
+                  "description": "\"all\" gives access to every project in the workspace, including future ones. \"selected\" limits the member to projectIds.",
+                  "enum": [
+                    "all",
+                    "selected"
+                  ],
+                  "type": "string"
+                },
+                "projectIds": {
+                  "default": [],
+                  "description": "Projects the member can access when projectAccess is \"selected\".",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "projectAccess"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "required": true
+      },
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberProjectAccess"
+              }
+            }
+          },
+          "description": "The member's project access"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Invalid body, the member is an owner, or a project is not in this workspace"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Missing member:update permission, changing your own access, or granting a project you can't access"
+        },
+        "404": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Member not found"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/workspace/{workspaceId}/project-access",
+      "operation_id": "getWorkspaceProjectAccess",
+      "tags": [
+        "Workspaces"
+      ],
+      "summary": "Get member project access",
+      "description": "List the members who are limited to selected projects, with the projects each one can access. Everyone else in the workspace can access every project. A caller whose own access is limited only sees the projects they can access.",
+      "command": {
+        "group": "workspace",
+        "action": "list-project-access",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "Members limited to selected projects. Members not listed can access every project. Project IDs only include projects the caller can access.",
+                "items": {
+                  "$ref": "#/components/schemas/MemberProjectAccess"
+                },
+                "type": "array"
+              }
+            }
+          },
+          "description": "Members limited to selected projects"
+        },
+        "400": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Workspace ID could not be determined"
+        },
+        "401": {
+          "description": "Missing or invalid credentials"
+        },
+        "403": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "No workspace access, or missing member:update permission"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/workspace/{workspaceId}/project-access/me",
+      "operation_id": "getMyProjectAccess",
+      "tags": [
+        "Workspaces"
+      ],
+      "summary": "Get my project access",
+      "description": "Get the caller's own project access in the workspace: every project, or the selected projects they're limited to. Owners and instance admins always get every project.",
+      "command": {
+        "group": "workspace",
+        "action": "get-my-project-access",
+        "status": "implemented"
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "workspaceId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberProjectAccess"
+              }
+            }
+          },
+          "description": "The caller's project access"
         },
         "400": {
           "content": {

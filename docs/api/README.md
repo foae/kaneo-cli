@@ -1,8 +1,8 @@
 # Vendored API reference
 
-`api/openapi.json` is an exact snapshot of the official `https://kaneo.app/docs/openapi.json` fetched on 2026-10-02, matching upstream release tag `v2.30.1`. Its SHA-256, upstream source relationship, and the complete upstream MIT notice are recorded in [`api/provenance.json`](../../api/provenance.json).
+`api/openapi.json` is an exact snapshot of upstream release tag `v2.35.0`, fetched on 2026-10-08. Its SHA-256, upstream source relationship, and the complete upstream MIT notice are recorded in [`api/provenance.json`](../../api/provenance.json).
 
-The relationship is verified rather than inferred from this repository's license: the upstream [`usekaneo/kaneo`](https://github.com/usekaneo/kaneo) `apps/docs/docs.json` config points its API Reference at `openapi.json`, and the current official document matched `apps/docs/openapi.json` at upstream commit `0a23a40767de7ebb4e530206976b9831e4994002` (tag `v2.30.1` and verified main) by SHA-256.
+The relationship is verified rather than inferred from this repository's license: upstream [`usekaneo/kaneo`](https://github.com/usekaneo/kaneo) `apps/docs/docs.json` selects `openapi.json` as its API Reference. The pinned bytes match `apps/docs/openapi.json` at release commit `8bc9550279d5054e04f020028f40c315c3866cb1`. The live official document instead matches main `b329155c63fe50707ba927e014d4dc3acf7e2e97`: its unreleased `createCalendarFeed` contract allows omitted or empty `labelIds`, whereas v2.35.0 requires at least one. The maintainer explicitly approved the immutable release baseline; that live-doc change is excluded.
 
 ## Inventory
 

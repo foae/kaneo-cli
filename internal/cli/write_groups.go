@@ -371,6 +371,9 @@ var writeSpecs = []writeSpec{
 		operationID: "clearAllNotifications", method: "DELETE",
 		path:        "/notification/clear-all",
 		destructive: true,
+		params: []readParam{
+			{name: "workspaceId", in: paramQuery, flag: "workspace-id", minLen: 1, help: "Limit to this workspace plus user-wide notifications; omit for all workspaces"},
+		},
 	},
 	{
 		group: "notification", action: "create",
@@ -384,6 +387,9 @@ var writeSpecs = []writeSpec{
 		short:       "Mark all read",
 		operationID: "markAllNotificationsAsRead", method: "PATCH",
 		path: "/notification/read-all",
+		params: []readParam{
+			{name: "workspaceId", in: paramQuery, flag: "workspace-id", minLen: 1, help: "Limit to this workspace plus user-wide notifications; omit for all workspaces"},
+		},
 	},
 	{
 		group: "notification", action: "mark-read",
@@ -1073,6 +1079,104 @@ var writeSpecs = []writeSpec{
 		body: true,
 		params: []readParam{
 			{name: "id", in: paramPath, flag: "id", required: true},
+		},
+	},
+	{
+		group: "admin", action: "add-workspace-member",
+		short:       "Add a user to a workspace",
+		operationID: "addAdminWorkspaceMember", method: "POST",
+		path:  "/admin/workspaces/{workspaceId}/members",
+		body:  true,
+		notes: "Requires an instance administrator session token; API keys are rejected. The member starts with access to every project.",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "admin", action: "remove-workspace-member",
+		short:       "Remove a workspace member",
+		operationID: "removeAdminWorkspaceMember", method: "DELETE",
+		path:        "/admin/workspaces/{workspaceId}/members/{userId}",
+		destructive: true,
+		notes:       "Requires an instance administrator session token; API keys are rejected. Removes membership, not the user account.",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+			{name: "userId", in: paramPath, flag: "user-id", required: true},
+		},
+	},
+	{
+		group: "admin", action: "update-workspace-member-role",
+		short:       "Change a workspace member's role",
+		operationID: "updateAdminWorkspaceMemberRole", method: "PUT",
+		path:  "/admin/workspaces/{workspaceId}/members/{userId}/role",
+		body:  true,
+		notes: "Requires an instance administrator session token; API keys are rejected. Use transfer-workspace-ownership to make a member the owner.",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+			{name: "userId", in: paramPath, flag: "user-id", required: true},
+		},
+	},
+	{
+		group: "admin", action: "transfer-workspace-ownership",
+		short:       "Transfer workspace ownership",
+		operationID: "transferAdminWorkspaceOwnership", method: "PUT",
+		path:        "/admin/workspaces/{workspaceId}/owner",
+		body:        true,
+		destructive: true,
+		notes:       "Requires an instance administrator session token; API keys are rejected. Makes an existing member the only owner; previous owners become admins.",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "workspace", action: "update-member-project-access",
+		short:       "Update member project access",
+		operationID: "updateMemberProjectAccess", method: "PUT",
+		path:        "/workspace/{workspaceId}/members/{userId}/project-access",
+		body:        true,
+		destructive: true,
+		notes:       "Can revoke project access. Owners always access every project; you cannot change your own access or grant projects you cannot access.",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+			{name: "userId", in: paramPath, flag: "user-id", required: true},
+		},
+	},
+	{
+		group: "integration-sync", action: "preview-rules",
+		short:       "Preview a sync rule change",
+		operationID: "previewIntegrationSyncRules", method: "POST",
+		path:  "/integration-sync/project/{projectId}/{provider}/preview",
+		body:  true,
+		notes: "Preview first, then pass the rules and returned previewToken to save-rules. Outgoing labels are workspace label IDs; incoming labels are exact repository label names. Tokens are comparison tokens, not credentials. Conflicts are not retried.",
+		params: []readParam{
+			{name: "projectId", in: paramPath, flag: "project-id", required: true, minLen: 1},
+			{name: "provider", in: paramPath, flag: "provider", required: true, enum: []string{"github", "gitea", "gitlab"}},
+		},
+	},
+	{
+		group: "integration-sync", action: "save-rules",
+		short:       "Apply a previewed sync rule",
+		operationID: "saveIntegrationSyncRules", method: "PATCH",
+		path:  "/integration-sync/project/{projectId}/{provider}",
+		body:  true,
+		notes: "Run preview-rules first and submit its rules and previewToken. Excluded links are paused, never deleted; paused links require review-resume before resume. A stale preview returns HTTP 409: preview again. The command never retries.",
+		params: []readParam{
+			{name: "projectId", in: paramPath, flag: "project-id", required: true, minLen: 1},
+			{name: "provider", in: paramPath, flag: "provider", required: true, enum: []string{"github", "gitea", "gitlab"}},
+		},
+	},
+	{
+		group: "integration-sync", action: "resume",
+		short:       "Resume a reviewed issue link",
+		operationID: "resumeIntegrationSync", method: "POST",
+		path:        "/integration-sync/project/{projectId}/{provider}/links/{linkId}/resume",
+		body:        true,
+		destructive: true,
+		notes:       "Run review-resume first, then submit its comparison token and choose source kaneo or provider. Requires --yes because the chosen title, description and open/closed state overwrite the other side. Reuses the paused link without replaying historical comments. A changed comparison requires another review; HTTP 409/502 are never retried and failures leave sync paused.",
+		params: []readParam{
+			{name: "projectId", in: paramPath, flag: "project-id", required: true, minLen: 1},
+			{name: "provider", in: paramPath, flag: "provider", required: true, enum: []string{"github", "gitea", "gitlab"}},
+			{name: "linkId", in: paramPath, flag: "link-id", required: true, minLen: 1},
 		},
 	},
 }

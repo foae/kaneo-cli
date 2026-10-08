@@ -4,7 +4,7 @@ description: Manage Kaneo workspaces, projects, tasks, board columns, and commen
 license: MIT
 compatibility: Requires the separately installed kaneo-cli and network access to the user's Kaneo instance. Stable CLI versions also make a best-effort GitHub update check on the version command. Shell examples use POSIX syntax; adapt filesystem operations to the host.
 metadata:
-  version: "2.0.0"
+  version: "3.0.0"
 ---
 
 # Kaneo CLI
@@ -205,6 +205,22 @@ The 8 MiB ordinary-response limit applies to export: its failure writes no parti
 Import reports per-task outcomes and can return its complete JSON result on stdout while exiting nonzero for partial failure; `gitlab import-issues` exits 5 with code `partial_failure` when its `errors` list is non-empty, and `github import-issues` and `label delete` exit 5 with code `incomplete` when the server has only finished part of the work, so repeat them as the error message says rather than treating stdout as final; inspect every item and preserve that status. Do not promise preserved task numbering, import/result ordering, label identity, or any other unreturned mapping.
 
 Kaneo 2.30.1 tightens GitHub and Gitea imports: both `task:create` **and** `task:update` workspace permissions are required. Existing create-only roles now receive HTTP 403. Ask an authorized administrator to grant the missing permission; do not switch credentials or broaden roles automatically.
+
+## Kaneo 2.35 compatibility and workspace access
+
+Project keys are unique case-insensitively after Unicode NFKC normalization within a workspace, including archived projects. `project create`, `project update`, and `project unarchive` can return HTTP 409 for a collision. Choose a genuinely unused key; do not retry unchanged. `task get-by-ticket-id` now prefers an active project, then the most recently archived one; use `--project-id` when the intended project matters.
+
+Use `task list-assigned --workspace-id "$WORKSPACE_ID"` for your assigned open tasks and `activity list-workspace --workspace-id "$WORKSPACE_ID"` for the workspace feed. `activity list-task` accepts `--limit` (1–100). `notification list`, `notification mark-all-read`, and `notification clear-all` accept `--workspace-id`; omission still means all workspaces. `workspace list-members --project-id "$PROJECT_ID"` scopes the assignable-member list.
+
+`workspace get-my-project-access` and `workspace list-project-access` expose access restrictions. `workspace update-member-project-access --workspace-id ... --user-id ... --yes --body-file ...` accepts `projectAccess: "all"` or `"selected"` plus `projectIds`. Selected access can hide projects, tasks, and activity; never interpret invisibility as deletion. Invitations accept the same access fields, and invitation reads return them.
+
+Instance administrators can use `admin list-workspaces` (`--search`, `--page`, `--limit`), `list-workspace-members`, `list-workspace-roles`, `add-workspace-member`, `update-workspace-member-role`, `remove-workspace-member`, and `transfer-workspace-ownership`. These require an administrator **session**, not an API key. Removal and ownership transfer require `--yes`; ownership transfer makes the chosen existing member the sole owner and demotes former owners to admins.
+
+## Integration synchronization
+
+The `integration-sync` group supports `get-rules`, `preview-rules`, `save-rules`, `review-resume`, and `resume` for `--provider github|gitea|gitlab` and `--project-id`. Read each command's help for the complete rule body; outgoing/incoming rule branches are alternatives, not fields to merge indiscriminately. `get-rules --after` continues the task-scope cursor.
+
+Preview a rule change, then pass its `previewToken` with those rules to `save-rules`. For a paused link, use `review-resume --link-id ...`, choose the authoritative `source` (`kaneo` or `provider`), and pass the comparison `token` to `resume --link-id ... --yes`. Resuming overwrites the other side's title, description and open/closed state; historical comments are not replayed. Obtain explicit authorization first. A stale comparison/preview returns HTTP 409; review again rather than silently retrying. Provider failure can return HTTP 502 and leaves synchronization paused. Ordinary JSON bodies, including explicit `false` and omitted fields, are forwarded unchanged.
 
 ## Destructive changes and failures
 

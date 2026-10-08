@@ -456,27 +456,29 @@ func (r *bodyHelpRenderer) renderObjectContents(raw map[string]any, indent strin
 		}
 		lines = append(lines, propertyLines...)
 	}
-	alternatives := values(schema["anyOf"])
-	if len(alternatives) > 0 {
-		lines = append(lines, indent+"one of:")
-		for index, alternative := range alternatives {
-			alternativeSchema := objectValues(alternative)
-			if alternativeSchema == nil {
-				return nil, errors.New("anyOf member is not a schema object")
-			}
-			lines = append(lines, fmt.Sprintf("%s  option %d:", indent, index+1))
-			alternativeLines, err := r.renderObjectContents(alternativeSchema, indent+"    ", nil)
-			if err != nil {
-				return nil, err
-			}
-			if len(alternativeLines) == 0 {
-				summary, err := r.schemaSummary(alternativeSchema)
+	for _, keyword := range []string{"anyOf", "oneOf"} {
+		alternatives := values(schema[keyword])
+		if len(alternatives) > 0 {
+			lines = append(lines, indent+"one of:")
+			for index, alternative := range alternatives {
+				alternativeSchema := objectValues(alternative)
+				if alternativeSchema == nil {
+					return nil, fmt.Errorf("%s member is not a schema object", keyword)
+				}
+				lines = append(lines, fmt.Sprintf("%s  option %d:", indent, index+1))
+				alternativeLines, err := r.renderObjectContents(alternativeSchema, indent+"    ", nil)
 				if err != nil {
 					return nil, err
 				}
-				lines = append(lines, indent+"    value: "+summary)
-			} else {
-				lines = append(lines, alternativeLines...)
+				if len(alternativeLines) == 0 {
+					summary, err := r.schemaSummary(alternativeSchema)
+					if err != nil {
+						return nil, err
+					}
+					lines = append(lines, indent+"    value: "+summary)
+				} else {
+					lines = append(lines, alternativeLines...)
+				}
 			}
 		}
 	}
@@ -508,7 +510,7 @@ func (r *bodyHelpRenderer) renderProperty(name string, raw map[string]any, requi
 		line += " — " + description
 	}
 	lines := []string{line}
-	if isObjectSchema(schema) {
+	if isObjectSchema(schema) || len(values(schema["oneOf"])) > 0 || len(values(schema["anyOf"])) > 0 {
 		children, err := r.renderObjectContents(schema, indent+"  ", nil)
 		if err != nil {
 			return nil, err
@@ -529,7 +531,7 @@ func (r *bodyHelpRenderer) renderProperty(name string, raw map[string]any, requi
 		if err != nil {
 			return nil, err
 		}
-		if isObjectSchema(itemSchema) {
+		if isObjectSchema(itemSchema) || len(values(itemSchema["oneOf"])) > 0 || len(values(itemSchema["anyOf"])) > 0 {
 			children, err := r.renderObjectContents(itemSchema, indent+"    ", nil)
 			if err != nil {
 				return nil, err
@@ -574,12 +576,17 @@ func (r *bodyHelpRenderer) schemaSummary(raw map[string]any) (string, error) {
 				summary = arraySummary + " or " + strings.Join(nonArrayTypes, " or ")
 			}
 		}
-	} else if len(values(schema["anyOf"])) > 0 {
-		alternatives := make([]string, 0, len(values(schema["anyOf"])))
-		for _, alternative := range values(schema["anyOf"]) {
+	} else if len(values(schema["anyOf"])) > 0 || len(values(schema["oneOf"])) > 0 {
+		keyword := "anyOf"
+		if len(values(schema["oneOf"])) > 0 {
+			keyword = "oneOf"
+		}
+		members := values(schema[keyword])
+		alternatives := make([]string, 0, len(members))
+		for _, alternative := range members {
 			alternativeSchema := objectValues(alternative)
 			if alternativeSchema == nil {
-				return "", errors.New("anyOf member is not a schema object")
+				return "", fmt.Errorf("%s member is not a schema object", keyword)
 			}
 			alternativeSummary, err := r.schemaSummary(alternativeSchema)
 			if err != nil {
@@ -721,17 +728,12 @@ func (r *bodyHelpRenderer) validateSchemaReferences(schema map[string]any, refer
 			}
 		}
 	}
-	for _, member := range values(schema["allOf"]) {
-		if memberSchema := objectValues(member); memberSchema != nil {
-			if err := r.validateSchemaReferences(memberSchema, references); err != nil {
-				return err
-			}
-		}
-	}
-	for _, member := range values(schema["anyOf"]) {
-		if memberSchema := objectValues(member); memberSchema != nil {
-			if err := r.validateSchemaReferences(memberSchema, references); err != nil {
-				return err
+	for _, keyword := range []string{"allOf", "anyOf", "oneOf"} {
+		for _, member := range values(schema[keyword]) {
+			if memberSchema := objectValues(member); memberSchema != nil {
+				if err := r.validateSchemaReferences(memberSchema, references); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -885,7 +887,16 @@ func buildSecretBodyOperations(document map[string]any, operations []generatedOp
 		if schema == nil {
 			continue
 		}
-		found, err := renderer.hasSecretProperty(schema, make(map[string]bool))
+		// These root fields are state-comparison hashes, not credentials.
+		// Keep scanning every other field, including nested credentials.
+		comparisonProperty := ""
+		switch operation.OperationID {
+		case "saveIntegrationSyncRules":
+			comparisonProperty = "previewToken"
+		case "resumeIntegrationSync":
+			comparisonProperty = "token"
+		}
+		found, err := renderer.hasSecretProperty(schema, make(map[string]bool), comparisonProperty)
 		if err != nil {
 			return nil, fmt.Errorf("scan request body for %s: %w", operation.OperationID, err)
 		}
@@ -897,8 +908,9 @@ func buildSecretBodyOperations(document map[string]any, operations []generatedOp
 }
 
 // hasSecretProperty walks a schema, following local references once each along
-// a branch so a cyclic document cannot loop.
-func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references map[string]bool) (bool, error) {
+// a branch so a cyclic document cannot loop. comparisonProperty exempts only
+// the named property at this object level, never properties of child objects.
+func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references map[string]bool, comparisonProperty string) (bool, error) {
 	if reference := stringValue(schema["$ref"]); reference != "" {
 		if references[reference] {
 			return false, nil
@@ -908,7 +920,7 @@ func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references m
 		if err != nil {
 			return false, err
 		}
-		found, err := r.hasSecretProperty(target, references)
+		found, err := r.hasSecretProperty(target, references, comparisonProperty)
 		delete(references, reference)
 		if err != nil || found {
 			return found, err
@@ -916,14 +928,14 @@ func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references m
 	}
 	properties := objectValues(schema["properties"])
 	for _, name := range sortedKeys(properties) {
-		if secretProperty(name) {
+		if secretProperty(name) && name != comparisonProperty {
 			return true, nil
 		}
 		property := objectValues(properties[name])
 		if property == nil {
 			return false, fmt.Errorf("property %q is not a schema object", name)
 		}
-		found, err := r.hasSecretProperty(property, references)
+		found, err := r.hasSecretProperty(property, references, "")
 		if err != nil || found {
 			return found, err
 		}
@@ -943,7 +955,7 @@ func (r *bodyHelpRenderer) hasSecretProperty(schema map[string]any, references m
 		if memberSchema == nil {
 			continue
 		}
-		found, err := r.hasSecretProperty(memberSchema, references)
+		found, err := r.hasSecretProperty(memberSchema, references, "")
 		if err != nil || found {
 			return found, err
 		}

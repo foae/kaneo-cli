@@ -1,5 +1,5 @@
 # Disposable acceptance environment only. Never deploy these test credentials.
-# Pins audited 2026-10-02 (Kaneo 2.30.1); image identity is not API-spec compatibility proof.
+# Pins audited 2026-10-08 (Kaneo 2.35.0); image identity is not API-spec compatibility proof.
 services:
   postgres:
     image: postgres:18.6-alpine3.24@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 30
   kaneo:
-    image: ghcr.io/usekaneo/kaneo@sha256:fed2e27bd6d0f0aa6b72f7ff453385c3067f1c7e2b8af7737686c523c960c114
+    image: ghcr.io/usekaneo/kaneo@sha256:4a14cb29a8a249c9d2e4c72d0a97df828577b1313e46331160844bb4622e3615
     ports:
       - "127.0.0.1:15173:5173"
       - "127.0.0.1:19000:19000"

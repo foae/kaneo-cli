@@ -4,7 +4,7 @@ This public repository is an **unofficial Kaneo CLI**. Read progressively: this 
 
 ## Non-negotiable boundaries
 
-- Current executable coverage includes profiles, authentication, all 67 non-browser reads, 119 JSON mutations, avatar/presigned file transfers and the two browser-navigation URL handoffs: all 192 pinned operations. Consult the operation inventory and verification evidence for implemented coverage and outstanding blockers; registration alone is not acceptance. No fake successful API commands, no TODO handlers, no placeholder packages.
+- Current executable coverage includes profiles, authentication, all 76 non-browser reads, 127 JSON mutations, avatar/presigned file transfers and the two browser-navigation URL handoffs: all 209 pinned operations. Consult the operation inventory and verification evidence for implemented coverage and outstanding blockers; registration alone is not acceptance. No fake successful API commands, no TODO handlers, no placeholder packages.
 - The pinned official API baseline plus documented device authorization defines the implementation target. Do not invent fields, pagination, authentication requirements, or server behavior.
 - Every pinned operation has exactly one canonical command mapping. Mark it implemented only with observable evidence. Browser and binary operations need deliberate contracts, not fabricated JSON wrappers.
 - Preserve LICENSE and upstream notices. No public SDK promise: application packages belong in `internal/`.

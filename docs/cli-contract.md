@@ -48,6 +48,14 @@ GitHub and Gitea issue imports require both `task:create` and `task:update` on K
 
 For automation, avoid progress bars, ANSI escapes, timestamps, and unsolicited stdout. Future human formatting must be explicit, leaving JSON the default. Preserve the documented CLI output contract within each major version; breaking changes require release notes and a major version bump. Upstream API response shapes remain governed by the pinned API baseline and documented compatibility limitations.
 
+## Kaneo 2.35 migration
+
+The baseline is the immutable v2.35.0 release specification, not the ahead-of-release live documentation. Its 209 operations retain every existing canonical command and add workspace administration, project access, assigned tasks, workspace activity and integration synchronization; see the [operation inventory](api/operations.md).
+
+This refresh is a major CLI release by explicit maintainer approval: project creation, key changes and unarchiving now reject normalized, case-insensitive key collisions within a workspace, including archived projects, with HTTP 409. Resolve the key conflict before retrying. Ticket lookup prefers active projects, then the most recently archived project; use a project selector when that precedence is not the intended target. Equal-precedence ambiguity still fails.
+
+New administrator workspace operations require an instance-administrator session; API keys are rejected. Ownership transfer, member removal, project-access changes and paused-sync resumption require `--yes`. Rule save uses a preview token; sync resumption uses a reviewed comparison token and an explicit authoritative source. HTTP 409/502 failures are surfaced without retry. The consumer skill documents the full workflow and new scope flags. JSON request validation remains syntactic; the server validates request-body schemas.
+
 ## Exit codes
 
 | Code | Meaning |

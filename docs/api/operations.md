@@ -2,7 +2,7 @@
 
 # API operation inventory
 
-This inventory contains 192 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `b4ab5c1f32ab57078863a330d5910d6ee05c1c893f5729abcaabfe200449c862`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
+This inventory contains 209 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `7dace2b05cc27a8b239676e4b4d6c296e2e8c19f1bed8467d819cb73f68d3103`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
 
 Detailed request schemas, query/path parameters, effective security, and responses are in the generated [`api/operations.json`](../../api/operations.json). Schema references resolve against the pinned OpenAPI snapshot.
 
@@ -13,7 +13,8 @@ Detailed request schemas, query/path parameters, effective security, and respons
 | `activity create` | `POST` | `/activity/create` | `createActivity` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 | `activity create-comment` | `POST` | `/activity/comment` | `createComment` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 | `activity delete-comment` | `DELETE` | `/activity/comment` | `deleteComment` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
-| `activity list-task` | `GET` | `/activity/{taskId}` | `getActivities` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `activity list-task` | `GET` | `/activity/{taskId}` | `getActivities` | `implemented` | 2 |  | 200, 400, 401, 403 |
+| `activity list-workspace` | `GET` | `/activity/workspace/{workspaceId}` | `getWorkspaceActivities` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `activity update-comment` | `PUT` | `/activity/comment` | `updateComment` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
 
 ### `activity create` request
@@ -54,7 +55,46 @@ JSON body (required):
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
+| `admin add-workspace-member` | `POST` | `/admin/workspaces/{workspaceId}/members` | `addAdminWorkspaceMember` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409 |
 | `admin list-users` | `GET` | `/admin/users` | `listAdminUsers` | `implemented` | 3 |  | 200, 400, 401, 403 |
+| `admin list-workspace-members` | `GET` | `/admin/workspaces/{workspaceId}/members` | `listAdminWorkspaceMembers` | `implemented` | 1 |  | 200, 401, 403, 404 |
+| `admin list-workspace-roles` | `GET` | `/admin/workspaces/{workspaceId}/roles` | `listAdminWorkspaceRoles` | `implemented` | 1 |  | 200, 401, 403, 404 |
+| `admin list-workspaces` | `GET` | `/admin/workspaces` | `listAdminWorkspaces` | `implemented` | 3 |  | 200, 400, 401, 403 |
+| `admin remove-workspace-member` | `DELETE` | `/admin/workspaces/{workspaceId}/members/{userId}` | `removeAdminWorkspaceMember` | `implemented` | 2 |  | 200, 401, 403, 404, 409 |
+| `admin transfer-workspace-ownership` | `PUT` | `/admin/workspaces/{workspaceId}/owner` | `transferAdminWorkspaceOwnership` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `admin update-workspace-member-role` | `PUT` | `/admin/workspaces/{workspaceId}/members/{userId}/role` | `updateAdminWorkspaceMemberRole` | `implemented` | 2 | yes | 200, 400, 401, 403, 404, 409 |
+
+### `admin add-workspace-member` request
+
+Path parameters (not JSON body fields):
+- `workspaceId` (required): string
+
+```text
+JSON body (required):
+  role (required): string (min length: 1, max length: 100) — A built-in role (viewer, member, admin) or one of the workspace's custom roles. Use the ownership endpoint to make someone the owner.
+  userId (required): string (min length: 1)
+```
+
+### `admin transfer-workspace-ownership` request
+
+Path parameters (not JSON body fields):
+- `workspaceId` (required): string
+
+```text
+JSON body (required):
+  userId (required): string (min length: 1) — An existing member who becomes the only owner. Previous owners become admins.
+```
+
+### `admin update-workspace-member-role` request
+
+Path parameters (not JSON body fields):
+- `workspaceId` (required): string
+- `userId` (required): string
+
+```text
+JSON body (required):
+  role (required): string (min length: 1, max length: 100) — A built-in role (viewer, member, admin) or one of the workspace's custom roles. Use the ownership endpoint to make someone the owner.
+```
 
 ## asset
 
@@ -298,7 +338,7 @@ JSON body (required):
 | `gitea get-integration` | `GET` | `/gitea-integration/project/{projectId}` | `getGiteaIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `gitea import-issues` | `POST` | `/gitea-integration/import-issues` | `importGiteaIssues` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
 | `gitea list-repositories` | `POST` | `/gitea-integration/repositories` | `listGiteaRepositories` | `implemented` | 0 | yes | 200, 400, 401, 403 |
-| `gitea update-integration` | `PATCH` | `/gitea-integration/project/{projectId}` | `updateGiteaIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `gitea update-integration` | `PATCH` | `/gitea-integration/project/{projectId}` | `updateGiteaIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409 |
 | `gitea verify-access` | `POST` | `/gitea-integration/verify` | `verifyGiteaAccess` | `implemented` | 0 | yes | 200, 400, 401, 403, 500 |
 
 ### `gitea create-integration` request
@@ -413,7 +453,7 @@ JSON body (required):
 | `gitlab get-integration` | `GET` | `/gitlab-integration/project/{projectId}` | `getGitlabIntegration` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `gitlab import-issues` | `POST` | `/gitlab-integration/import-issues` | `importGitlabIssues` | `implemented` | 0 | yes | 200, 400, 401, 403, 404 |
 | `gitlab list-projects` | `POST` | `/gitlab-integration/projects` | `listGitlabProjects` | `implemented` | 0 | yes | 200, 400, 401, 403 |
-| `gitlab update-integration` | `PATCH` | `/gitlab-integration/project/{projectId}` | `updateGitlabIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404 |
+| `gitlab update-integration` | `PATCH` | `/gitlab-integration/project/{projectId}` | `updateGitlabIntegration` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409 |
 | `gitlab verify-access` | `POST` | `/gitlab-integration/verify` | `verifyGitlabAccess` | `implemented` | 0 | yes | 200, 400, 401, 403 |
 
 ### `gitlab create-integration` request
@@ -473,6 +513,88 @@ JSON body (required):
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
 | `instance get-status` | `GET` | `/instance/status` | `getInstanceStatus` | `implemented` | 0 |  | 200 |
+
+## integration-sync
+
+| Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
+| --- | --- | --- | --- | --- | ---: | --- | --- |
+| `integration-sync get-rules` | `GET` | `/integration-sync/project/{projectId}/{provider}` | `getIntegrationSyncRules` | `implemented` | 3 |  | 200, 400, 401, 403, 404, 409 |
+| `integration-sync preview-rules` | `POST` | `/integration-sync/project/{projectId}/{provider}/preview` | `previewIntegrationSyncRules` | `implemented` | 2 | yes | 200, 400, 401, 403, 404, 409 |
+| `integration-sync resume` | `POST` | `/integration-sync/project/{projectId}/{provider}/links/{linkId}/resume` | `resumeIntegrationSync` | `implemented` | 3 | yes | 200, 400, 401, 403, 404, 409, 502 |
+| `integration-sync review-resume` | `GET` | `/integration-sync/project/{projectId}/{provider}/links/{linkId}/review` | `reviewIntegrationSyncResume` | `implemented` | 3 |  | 200, 400, 401, 403, 404, 409, 502 |
+| `integration-sync save-rules` | `PATCH` | `/integration-sync/project/{projectId}/{provider}` | `saveIntegrationSyncRules` | `implemented` | 2 | yes | 200, 400, 401, 403, 404, 409 |
+
+### `integration-sync preview-rules` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string (min length: 1)
+- `provider` (required): string (one of: "github", "gitea", "gitlab")
+
+```text
+JSON body (required):
+  rules (required): object
+    incoming (required): one of: object | object — Exact repository label names controlling which issues can be imported.
+      one of:
+        option 1:
+          mode (required): string (one of: "all")
+        option 2:
+          labels (required): array<string (min length: 1, max length: 128)> (min items: 1, max items: 50)
+            items: string (min length: 1, max length: 128)
+          match (required): string (one of: "any", "all")
+          mode (required): string (one of: "labels")
+    outgoing (required): one of: object | object — Kaneo workspace label IDs controlling task sync. Missing labels pause sync.
+      one of:
+        option 1:
+          mode (required): string (one of: "all")
+        option 2:
+          labels (required): array<string (min length: 1, max length: 128)> (min items: 1, max items: 50)
+            items: string (min length: 1, max length: 128)
+          match (required): string (one of: "any", "all")
+          mode (required): string (one of: "labels")
+```
+
+### `integration-sync resume` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string (min length: 1)
+- `provider` (required): string (one of: "github", "gitea", "gitlab")
+- `linkId` (required): string (min length: 1)
+
+```text
+JSON body (required):
+  source (required): string (one of: "kaneo", "provider")
+  token (required): string (min length: 64, max length: 64)
+```
+
+### `integration-sync save-rules` request
+
+Path parameters (not JSON body fields):
+- `projectId` (required): string (min length: 1)
+- `provider` (required): string (one of: "github", "gitea", "gitlab")
+
+```text
+JSON body (required):
+  previewToken (required): string (min length: 64, max length: 64)
+  rules (required): object
+    incoming (required): one of: object | object — Exact repository label names controlling which issues can be imported.
+      one of:
+        option 1:
+          mode (required): string (one of: "all")
+        option 2:
+          labels (required): array<string (min length: 1, max length: 128)> (min items: 1, max items: 50)
+            items: string (min length: 1, max length: 128)
+          match (required): string (one of: "any", "all")
+          mode (required): string (one of: "labels")
+    outgoing (required): one of: object | object — Kaneo workspace label IDs controlling task sync. Missing labels pause sync.
+      one of:
+        option 1:
+          mode (required): string (one of: "all")
+        option 2:
+          labels (required): array<string (min length: 1, max length: 128)> (min items: 1, max items: 50)
+            items: string (min length: 1, max length: 128)
+          match (required): string (one of: "any", "all")
+          mode (required): string (one of: "labels")
+```
 
 ## invitation
 
@@ -608,10 +730,10 @@ JSON body (required):
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `notification clear-all` | `DELETE` | `/notification/clear-all` | `clearAllNotifications` | `implemented` | 0 |  | 200, 401 |
+| `notification clear-all` | `DELETE` | `/notification/clear-all` | `clearAllNotifications` | `implemented` | 1 |  | 200, 401 |
 | `notification create` | `POST` | `/notification` | `createNotification` | `implemented` | 0 | yes | 200, 400, 401 |
-| `notification list` | `GET` | `/notification` | `listNotifications` | `implemented` | 0 |  | 200, 401 |
-| `notification mark-all-read` | `PATCH` | `/notification/read-all` | `markAllNotificationsAsRead` | `implemented` | 0 |  | 200, 401 |
+| `notification list` | `GET` | `/notification` | `listNotifications` | `implemented` | 1 |  | 200, 401 |
+| `notification mark-all-read` | `PATCH` | `/notification/read-all` | `markAllNotificationsAsRead` | `implemented` | 1 |  | 200, 401 |
 | `notification mark-read` | `PATCH` | `/notification/{id}/read` | `markNotificationAsRead` | `implemented` | 1 |  | 200, 401, 404 |
 
 ### `notification create` request
@@ -703,7 +825,7 @@ JSON body (required):
 | `org invite-member` | `POST` | `/auth/organization/invite-member` | `inviteOrganizationMember` | `implemented` | 0 | yes | 200, 401, 502 |
 | `org leave` | `POST` | `/auth/organization/leave` | `leaveOrganization` | `implemented` | 0 | yes | 200, 401 |
 | `org list` | `GET` | `/auth/organization/list` | `listOrganization` | `implemented` | 0 |  | 200, 401 |
-| `org list-invitations` | `GET` | `/auth/organization/list-invitations` | `listOrganizationInvitations` | `implemented` | 0 |  | 200, 401 |
+| `org list-invitations` | `GET` | `/auth/organization/list-invitations` | `listOrganizationInvitations` | `implemented` | 1 |  | 200, 401 |
 | `org list-members` | `GET` | `/auth/organization/list-members` | `listOrganizationMembers` | `implemented` | 0 |  | 200, 401 |
 | `org list-roles` | `GET` | `/auth/organization/list-roles` | `listOrganizationRoles` | `implemented` | 0 |  | 200, 401 |
 | `org list-team-members` | `GET` | `/auth/organization/list-team-members` | `listOrganizationTeamMembers` | `implemented` | 0 |  | 200, 401 |
@@ -820,9 +942,22 @@ JSON body (required):
 JSON body (required):
   email (required): string — The email address of the user to invite
   organizationId (optional): string — The organization ID to invite the user to
+  projectAccess (optional): string (one of: "all", "selected") — "all" (the default) gives access to every project. "selected" limits the new member to projectIds once they accept.
+  projectIds (optional): array<string> — Projects the new member can access when projectAccess is "selected". They must belong to the workspace, and an inviter whose own access is limited can only choose projects they can access.
+    items: string
   resend (optional): boolean — Resend the invitation email, if the user is already invited. Eg: true
   role (required): one of: string | array<string> — The role(s) to assign to the user. It can be `admin`, `member`, owner. Eg: "member"
+    one of:
+      option 1:
+        value: string
+      option 2:
+        value: array<string>
   teamId (optional): one of: string | array<string>
+    one of:
+      option 1:
+        value: string
+      option 2:
+        value: array<string>
 ```
 
 ### `org leave` request
@@ -900,6 +1035,11 @@ JSON body (required):
   memberId (required): string — The member id to apply the role update to. Eg: "member-id"
   organizationId (optional): string — An optional organization ID which the member is a part of to apply the role update. If not provided, you must provide session headers to get the active organization. Eg: "organization-id"
   role (required): one of: string | array<string> — The new role to be applied. This can be a string or array of strings representing the roles. Eg: ["admin", "sale"]
+    one of:
+      option 1:
+        value: string
+      option 2:
+        value: array<string>
 ```
 
 ### `org update-role` request
@@ -936,7 +1076,7 @@ JSON body (required):
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
 | `project archive` | `PUT` | `/project/{id}/archive` | `archiveProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `project create` | `POST` | `/project` | `createProject` | `implemented` | 0 | yes | 200, 400, 401, 403 |
+| `project create` | `POST` | `/project` | `createProject` | `implemented` | 0 | yes | 200, 400, 401, 403, 409 |
 | `project create-background-upload` | `PUT` | `/project/{id}/background-upload` | `uploadProjectBackground` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 503 |
 | `project delete` | `DELETE` | `/project/{id}` | `deleteProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
 | `project delete-background` | `DELETE` | `/project/{id}/background` | `deleteProjectBackground` | `implemented` | 1 |  | 204, 400, 401, 403 |
@@ -949,8 +1089,8 @@ JSON body (required):
 | `project list` | `GET` | `/project` | `listProjects` | `implemented` | 2 |  | 200, 400, 401, 403 |
 | `project move` | `PUT` | `/project/{id}/move` | `moveProject` | `implemented` | 1 | yes | 200, 400, 401, 402, 403, 404, 409 |
 | `project reorder` | `PUT` | `/project/reorder` | `reorderProjects` | `implemented` | 1 | yes | 200, 400, 401, 403 |
-| `project unarchive` | `PUT` | `/project/{id}/unarchive` | `unarchiveProject` | `implemented` | 1 |  | 200, 400, 401, 403 |
-| `project update` | `PUT` | `/project/{id}` | `updateProject` | `implemented` | 1 | yes | 200, 400, 401, 403 |
+| `project unarchive` | `PUT` | `/project/{id}/unarchive` | `unarchiveProject` | `implemented` | 1 |  | 200, 400, 401, 403, 409 |
+| `project update` | `PUT` | `/project/{id}` | `updateProject` | `implemented` | 1 | yes | 200, 400, 401, 403, 409 |
 
 ### `project create` request
 
@@ -1079,10 +1219,11 @@ JSON body (required):
 | `task finalize-staged-asset` | `POST` | `/task/draft-upload/{projectId}/finalize` | `finalizeStagedTaskAsset` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409, 503 |
 | `task find-description-matches` | `GET` | `/task/description-matches/{projectId}` | `findDeferredTaskDescriptions` | `implemented` | 3 |  | 200, 400, 401, 403, 503 |
 | `task get` | `GET` | `/task/{id}` | `getTask` | `implemented` | 2 |  | 200, 400, 401, 403 |
-| `task get-by-ticket-id` | `GET` | `/task/by-ticket-id/{ticketId}` | `getTaskByTicketId` | `implemented` | 3 |  | 200, 400, 401, 404, 409 |
+| `task get-by-ticket-id` | `GET` | `/task/by-ticket-id/{ticketId}` | `getTaskByTicketId` | `implemented` | 4 |  | 200, 400, 401, 404, 409 |
 | `task get-description` | `GET` | `/task/{id}/description` | `getTaskDescriptionPage` | `implemented` | 3 |  | 200, 400, 401, 403, 404, 409, 503 |
 | `task import` | `POST` | `/task/import/{projectId}` | `importTasks` | `implemented` | 1 | yes | 200, 400, 401, 403 |
 | `task list` | `GET` | `/task/tasks/{projectId}` | `listTasks` | `implemented` | 11 |  | 200, 400, 401, 403, 503 |
+| `task list-assigned` | `GET` | `/task/assigned` | `listAssignedTasks` | `implemented` | 2 |  | 200, 400, 401, 403 |
 | `task move` | `PUT` | `/task/move/{id}` | `moveTask` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409 |
 | `task reorder` | `POST` | `/task/reorder` | `reorderTasks` | `implemented` | 0 | yes | 200, 400, 401, 403, 404, 409 |
 | `task stage-asset-upload` | `POST` | `/task/draft-upload/{projectId}` | `stageTaskAssetUpload` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 503 |
@@ -1491,5 +1632,21 @@ JSON body (required):
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `workspace list-members` | `GET` | `/workspace/{workspaceId}/members` | `getWorkspaceMembers` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `workspace get-my-project-access` | `GET` | `/workspace/{workspaceId}/project-access/me` | `getMyProjectAccess` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `workspace list-members` | `GET` | `/workspace/{workspaceId}/members` | `getWorkspaceMembers` | `implemented` | 2 |  | 200, 400, 401, 403, 404 |
+| `workspace list-project-access` | `GET` | `/workspace/{workspaceId}/project-access` | `getWorkspaceProjectAccess` | `implemented` | 1 |  | 200, 400, 401, 403 |
+| `workspace update-member-project-access` | `PUT` | `/workspace/{workspaceId}/members/{userId}/project-access` | `updateMemberProjectAccess` | `implemented` | 2 | yes | 200, 400, 401, 403, 404 |
+
+### `workspace update-member-project-access` request
+
+Path parameters (not JSON body fields):
+- `workspaceId` (required): string
+- `userId` (required): string
+
+```text
+JSON body (required):
+  projectAccess (required): string (one of: "all", "selected") — "all" gives access to every project in the workspace, including future ones. "selected" limits the member to projectIds.
+  projectIds (optional): array<string> (default: []) — Projects the member can access when projectAccess is "selected".
+    items: string
+```
 

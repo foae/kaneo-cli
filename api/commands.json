@@ -1348,6 +1348,125 @@
       "group": "task",
       "action": "finalize-staged-asset",
       "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/workspaces/{workspaceId}/members",
+      "group": "admin",
+      "action": "add-workspace-member",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/integration-sync/project/{projectId}/{provider}",
+      "group": "integration-sync",
+      "action": "get-rules",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/workspace/{workspaceId}/project-access/me",
+      "group": "workspace",
+      "action": "get-my-project-access",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/activity/workspace/{workspaceId}",
+      "group": "activity",
+      "action": "list-workspace",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/workspace/{workspaceId}/project-access",
+      "group": "workspace",
+      "action": "list-project-access",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/workspaces/{workspaceId}/members",
+      "group": "admin",
+      "action": "list-workspace-members",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/workspaces/{workspaceId}/roles",
+      "group": "admin",
+      "action": "list-workspace-roles",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/workspaces",
+      "group": "admin",
+      "action": "list-workspaces",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/task/assigned",
+      "group": "task",
+      "action": "list-assigned",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/integration-sync/project/{projectId}/{provider}/preview",
+      "group": "integration-sync",
+      "action": "preview-rules",
+      "status": "implemented"
+    },
+    {
+      "method": "DELETE",
+      "path": "/admin/workspaces/{workspaceId}/members/{userId}",
+      "group": "admin",
+      "action": "remove-workspace-member",
+      "status": "implemented"
+    },
+    {
+      "method": "POST",
+      "path": "/integration-sync/project/{projectId}/{provider}/links/{linkId}/resume",
+      "group": "integration-sync",
+      "action": "resume",
+      "status": "implemented"
+    },
+    {
+      "method": "GET",
+      "path": "/integration-sync/project/{projectId}/{provider}/links/{linkId}/review",
+      "group": "integration-sync",
+      "action": "review-resume",
+      "status": "implemented"
+    },
+    {
+      "method": "PATCH",
+      "path": "/integration-sync/project/{projectId}/{provider}",
+      "group": "integration-sync",
+      "action": "save-rules",
+      "status": "implemented"
+    },
+    {
+      "method": "PUT",
+      "path": "/admin/workspaces/{workspaceId}/owner",
+      "group": "admin",
+      "action": "transfer-workspace-ownership",
+      "status": "implemented"
+    },
+    {
+      "method": "PUT",
+      "path": "/admin/workspaces/{workspaceId}/members/{userId}/role",
+      "group": "admin",
+      "action": "update-workspace-member-role",
+      "status": "implemented"
+    },
+    {
+      "method": "PUT",
+      "path": "/workspace/{workspaceId}/members/{userId}/project-access",
+      "group": "workspace",
+      "action": "update-member-project-access",
+      "status": "implemented"
     }
   ]
 }
