@@ -3,20 +3,20 @@
   "openapi": {
     "local_path": "api/openapi.json",
     "official_url": "https://kaneo.app/docs/openapi.json",
-    "retrieved_at": "2026-10-02T18:44:12Z",
-    "sha256": "b4ab5c1f32ab57078863a330d5910d6ee05c1c893f5729abcaabfe200449c862",
-    "operation_count_observed": 192,
+    "retrieved_at": "2026-10-08T11:52:14Z",
+    "sha256": "7dace2b05cc27a8b239676e4b4d6c296e2e8c19f1bed8467d819cb73f68d3103",
+    "operation_count_observed": 209,
     "upstream_repository": "https://github.com/usekaneo/kaneo",
     "upstream_path": "apps/docs/openapi.json",
-    "upstream_source_commit": "0a23a40767de7ebb4e530206976b9831e4994002",
-    "upstream_source_commit_url": "https://github.com/usekaneo/kaneo/commit/0a23a40767de7ebb4e530206976b9831e4994002",
-    "upstream_main_commit_verified": "0a23a40767de7ebb4e530206976b9831e4994002",
-    "upstream_raw_url": "https://raw.githubusercontent.com/usekaneo/kaneo/0a23a40767de7ebb4e530206976b9831e4994002/apps/docs/openapi.json",
-    "source_relationship": "Verified from usekaneo/kaneo apps/docs/docs.json at main commit 0a23a40767de7ebb4e530206976b9831e4994002: its API Reference tab sets openapi to openapi.json. The official kaneo.app/docs/openapi.json fetch and apps/docs/openapi.json at release tag v2.30.1 (the same commit) both had the recorded SHA-256."
+    "upstream_source_commit": "8bc9550279d5054e04f020028f40c315c3866cb1",
+    "upstream_source_commit_url": "https://github.com/usekaneo/kaneo/commit/8bc9550279d5054e04f020028f40c315c3866cb1",
+    "upstream_main_commit_verified": "b329155c63fe50707ba927e014d4dc3acf7e2e97",
+    "upstream_raw_url": "https://raw.githubusercontent.com/usekaneo/kaneo/8bc9550279d5054e04f020028f40c315c3866cb1/apps/docs/openapi.json",
+    "source_relationship": "Pinned immutable release v2.35.0 at 8bc9550279d5054e04f020028f40c315c3866cb1; its apps/docs/docs.json API Reference selects openapi.json. The live official document instead matches main b329155c63fe50707ba927e014d4dc3acf7e2e97 (SHA-256 fcc0afc471202f00fbbfd16d700d43180fa14ec765f817a137e7c27ec24740fa). The sole semantic difference is createCalendarFeed: live docs allow omitted/empty labelIds for all scheduled project tasks; the release requires at least one label. The maintainer explicitly approved pinning the release contract and excluding that unreleased change."
   },
   "license": {
     "spdx": "MIT",
-    "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/main/LICENSE",
+    "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/8bc9550279d5054e04f020028f40c315c3866cb1/LICENSE",
     "notice": "MIT License\n\nCopyright (c) 2024 Andrej Acevski\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
   },
   "supplements": {
@@ -25,8 +25,8 @@
       "local_path": "api/authentication.md",
       "snapshot_url": "https://kaneo.app/docs/api-reference/authentication.md",
       "sha256": "90cf515c570183c857b82c82b90590b7b25d24eff5a00dbdceabc3b95bf5fcb4",
-      "snapshot_retrieved_at": "2026-10-02T18:44:12Z",
-      "retrieved_at": "2026-10-02T18:44:12Z",
+      "snapshot_retrieved_at": "2026-10-08T11:52:14Z",
+      "retrieved_at": "2026-10-08T11:52:14Z",
       "scope": "Documentation supplement only; it is not an OpenAPI operation and is not included in operation_count_observed.",
       "facts": [
         "The guide describes device authorization for interactive clients: a device_code and user_code, browser approval, and a token poll with grant_type urn:ietf:params:oauth:grant-type:device_code. Earlier revisions named RFC 8628 explicitly; upstream commit 2f2bdf3148 (2026-09-26, \"docs: rebuild guides around current Kaneo workflows\") dropped the name but not the grant.",
@@ -44,7 +44,7 @@
       "operation_id": "getOrganizationRole",
       "source_url": "https://raw.githubusercontent.com/better-auth/better-auth/v1.6.26/packages/better-auth/src/plugins/organization/routes/crud-access-control.ts",
       "source_revision": "v1.6.26",
-      "relationship": "Kaneo at 0a23a40767de7ebb4e530206976b9831e4994002 (v2.30.1) apps/api/package.json pins better-auth exactly to 1.6.26 and pnpm-lock.yaml resolves 1.6.26, unchanged from v2.29.0. The current OpenAPI still omits the role query parameters. This source tag is evidence for the contract, not a claim about the container's exact installed patch.",
+      "relationship": "Kaneo at 8bc9550279d5054e04f020028f40c315c3866cb1 (v2.35.0) pins and resolves better-auth 1.6.26, unchanged from v2.30.1. The current OpenAPI still omits the role query parameters. This source tag is evidence for the contract, not a claim about the container's exact installed patch.",
       "scope": "CLI query supplement only. The pinned OpenAPI and generated source inventory remain unchanged.",
       "observed_at": "2026-09-21",
       "evidence": "Disposable pinned Kaneo v2.25.0: roleId and roleName each returned HTTP 200 and the newly created organization role when organizationId was supplied. See docs/verification.md.",
@@ -57,9 +57,9 @@
     },
     "task_reserved_statuses": {
       "operation_ids": ["updateTaskStatus", "createTask", "moveTask", "importTasks", "listTasks"],
-      "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/0a23a40767de7ebb4e530206976b9831e4994002/apps/api/src/task/validate-task-fields.ts",
-      "source_revision": "0a23a40767de7ebb4e530206976b9831e4994002",
-      "relationship": "The pinned OpenAPI still describes task status as an unconstrained string and PUT /task/status/{id} as a move to another column. At v2.30.1 the declaring file still defines VIRTUAL_STATUSES as [\"planned\", \"archived\"], includes them in valid task statuses, and maps unknown import statuses to planned with a warning. This supplement is help text only; it is evidence for the contract, not a modification of the pinned snapshot.",
+      "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/8bc9550279d5054e04f020028f40c315c3866cb1/apps/api/src/task/validate-task-fields.ts",
+      "source_revision": "8bc9550279d5054e04f020028f40c315c3866cb1",
+      "relationship": "The pinned OpenAPI still describes task status as an unconstrained string and PUT /task/status/{id} as a move to another column. At v2.35.0 the declaring file still defines VIRTUAL_STATUSES as [\"planned\", \"archived\"], includes them in valid task statuses, and maps unknown import statuses to planned with a warning. This supplement is help text only; it is evidence for the contract, not a modification of the pinned snapshot.",
       "scope": "CLI help supplement only. The pinned OpenAPI, the generated operation inventory and the generated request-body reference remain unchanged.",
       "observed_at": "2026-09-22",
       "evidence": "Disposable pinned Kaneo (image digest recorded in docs/verification.md): writing status \"planned\" or \"archived\" through updateTaskStatus returned HTTP 200 with columnId null and moved the task into the board's plannedTasks or archivedTasks container; writing a column slug back restored it with a non-null columnId. createTask accepted \"planned\" directly. moveTask rejected destinationStatus \"planned\" with HTTP 400 \"Selected status is not valid for the destination project\". An unknown status on updateTaskStatus returned HTTP 400 and left the task unchanged. importTasks accepted an unknown status, stored it as \"planned\" and reported success with a per-task warning. listTasks --status planned returned only the planned container. See docs/verification.md.",

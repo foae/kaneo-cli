@@ -27,6 +27,15 @@ func TestRenderBodyHelpRejectsRecursiveSchemaReferences(t *testing.T) {
 				"items": map[string]any{"$ref": "#/components/schemas/Node"},
 			},
 		},
+		{
+			name: "oneOf branch",
+			schema: map[string]any{
+				"oneOf": []any{
+					map[string]any{"type": "string"},
+					map[string]any{"$ref": "#/components/schemas/Node"},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

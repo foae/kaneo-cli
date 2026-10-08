@@ -442,3 +442,22 @@ Fixture-only: concurrent move/delete/bulk conflicts, staged-finalization conflic
 Independent review of the committed refresh found no confirmed actionable defects in query validation/dispatch, JSON mutations, staged-upload safety, existing-upload compatibility, migration guidance, or the recorded coverage. The consumer skill was stamped to `2.0.0`; the release planner selected `v2.0.0` and the subsequent `just check` passed.
 
 Post-merge [CI run 37051156202](https://github.com/foae/kaneo-cli/actions/runs/37051156202) passed Linux/macOS checks but failed the FIFO fixture on Windows: `mkfifo` was present, yet native Go could not access the created path. Publication was skipped. The fixture now skips native Windows explicitly because POSIX FIFO semantics are unavailable there; regular-file, directory and missing-file checks remain cross-platform. No production behavior changed.
+
+## API baseline refresh to Kaneo 2.35.0 (2026-10-08)
+
+Environment: Linux amd64. The API snapshot is the immutable v2.35.0 release specification at `8bc9550279d5054e04f020028f40c315c3866cb1`, SHA-256 `7dace2b05cc27a8b239676e4b4d6c296e2e8c19f1bed8467d819cb73f68d3103`. The maintainer approved excluding the ahead-of-release live-doc calendar-feed change and the major release for project-key compatibility changes. The authentication guide is unchanged.
+
+Coverage increases from 192 to 209 operations: 17 added, 15 existing operation definitions changed, none removed. New commands cover administrator workspace membership/ownership, workspace project access, assigned tasks, workspace activity, and integration-sync rules/resumption. Existing changes cover notification workspace scope, task-activity limits, workspace/project selectors, invitation access fields, project-key conflicts and ordering, and Gitea/GitLab task-link comment settings. Generated body help now handles `oneOf` schemas and rejects recursive union references.
+
+The disposable instance used `ghcr.io/usekaneo/kaneo@sha256:4a14cb29a8a249c9d2e4c72d0a97df828577b1313e46331160844bb4622e3615`. Its image labels report version `2.35.0`, source revision `d96058cd4e2c4659b4979ccca4c3f63cbf85c508`; `/health` returned version `2.35.0`. The image's build revision is distinct from the release-tag revision. The fresh compose stack was healthy, bootstrapped through HTTP, and exercised using the built CLI and isolated configuration:
+
+- Administrator sessions listed workspaces, members and assignable roles, added a member, changed their role, transferred ownership and removed a member. An ordinary member and an API key were rejected on administrator routes.
+- Assigned-task listing and count-only responses agreed on the created assigned task. Workspace/task activity, project-filtered members, workspace-scoped notifications and their bulk mark-read/clear mutations succeeded.
+- Project access changed to a selected project; self-access and workspace access listings reflected it. Access to another project was denied.
+- Project creation/update/unarchive key conflicts returned HTTP 409; reordering and an archive/unarchive round trip succeeded. Workspace-scoped ticket lookup returned the created task.
+- An invitation carried selected project access; workspace invitation listing and the recipient's invitation read preserved those fields.
+- All five integration-sync commands reached the live routes and returned HTTP 404 for the absent integration/link. Gitea and GitLab integration updates likewise returned HTTP 404 with no configured integration; these are route/error acceptance, not provider-success evidence.
+
+Fixture-only: provider-backed sync success, paused-link pagination, stale-preview/comparison HTTP 409, provider HTTP 502, and provider update success. Shared operation fixtures cover dispatch and JSON behavior; focused fixtures cover omitted/false/empty query distinctions, parameter boundaries before network/session setup, destructive confirmation before credential loading, and absence of automatic pagination or retries. External provider credentials were unavailable. No device-login, transfer, native macOS/Windows/ARM or external-provider runtime acceptance is claimed for this refresh.
+
+`just check`, `just race`, `just vuln` (no vulnerabilities), and `just cross` passed. Cross-builds prove compilation only. The built `integration-sync save-rules --help` displayed both rule union branches. Obsolete generated-list and exact help-wording assertions were removed rather than re-pinned. The disposable stack and its volumes were removed after acceptance.

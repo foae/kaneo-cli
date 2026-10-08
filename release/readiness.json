@@ -7,8 +7,8 @@
   "requiredEvidence": [
     {
       "id": "public-api",
-      "requirement": "All 192 canonical API mappings are implemented and inventory coverage is current. Local contract and disposable-server acceptance is recorded; external-provider live acceptance is explicitly deferred for v1.0.0.",
-      "evidence": ["docs/verification.md#packet-follow-up-evidence-2026-09-21", "docs/verification.md#v100-acceptance-2026-09-21", "docs/verification.md#api-baseline-refresh-to-kaneo-2270-2026-09-24", "docs/verification.md#api-baseline-refresh-to-kaneo-2283-2026-09-26", "docs/verification.md#api-baseline-refresh-to-kaneo-2290-2026-09-27", "docs/verification.md#api-baseline-refresh-to-kaneo-2301-2026-10-02"],
+      "requirement": "All 209 canonical API mappings are implemented and inventory coverage is current. Local contract and disposable-server acceptance is recorded; external-provider live acceptance is explicitly deferred for v1.0.0.",
+      "evidence": ["docs/verification.md#packet-follow-up-evidence-2026-09-21", "docs/verification.md#v100-acceptance-2026-09-21", "docs/verification.md#api-baseline-refresh-to-kaneo-2270-2026-09-24", "docs/verification.md#api-baseline-refresh-to-kaneo-2283-2026-09-26", "docs/verification.md#api-baseline-refresh-to-kaneo-2290-2026-09-27", "docs/verification.md#api-baseline-refresh-to-kaneo-2301-2026-10-02", "docs/verification.md#api-baseline-refresh-to-kaneo-2350-2026-10-08"],
       "limitation": "External integrations are fixture-tested, not live-provider verified; explicitly approved for v1.0.0."
     },
     {

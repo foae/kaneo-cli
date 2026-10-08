@@ -13,6 +13,16 @@ var readSpecs = []readSpec{
 		path:        "/activity/{taskId}",
 		params: []readParam{
 			{name: "taskId", in: paramPath, flag: "task-id", required: true},
+			{name: "limit", in: paramQuery, flag: "limit", numeric: true, bounded: true, minimum: 1, maximum: 100},
+		},
+	},
+	{
+		group: "activity", action: "list-workspace",
+		short:       "Get recent workspace activity",
+		operationID: "getWorkspaceActivities",
+		path:        "/activity/workspace/{workspaceId}",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true, minLen: 1},
 		},
 	},
 	{
@@ -200,6 +210,9 @@ var readSpecs = []readSpec{
 		short:       "List notifications",
 		operationID: "listNotifications",
 		path:        "/notification",
+		params: []readParam{
+			{name: "workspaceId", in: paramQuery, flag: "workspace-id", minLen: 1},
+		},
 	},
 	{
 		group: "notification-preference", action: "get",
@@ -265,6 +278,9 @@ var readSpecs = []readSpec{
 		short:       "List Organization Invitations",
 		operationID: "listOrganizationInvitations",
 		path:        "/auth/organization/list-invitations",
+		params: []readParam{
+			{name: "organizationId", in: paramQuery, flag: "organization-id"},
+		},
 	},
 	{
 		group: "org", action: "list-members",
@@ -436,6 +452,7 @@ var readSpecs = []readSpec{
 		params: []readParam{
 			{name: "ticketId", in: paramPath, flag: "ticket-id", required: true, maxLen: 128},
 			{name: "workspaceId", in: paramQuery, flag: "workspace-id", minLen: 1},
+			{name: "workspaceSlug", in: paramQuery, flag: "workspace-slug", minLen: 1, maxLen: 128},
 			{name: "projectId", in: paramQuery, flag: "project-id", minLen: 1},
 		},
 	},
@@ -467,6 +484,16 @@ var readSpecs = []readSpec{
 			{name: "sortOrder", in: paramQuery, flag: "sort-order", enum: []string{"asc", "desc"}},
 			{name: "dueBefore", in: paramQuery, flag: "due-before"},
 			{name: "dueAfter", in: paramQuery, flag: "due-after"},
+		},
+	},
+	{
+		group: "task", action: "list-assigned",
+		short:       "List my assigned tasks",
+		operationID: "listAssignedTasks",
+		path:        "/task/assigned",
+		params: []readParam{
+			{name: "workspaceId", in: paramQuery, flag: "workspace-id", required: true, minLen: 1},
+			{name: "countOnly", in: paramQuery, flag: "count-only", enum: []string{"true", "false"}},
 		},
 	},
 	{
@@ -541,6 +568,7 @@ var readSpecs = []readSpec{
 		path:        "/workspace/{workspaceId}/members",
 		params: []readParam{
 			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+			{name: "projectId", in: paramQuery, flag: "project-id"},
 		},
 	},
 	{
@@ -552,6 +580,35 @@ var readSpecs = []readSpec{
 			{name: "search", in: paramQuery, flag: "search", maxLen: 200, help: "Case-insensitive match against user name or email"},
 			{name: "page", in: paramQuery, flag: "page", numeric: true, bounded: true, minimum: 1, maximum: 1000000},
 			{name: "limit", in: paramQuery, flag: "limit", numeric: true, bounded: true, minimum: 1, maximum: 100},
+		},
+	},
+	{
+		group: "admin", action: "list-workspaces",
+		short:       "List instance workspaces (administrator session required)",
+		operationID: "listAdminWorkspaces",
+		path:        "/admin/workspaces",
+		params: []readParam{
+			{name: "search", in: paramQuery, flag: "search", maxLen: 200},
+			{name: "page", in: paramQuery, flag: "page", numeric: true, bounded: true, minimum: 1, maximum: 1000000},
+			{name: "limit", in: paramQuery, flag: "limit", numeric: true, bounded: true, minimum: 1, maximum: 100},
+		},
+	},
+	{
+		group: "admin", action: "list-workspace-members",
+		short:       "List workspace members (administrator session required)",
+		operationID: "listAdminWorkspaceMembers",
+		path:        "/admin/workspaces/{workspaceId}/members",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "admin", action: "list-workspace-roles",
+		short:       "List assignable workspace roles (administrator session required)",
+		operationID: "listAdminWorkspaceRoles",
+		path:        "/admin/workspaces/{workspaceId}/roles",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
 		},
 	},
 	{
@@ -600,6 +657,46 @@ var readSpecs = []readSpec{
 		operationID: "getCurrentUser",
 		path:        "/user/me",
 	},
+	{
+		group: "workspace", action: "get-my-project-access",
+		short:       "Get my project access",
+		operationID: "getMyProjectAccess",
+		path:        "/workspace/{workspaceId}/project-access/me",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "workspace", action: "list-project-access",
+		short:       "Get member project access",
+		operationID: "getWorkspaceProjectAccess",
+		path:        "/workspace/{workspaceId}/project-access",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "integration-sync", action: "get-rules",
+		short:       "Get sync rules and current task scope",
+		operationID: "getIntegrationSyncRules",
+		path:        "/integration-sync/project/{projectId}/{provider}",
+		params: []readParam{
+			{name: "projectId", in: paramPath, flag: "project-id", required: true, minLen: 1},
+			{name: "provider", in: paramPath, flag: "provider", required: true, enum: []string{"github", "gitea", "gitlab"}},
+			{name: "after", in: paramQuery, flag: "after"},
+		},
+	},
+	{
+		group: "integration-sync", action: "review-resume",
+		short:       "Compare a paused task with its external issue before resuming",
+		operationID: "reviewIntegrationSyncResume",
+		path:        "/integration-sync/project/{projectId}/{provider}/links/{linkId}/review",
+		params: []readParam{
+			{name: "projectId", in: paramPath, flag: "project-id", required: true, minLen: 1},
+			{name: "provider", in: paramPath, flag: "provider", required: true, enum: []string{"github", "gitea", "gitlab"}},
+			{name: "linkId", in: paramPath, flag: "link-id", required: true, minLen: 1},
+		},
+	},
 }
 
 // groupShorts describes each read command group.
@@ -616,6 +713,7 @@ var groupShorts = map[string]string{
 	"gitea":                   "Gitea integration",
 	"github":                  "GitHub integration",
 	"gitlab":                  "GitLab integration",
+	"integration-sync":        "Integration sync rules and paused links",
 	"invitation":              "Invitations",
 	"label":                   "Labels",
 	"mattermost":              "Mattermost integration",

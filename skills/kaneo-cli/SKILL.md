@@ -206,6 +206,22 @@ Import reports per-task outcomes and can return its complete JSON result on stdo
 
 Kaneo 2.30.1 tightens GitHub and Gitea imports: both `task:create` **and** `task:update` workspace permissions are required. Existing create-only roles now receive HTTP 403. Ask an authorized administrator to grant the missing permission; do not switch credentials or broaden roles automatically.
 
+## Kaneo 2.35 compatibility and workspace access
+
+Project keys are unique case-insensitively after Unicode NFKC normalization within a workspace, including archived projects. `project create`, `project update`, and `project unarchive` can return HTTP 409 for a collision. Choose a genuinely unused key; do not retry unchanged. `task get-by-ticket-id` now prefers an active project, then the most recently archived one; use `--project-id` when the intended project matters.
+
+Use `task list-assigned --workspace-id "$WORKSPACE_ID"` for your assigned open tasks and `activity list-workspace --workspace-id "$WORKSPACE_ID"` for the workspace feed. `activity list-task` accepts `--limit` (1–100). `notification list`, `notification mark-all-read`, and `notification clear-all` accept `--workspace-id`; omission still means all workspaces. `workspace list-members --project-id "$PROJECT_ID"` scopes the assignable-member list.
+
+`workspace get-my-project-access` and `workspace list-project-access` expose access restrictions. `workspace update-member-project-access --workspace-id ... --user-id ... --yes --body-file ...` accepts `projectAccess: "all"` or `"selected"` plus `projectIds`. Selected access can hide projects, tasks, and activity; never interpret invisibility as deletion. Invitations accept the same access fields, and invitation reads return them.
+
+Instance administrators can use `admin list-workspaces` (`--search`, `--page`, `--limit`), `list-workspace-members`, `list-workspace-roles`, `add-workspace-member`, `update-workspace-member-role`, `remove-workspace-member`, and `transfer-workspace-ownership`. These require an administrator **session**, not an API key. Removal and ownership transfer require `--yes`; ownership transfer makes the chosen existing member the sole owner and demotes former owners to admins.
+
+## Integration synchronization
+
+The `integration-sync` group supports `get-rules`, `preview-rules`, `save-rules`, `review-resume`, and `resume` for `--provider github|gitea|gitlab` and `--project-id`. Read each command's help for the complete rule body; outgoing/incoming rule branches are alternatives, not fields to merge indiscriminately. `get-rules --after` continues the task-scope cursor.
+
+Preview a rule change, then pass its `previewToken` with those rules to `save-rules`. For a paused link, use `review-resume --link-id ...`, choose the authoritative `source` (`kaneo` or `provider`), and pass the comparison `token` to `resume --link-id ... --yes`. Resuming overwrites the other side's title, description and open/closed state; historical comments are not replayed. Obtain explicit authorization first. A stale comparison/preview returns HTTP 409; review again rather than silently retrying. Provider failure can return HTTP 502 and leaves synchronization paused. Ordinary JSON bodies, including explicit `false` and omitted fields, are forwarded unchanged.
+
 ## Destructive changes and failures
 
 Deletes, removals, revocations, and other destructive operations, including `task bulk-update`, require `--yes`. It is a mechanical safeguard, not user authorization. Use it only after the user explicitly approves the exact operation and target; never apply it globally to every command. Do not automate bulk changes from an ambiguous request.
