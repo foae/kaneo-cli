@@ -1,4 +1,4 @@
-# svu v3.3.0 stable release policy.
+# Stable release policy for the svu version pinned in .github/workflows/release.yml.
 tag.prefix: v
 always: false
 v0: false

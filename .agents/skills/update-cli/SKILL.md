@@ -56,7 +56,7 @@ Follow the refresh procedure in `docs/api/README.md` steps 3–7:
 - Implement every new operation in the existing data-driven style (read/write specs, browser/binary contracts per `AGENTS.md`); none may stay `planned` without an explicit reason in the docs. Apply tightened constraints before any request. Handle new response semantics (pagination, continuation, partial success) without silent retries.
 - Move the Kaneo image digest in `integration/compose.yaml` to the target tag's image and update its audit comment.
 - Update the consumer skill `skills/kaneo-cli/SKILL.md` wherever commands, flags, recipes or behavior changed, plus `docs/cli-contract.md` and any other affected docs.
-- Update the operation count and evidence links in `release/readiness.json` (`public-api`).
+- Update the operation count and evidence links in `release/readiness.json` (`public-api`), and the count everywhere it is stated as current: `AGENTS.md`, `README.md`, `docs/implementation.md`, `docs/cli-contract.md` and the release header in `.goreleaser.yaml`. `git grep -nE "\b<old count>\b"` finds stragglers; dated entries in `docs/verification.md` are history and keep their numbers.
 - Record discrepancies (source URL, revision, endpoint, observed behavior, impact) per `AGENTS.md`; upstream defects left unfixed go in `docs/reported_bugs/`.
 
 Delegate mechanical implementation to worker agents with disjoint files. Keep diff classification, naming and conflict judgments on the coordinator.

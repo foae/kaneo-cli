@@ -26,7 +26,7 @@ The webhook handlers under `plugins/github/webhooks/` and `plugins/gitea/webhook
 
 ## Effect on this CLI
 
-`internal/cli/resolve.go:172` builds each page's candidate set from `archivedTasks + plannedTasks + columns[].tasks`. A task with an unbucketed status is in none of those, so `kaneo-cli task get --key` returns a usage error (exit 2, "no match") for a task that exists.
+`resolveTaskNumber` (`internal/cli/resolve.go:189-192`) builds each page's candidate set from `archivedTasks + plannedTasks + columns[].tasks`. A task with an unbucketed status is in none of those, so `kaneo-cli task get --key` returns a usage error (exit 2, "no match") for a task that exists.
 
 ## Impact
 
