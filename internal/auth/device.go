@@ -196,6 +196,7 @@ func pollDeviceToken(ctx context.Context, c *client.Client, clientID, deviceCode
 		ContentType: "application/json",
 		OperationID: "deviceTokenPoll",
 		Sensitive:   true,
+		SecretBody:  true,
 	})
 	if err != nil {
 		return DeviceToken{}, err
@@ -214,18 +215,22 @@ func pollDeviceToken(ctx context.Context, c *client.Client, clientID, deviceCode
 		// Some servers return a documented polling status with a 2xx status;
 		// surface it as a retryable/terminal protocol error rather than a hard
 		// decode failure.
-		if payload.Error != "" {
+		switch payload.Error {
+		case "authorization_pending", "slow_down", "access_denied", "expired_token", "invalid_client":
 			return DeviceToken{}, &client.Error{
 				StatusCode: 0,
 				Code:       "device_error",
-				Message:    payload.Error,
 				ServerCode: payload.Error,
 			}
+		case "":
+			// A successful token response must carry either a token or a known polling status.
+		default:
+			return DeviceToken{}, errors.New("device token response contains an unrecognized error")
 		}
 		return DeviceToken{}, errors.New("device token response is missing an access token")
 	}
 	if payload.TokenType != "" && !strings.EqualFold(payload.TokenType, "Bearer") {
-		return DeviceToken{}, fmt.Errorf("unsupported device token type %q", SanitizeForDisplay(payload.TokenType))
+		return DeviceToken{}, errors.New("unsupported device token type")
 	}
 	return DeviceToken{AccessToken: payload.AccessToken, TokenType: payload.TokenType}, nil
 }

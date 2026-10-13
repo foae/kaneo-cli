@@ -36,6 +36,8 @@ Implement the exact pinned guide's code-request and token-polling endpoints, req
 
 Display safe verification instructions on stderr. Do not reveal device codes or access tokens in debug/error output. Respect server polling interval, expiry, authorization-pending, slow-down, access-denied and expired-token outcomes; cancel promptly. Never poll indefinitely or retry a denied request as a new login. Store credentials only after documented success. Do not assume a refresh-token flow exists.
 
+Token polling suppresses arbitrary server error text/codes and unrecognized token-type values, which could reflect the submitted device credential. Only recognized polling statuses influence the protocol, including when supplied in a successful HTTP response. Unknown statuses fail without retry or reflected response text.
+
 ## Required evidence
 
 API-key authenticated request; approved/denied/expired/cancelled device login; unavailable keyring fallback and warning; Unix permissions and Windows ACLs; profile isolation; URL changes; cross-origin redirect refusal; concurrent writes; logout cleanup. Mocked keyring tests do not prove native keyring behavior. Keep native-platform evidence explicit and pending until exercised.
