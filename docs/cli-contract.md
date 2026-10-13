@@ -56,6 +56,16 @@ This refresh is a major CLI release by explicit maintainer approval: project cre
 
 New administrator workspace operations require an instance-administrator session; API keys are rejected. Ownership transfer, member removal, project-access changes and paused-sync resumption require `--yes`. Rule save uses a preview token; sync resumption uses a reviewed comparison token and an explicit authoritative source. HTTP 409/502 failures are surfaced without retry. The consumer skill documents the full workflow and new scope flags. JSON request validation remains syntactic; the server validates request-body schemas.
 
+## Kaneo 2.46 migration
+
+The immutable v2.46.2 baseline has 221 operations (12 additions, none removed). Existing command names are unchanged. The approved major-version migration adopts JSON API error contracts, missing-resource HTTP 404 in place of earlier 400 responses, and nullable missing-integration reads. Automation must inspect HTTP status and stable CLI codes rather than depend on old error wording.
+
+New commands are `workspace list|get|get-my-capabilities`, `import list-source-projects|start-run|list-runs|get-run|get-trello-authorize-url`, `notification mark-unread|delete|clear-read`, and `custom-field update`. Destructive notification commands require `--yes`. GitHub repository listing adds `--search` (at most 100 Unicode characters); continue returned cursors with the same search even after an empty page. Calendar creation permits omitted/empty labels, and imported comment attribution adds Plane, Linear and Kaneo.
+
+`import start-run` returns its HTTP 202 envelope with exit 0: the run was accepted, not completed. Poll explicitly with `import get-run` using `run.id`; inspect `run.projects[].status` and warnings. Never repeat the start request as continuation. Existing label and GitHub import continuation exit-5 semantics are unchanged. Import HTTP 429 can signal server-wide concurrency capacity as well as rate limiting, and no mutation is retried automatically.
+
+Import connection secrets use `--body-file`/stdin. Credential-bearing operations suppress all server-supplied error messages and arbitrary error codes, retaining only recognized device-poll protocol codes internally. Ordinary non-secret error diagnostics remain available. The Trello authorization JSON contains a public application key, not a secret user token ([Trello contract](https://developer.atlassian.com/cloud/trello/guides/rest-api/api-introduction/)); it is returned unchanged without browser interaction.
+
 ## Exit codes
 
 | Code | Meaning |

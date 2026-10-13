@@ -1467,6 +1467,18 @@
       "group": "workspace",
       "action": "update-member-project-access",
       "status": "implemented"
-    }
+    },
+    {"method": "DELETE", "path": "/notification/clear-read", "group": "notification", "action": "clear-read", "status": "implemented"},
+    {"method": "DELETE", "path": "/notification/{id}", "group": "notification", "action": "delete", "status": "implemented"},
+    {"method": "GET", "path": "/import/runs/{workspaceId}/{runId}", "group": "import", "action": "get-run", "status": "implemented"},
+    {"method": "GET", "path": "/workspace/{workspaceId}/capabilities", "group": "workspace", "action": "get-my-capabilities", "status": "implemented"},
+    {"method": "GET", "path": "/import/trello/authorize-url/{workspaceId}", "group": "import", "action": "get-trello-authorize-url", "status": "implemented"},
+    {"method": "GET", "path": "/workspace/{workspaceId}", "group": "workspace", "action": "get", "status": "implemented"},
+    {"method": "GET", "path": "/import/runs/{workspaceId}", "group": "import", "action": "list-runs", "status": "implemented"},
+    {"method": "POST", "path": "/import/projects", "group": "import", "action": "list-source-projects", "status": "implemented"},
+    {"method": "GET", "path": "/workspace", "group": "workspace", "action": "list", "status": "implemented"},
+    {"method": "PATCH", "path": "/notification/{id}/unread", "group": "notification", "action": "mark-unread", "status": "implemented"},
+    {"method": "POST", "path": "/import/runs", "group": "import", "action": "start-run", "status": "implemented"},
+    {"method": "PUT", "path": "/custom-field/{id}", "group": "custom-field", "action": "update", "status": "implemented"}
   ]
 }

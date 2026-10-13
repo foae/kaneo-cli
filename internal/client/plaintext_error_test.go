@@ -156,3 +156,109 @@ func TestPlainTextHTMLBodyKeepsInvalidJSONHint(t *testing.T) {
 		t.Fatalf("message leaked body: %q", apiErr.Message)
 	}
 }
+
+func TestSecretBodyJSONErrorsDoNotReflectCredentials(t *testing.T) {
+	const secret = "synthetic-submitted-credential"
+	bodies := []string{
+		`{"message":"` + secret + `","code":"` + secret + `"}`,
+		`{"message":{"description":{"message":"` + secret + `"}},"code":{"code":"` + secret + `"}}`,
+		`{"error_description":"` + secret + `","error":"` + secret + `"}`,
+		`{"detail":{"code":"` + secret + `"},"error":{"description":"` + secret + `"}}`,
+		`{"message":"` + secret + `","error":"authorization_pending"}`,
+	}
+	for _, status := range []int{http.StatusBadRequest, http.StatusBadGateway} {
+		for _, body := range bodies {
+			t.Run(http.StatusText(status)+"/"+body, func(t *testing.T) {
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(status)
+					_, _ = w.Write([]byte(body))
+				}))
+				defer server.Close()
+
+				c := newTestClient(t, server.URL, "x")
+				_, err := c.Do(context.Background(), Request{
+					Method: "POST", Path: "/credential", OperationID: "credentialRequest",
+					Body: []byte(`{"password":"` + secret + `"}`), SecretBody: true,
+				})
+				var apiErr *Error
+				if !errors.As(err, &apiErr) {
+					t.Fatalf("error = %v, want *Error", err)
+				}
+				if apiErr.Message != "" {
+					t.Errorf("secret-body message = %q, want empty", apiErr.Message)
+				}
+				if apiErr.ServerCode != "" {
+					t.Errorf("secret-body server code = %q, want empty", apiErr.ServerCode)
+				}
+				if strings.Contains(apiErr.Error(), secret) {
+					t.Errorf("error leaked submitted credential: %q", apiErr.Error())
+				}
+			})
+		}
+	}
+}
+
+func TestSecretBodyDeviceProtocolCodes(t *testing.T) {
+	for _, code := range []string{
+		"authorization_pending", "slow_down", "access_denied", "expired_token", "invalid_client",
+		"synthetic-submitted-credential", "authorization_pending synthetic-submitted-credential",
+	} {
+		for _, body := range []string{
+			`{"error":"` + code + `","error_description":"synthetic-submitted-credential"}`,
+			`{"code":{"code":"` + code + `"},"message":{"message":"synthetic-submitted-credential"}}`,
+		} {
+			for _, status := range []int{http.StatusBadRequest, http.StatusBadGateway} {
+				t.Run(http.StatusText(status)+"/"+body, func(t *testing.T) {
+					recorder := httptest.NewRecorder()
+					recorder.Header().Set("Content-Type", "application/json")
+					recorder.WriteHeader(status)
+					_, _ = recorder.WriteString(body)
+					resp := recorder.Result()
+					defer func() { _ = resp.Body.Close() }()
+
+					apiErr := newError(resp, "deviceTokenPoll", true)
+					wantCode := code
+					if strings.Contains(code, "synthetic-submitted-credential") {
+						wantCode = ""
+					}
+					if apiErr.ServerCode != wantCode {
+						t.Errorf("server code = %q, want %q", apiErr.ServerCode, wantCode)
+					}
+					if apiErr.Message != "" {
+						t.Errorf("secret-body message = %q, want empty", apiErr.Message)
+					}
+					if strings.Contains(apiErr.Error(), "synthetic-submitted-credential") {
+						t.Errorf("error leaked submitted credential: %q", apiErr.Error())
+					}
+				})
+			}
+		}
+	}
+}
+
+func TestOrdinaryJSONErrorsKeepDiagnostics(t *testing.T) {
+	for _, body := range []string{
+		`{"message":"ordinary diagnostic","code":"ordinary_code"}`,
+		`{"message":{"description":"ordinary diagnostic"},"error":{"code":"ordinary_code"}}`,
+	} {
+		for _, status := range []int{http.StatusBadRequest, http.StatusBadGateway} {
+			t.Run(http.StatusText(status)+"/"+body, func(t *testing.T) {
+				recorder := httptest.NewRecorder()
+				recorder.Header().Set("Content-Type", "application/json")
+				recorder.WriteHeader(status)
+				_, _ = recorder.WriteString(body)
+				resp := recorder.Result()
+				defer func() { _ = resp.Body.Close() }()
+
+				apiErr := newError(resp, "ordinaryRequest", false)
+				if apiErr.Message != "ordinary diagnostic" || apiErr.ServerCode != "ordinary_code" {
+					t.Fatalf("ordinary error = %#v", apiErr)
+				}
+				if apiErr.Code != statusCode(status) || apiErr.StatusCode != status {
+					t.Fatalf("status classification changed: %#v", apiErr)
+				}
+			})
+		}
+	}
+}

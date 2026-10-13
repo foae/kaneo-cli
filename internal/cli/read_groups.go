@@ -142,6 +142,35 @@ var readSpecs = []readSpec{
 			{name: "projectId", in: paramPath, flag: "project-id", required: true},
 			{name: "installationPage", in: paramQuery, flag: "installation-page", pattern: `^[1-9][0-9]{0,5}$`},
 			{name: "repositoryPage", in: paramQuery, flag: "repository-page", pattern: `^[1-9][0-9]{0,5}$`},
+			{name: "search", in: paramQuery, flag: "search", maxLen: 100, help: "Case-insensitive match on repository full name or description; follow nextPage to resume the bounded scan"},
+		},
+	},
+	{
+		group: "import", action: "list-runs",
+		short:       "List recent workspace imports",
+		operationID: "listImportRuns",
+		path:        "/import/runs/{workspaceId}",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "import", action: "get-run",
+		short:       "Get import progress and each project's status",
+		operationID: "getImportRun",
+		path:        "/import/runs/{workspaceId}/{runId}",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+			{name: "runId", in: paramPath, flag: "run-id", required: true},
+		},
+	},
+	{
+		group: "import", action: "get-trello-authorize-url",
+		short:       "Get the Trello authorize link as JSON",
+		operationID: "getTrelloAuthorizeUrl",
+		path:        "/import/trello/authorize-url/{workspaceId}",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
 		},
 	},
 	{
@@ -562,6 +591,30 @@ var readSpecs = []readSpec{
 		},
 	},
 	{
+		group: "workspace", action: "list",
+		short:       "List accessible workspaces with the caller's role",
+		operationID: "listWorkspaces",
+		path:        "/workspace",
+	},
+	{
+		group: "workspace", action: "get",
+		short:       "Get a workspace with the caller's role",
+		operationID: "getWorkspace",
+		path:        "/workspace/{workspaceId}",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "workspace", action: "get-my-capabilities",
+		short:       "Get the caller's workspace capabilities",
+		operationID: "getMyWorkspaceCapabilities",
+		path:        "/workspace/{workspaceId}/capabilities",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
 		group: "workspace", action: "list-members",
 		short:       "Get workspace members",
 		operationID: "getWorkspaceMembers",
@@ -713,6 +766,7 @@ var groupShorts = map[string]string{
 	"gitea":                   "Gitea integration",
 	"github":                  "GitHub integration",
 	"gitlab":                  "GitLab integration",
+	"import":                  "Import projects from another service",
 	"integration-sync":        "Integration sync rules and paused links",
 	"invitation":              "Invitations",
 	"label":                   "Labels",
@@ -732,5 +786,5 @@ var groupShorts = map[string]string{
 	"user":                    "User",
 	"webhook":                 "Generic webhook integration",
 	"workflow-rule":           "Workflow rules",
-	"workspace":               "Workspace; use org list to find workspace IDs",
+	"workspace":               "Workspace access, capabilities and members",
 }

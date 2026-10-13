@@ -30,7 +30,8 @@ type Error struct {
 	Message     string
 	OperationID string
 	// ServerCode is the machine-readable code the server returned, for example
-	// the RFC 8628 device-flow error names. It is empty when absent.
+	// the RFC 8628 device-flow error names. Secret-body requests retain only
+	// known device polling codes; it is otherwise empty when absent.
 	ServerCode string
 	// RetryAfter is the parsed Retry-After delay in seconds, or zero.
 	RetryAfter int
@@ -98,8 +99,8 @@ func statusCode(status int) string {
 
 // newError translates a failed response into an *Error, reading a bounded
 // portion of the body for a documented message field and otherwise for a
-// server-declared plain-text explanation. It never echoes an unrecognized
-// JSON, HTML or binary body, which could contain reflected secrets.
+// server-declared plain-text explanation. Credential-bearing requests suppress
+// body diagnostics and retain only known codes required for device polling.
 func newError(resp *http.Response, operationID string, secretBody bool) *Error {
 	apiErr := &Error{
 		StatusCode:  resp.StatusCode,
@@ -116,6 +117,15 @@ func newError(resp *http.Response, operationID string, secretBody bool) *Error {
 	}
 	if beginsWithHTML(body) {
 		apiErr.Message = fmt.Sprintf("request failed with HTTP status %d; %s", resp.StatusCode, ErrInvalidJSONResponse)
+		return apiErr
+	}
+	if secretBody {
+		if operationID == "deviceTokenPoll" {
+			switch code := extractServerCode(body); code {
+			case "authorization_pending", "slow_down", "access_denied", "expired_token", "invalid_client":
+				apiErr.ServerCode = code
+			}
+		}
 		return apiErr
 	}
 	apiErr.Message = extractMessage(body)

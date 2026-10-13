@@ -11,6 +11,7 @@ Claims are marked with their evidence class: live observation against a disposab
 - [upstream-bulk-update-status-partial-write.md](upstream-bulk-update-status-partial-write.md) — `PATCH /task/bulk` with `operation: "updateStatus"` commits part of a batch before returning HTTP 400 for a later project.
 - [upstream-unbucketed-task-status.md](upstream-unbucketed-task-status.md) — GitHub/Gitea issue import can write a task status matching no column slug and no reserved value, leaving the task in no board bucket.
 - [upstream-openapi-reserved-status-documentation.md](upstream-openapi-reserved-status-documentation.md) — the pinned OpenAPI never documents that `planned` and `archived` are reserved task statuses.
+- [upstream-rate-limit-header-documentation.md](upstream-rate-limit-header-documentation.md) - the OpenAPI restricts API-key window headers to rate-limit failures, but successful requests also return them.
 
 ## Local (foae/kaneo-cli)
 

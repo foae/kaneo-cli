@@ -71,7 +71,7 @@ release:
   header: |
     Unofficial JSON-first Kaneo CLI. The release configuration includes Linux, macOS and Windows archives for amd64 and arm64, native Linux packages, and a multi-architecture container image.
 
-    All 209 pinned operations have command mappings. GitHub, Gitea, Slack, Discord, Mattermost and Telegram integrations are fixture-tested, **not live-provider verified**; live-provider acceptance was explicitly deferred for v1.0.0.
+    All 221 pinned operations have command mappings. External integrations and cross-tool import completion are fixture-tested, **not live-provider verified**; live-provider acceptance was explicitly deferred for v1.0.0.
 
     See [verification evidence](https://github.com/foae/kaneo-cli/blob/{{ .Tag }}/docs/verification.md) and [API compatibility notes](https://github.com/foae/kaneo-cli/blob/{{ .Tag }}/docs/api/README.md).
 

@@ -143,6 +143,16 @@ var writeSpecs = []writeSpec{
 		body: true,
 	},
 	{
+		group: "custom-field", action: "update",
+		short:       "Update custom field",
+		operationID: "updateCustomField", method: "PUT",
+		path: "/custom-field/{id}",
+		body: true,
+		params: []readParam{
+			{name: "id", in: paramPath, flag: "id", required: true},
+		},
+	},
+	{
 		group: "discord", action: "create-integration",
 		short:       "Create Discord integration",
 		operationID: "createDiscordIntegration", method: "POST",
@@ -364,6 +374,50 @@ var writeSpecs = []writeSpec{
 		path:   "/mcp/register",
 		public: true,
 		body:   true,
+	},
+	{
+		group: "import", action: "list-source-projects",
+		short:       "List projects available from an import source",
+		operationID: "listImportSourceProjects", method: "POST",
+		path: "/import/projects",
+		body: true,
+	},
+	{
+		group: "import", action: "start-run",
+		short:       "Start a background import",
+		operationID: "startImportRun", method: "POST",
+		path:  "/import/runs",
+		body:  true,
+		notes: `HTTP 202 means the import was accepted, not completed, and exits 0. The complete run envelope is printed unchanged. Read run.id and explicitly use 'import get-run --workspace-id ... --run-id ...' to observe progress; check run.projects[].status even when run.status is completed. This command never polls, continues or retries automatically.`,
+	},
+	{
+		group: "notification", action: "mark-unread",
+		short:       "Mark notification unread",
+		operationID: "markNotificationAsUnread", method: "PATCH",
+		path: "/notification/{id}/unread",
+		params: []readParam{
+			{name: "id", in: paramPath, flag: "id", required: true},
+		},
+	},
+	{
+		group: "notification", action: "delete",
+		short:       "Delete notification",
+		operationID: "deleteNotification", method: "DELETE",
+		path:        "/notification/{id}",
+		destructive: true,
+		params: []readParam{
+			{name: "id", in: paramPath, flag: "id", required: true},
+		},
+	},
+	{
+		group: "notification", action: "clear-read",
+		short:       "Permanently delete read notifications, keeping unread notifications",
+		operationID: "clearReadNotifications", method: "DELETE",
+		path:        "/notification/clear-read",
+		destructive: true,
+		params: []readParam{
+			{name: "workspaceId", in: paramQuery, flag: "workspace-id", minLen: 1},
+		},
 	},
 	{
 		group: "notification", action: "clear-all",
