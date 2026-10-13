@@ -78,6 +78,50 @@ func newDeviceClient(t *testing.T, server *httptest.Server) *client.Client {
 	return c
 }
 
+func TestLoginDeviceDoesNotReflectDeviceCredentials(t *testing.T) {
+	const secret = "synthetic-device-secret"
+	for _, test := range []struct {
+		name   string
+		status int
+		body   string
+	}{
+		{"bad-request", http.StatusBadRequest, `{"message":"` + secret + `","code":"` + secret + `"}`},
+		{"gateway-failure", http.StatusBadGateway, `{"error_description":"` + secret + `","error":"` + secret + `"}`},
+		{"successful-error-envelope", http.StatusOK, `{"error":"` + secret + `"}`},
+		{"invalid-token-type", http.StatusOK, `{"access_token":"synthetic-access-token","token_type":"` + secret + `"}`},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			fixture := &deviceFixture{
+				code:        DeviceCode{DeviceCode: secret, UserCode: "ABCD-1234", Interval: 1, ExpiresIn: 600},
+				tokenStatus: []int{test.status},
+				tokenBodies: []string{test.body},
+			}
+			server := httptest.NewServer(fixture.handler(t))
+			defer server.Close()
+			fixture.code.VerificationURI = server.URL + "/device"
+			var instructions bytes.Buffer
+			_, err := LoginDevice(t.Context(), DeviceOptions{
+				Client:       newDeviceClient(t, server),
+				Instructions: &instructions,
+				Sleep:        func(context.Context, time.Duration) error { return nil },
+			})
+			if err == nil {
+				t.Fatal("expected polling failure")
+			}
+			if strings.Contains(err.Error(), secret) || strings.Contains(instructions.String(), secret) {
+				t.Fatal("device credential reflected in diagnostics")
+			}
+			var apiErr *client.Error
+			if errors.As(err, &apiErr) && strings.Contains(apiErr.ServerCode, secret) {
+				t.Fatal("device credential reflected in server code")
+			}
+			if fixture.tokenCalls != 1 {
+				t.Fatalf("unexpected retries: %d token requests", fixture.tokenCalls)
+			}
+		})
+	}
+}
+
 func TestLoginDevicePendingThenApproved(t *testing.T) {
 	fixture := &deviceFixture{
 		code: DeviceCode{DeviceCode: "dev_secret", UserCode: "ABCD-1234", VerificationURI: "", Interval: 1, ExpiresIn: 600},

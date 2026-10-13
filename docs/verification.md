@@ -2,7 +2,7 @@
 
 ## Explicit developer commands
 
-Use Go 1.27+ and [just](https://github.com/casey/just) 1.58.0, the version pinned in CI. Install that version from the [upstream release](https://github.com/casey/just/releases/tag/1.58.0); check your installation with `just --version`. Recipes can be invoked from the repository root or a subdirectory and run at the root. Native Windows recipes use Windows PowerShell; Unix recipes use `sh`. No dotenv files are loaded implicitly.
+Use Go 1.27.2+ and [just](https://github.com/casey/just) 1.58.0, the version pinned in CI. Install that version from the [upstream release](https://github.com/casey/just/releases/tag/1.58.0); check your installation with `just --version`. Recipes can be invoked from the repository root or a subdirectory and run at the root. Native Windows recipes use Windows PowerShell; Unix recipes use `sh`. No dotenv files are loaded implicitly.
 
 Run `just` or `just --list` for the task menu; neither runs checks or starts services:
 
@@ -43,7 +43,7 @@ The formatting check must fail on changes; use `fmt` deliberately to fix them. T
 
 ### Lint policy
 
-`lint` runs golangci-lint v2.13.2 through the version-pinned Go module in `internal/cmd/dev`, using `.golangci.yml`. No global installation is needed; the first run downloads/builds the tool, and later runs reuse Go's caches. `check` includes lint, so native CI and opt-in hooks enforce the same policy without a separate lint action. Neither command applies automatic fixes.
+`lint` runs golangci-lint v2.14.0 through the version-pinned Go module in `internal/cmd/dev`, using `.golangci.yml`. No global installation is needed; the first run downloads/builds the tool, and later runs reuse Go's caches. `check` includes lint, so native CI and opt-in hooks enforce the same policy without a separate lint action. Neither command applies automatic fixes.
 
 The explicit rule set is correctness-first: `errcheck`, `govet`, `ineffassign`, `staticcheck`, `unused`, `bodyclose`, `contextcheck`, `nilerr` and `nolintlint`. It covers unchecked errors, suspicious code, dead code, HTTP response cleanup and dropped inherited contexts. No complexity/line-length limits, mandatory error-wrapping style or blanket test exclusions. Formatting remains the existing `gofmt` check; dependency vulnerabilities remain the separate `vuln` command.
 
@@ -465,3 +465,37 @@ Fixture-only: provider-backed sync success, paused-link pagination, stale-previe
 Independent review found one actionable defect: comparison hashes in sync rule-save/resume bodies were classified as credentials, suppressing plain-text server diagnostics. The generator now exempts only those specific root fields while continuing to detect other and nested credentials. Regression assertions reproduced the lost HTTP 409/502 messages before the fix; a rebuilt CLI against a loopback fixture preserved both messages, returned exit 5 with empty stdout, and sent exactly one request per command. Upstream `review-resume.ts:90-100` and `preview-rules.ts:101-112` at the pinned revision construct these hashes independently of route authorization. The read-side/baseline review found no actionable defects.
 
 After the review fix, `just check`, `just race`, `just vuln` (no vulnerabilities), and `just cross` passed again. The consumer skill was stamped to `3.0.0`; the release planner reported `release: true`, next tag `v3.0.0`, and passed the stamp gate.
+
+## API baseline refresh to Kaneo 2.46.2 (2026-10-13)
+
+Baseline: upstream tag `v2.46.2`, commit `46ef6f78da1f0c9630d88c56f1686ebfc8de7beb`; exact release and official OpenAPI bytes both SHA-256 `5e2f5751617e2c5563d96662a0c480ab0d0124ef8dc3e3f4212ba4efda51d631`. The inventory moves from 209 to 221 operations: 12 added, 204 existing operation contracts changed, none removed or renamed. Most changes standardize JSON errors and missing-resource 404 responses. Other request changes are optional/empty calendar labels, three new imported-comment sources, and GitHub repository search. Shared schema changes include nullable absent integration results. The maintainer approved the breaking error-contract migration.
+
+New operations: `listWorkspaces`, `getWorkspace`, `getMyWorkspaceCapabilities`, `listImportSourceProjects`, `startImportRun`, `listImportRuns`, `getImportRun`, `getTrelloAuthorizeUrl`, `markNotificationAsUnread`, `deleteNotification`, `clearReadNotifications`, and `updateCustomField`. Canonical names and complete contracts are in the generated [operation reference](api/operations.md).
+
+Environment: Linux amd64, just 1.58.0; live CLI built with Go 1.27.1 before the security patch upgrade described below. Disposable image `ghcr.io/usekaneo/kaneo@sha256:f44be9aa22546f95c59076bee86678bffcaf5e5d4b960c58a107ad1a05cd1f90`; observed OCI version `2.46.2`, OCI revision `85d2a8494b136da66b490288fb678fc67ac25ad8` (distinct from the release commit). The API config does not expose a server version. PostgreSQL and MinIO use the Compose pins. Fresh Compose ownership and `hasUsers:false,hasAdmin:false` were verified before HTTP bootstrap. All containers and volumes were removed afterward.
+
+Built-CLI live acceptance:
+
+- Workspace list/get returned the bootstrapped workspace, and capabilities included project creation for its owner.
+- Custom-field update changed a dropdown to multiselect, renamed it, added an option, and preserved explicit false/null. An incompatible change to text returned HTTP 400.
+- Notification read → unread preserved the notification. Scoped clear-read rejected missing `--yes` with exit 2, then removed only the read notification; delete removed the remaining notification, verified by listing.
+- Calendar creation accepted both `{}` and `{"labelIds":[]}`. Task comments retained attribution for `plane`, `linear`, and `kaneo`.
+- Import list returned no runs; the unconfigured Trello authorization read returned `{"authorizeUrl":null}`; a missing run returned HTTP 404/exit 5. Both source discovery and import start rejected a private source URL with HTTP 400/exit 5 and generic diagnostics, without echoing the synthetic source credential. This proves route/error behavior, not source discovery or completed imports.
+- Missing workspace/custom-field operations returned HTTP 404; GitHub repository discovery rejected an API key with HTTP 403 and required a linked GitHub account with a session. Search beyond 100 characters failed locally with exit 2.
+- A successful API-key workspace read carried `X-RateLimit-*` headers. Exhausting its default 100-request window returned HTTP 429, `Retry-After:60`, and remaining zero; the CLI returned `rate_limited`/exit 5 without retry. An invalid key returned HTTP 401/exit 3. The incorrect upstream header description is [recorded separately](reported_bugs/upstream-rate-limit-header-documentation.md).
+
+Fixture-only: external-provider source discovery and import acceptance/completion, non-null Trello authorization, GitHub matching/pagination, provider failures, import concurrency failures, and error transitions requiring unavailable provider/resource states. Regression fixtures defend empty-page cursor preservation without auto-pagination, search boundaries, confirmation/required arguments before network access, failure exit codes without retries, and accepted import HTTP 202/exit 0 versus resumable GitHub/label HTTP 202/exit 5. This refresh does not re-exercise all 204 changed operation error paths, real external device authorization, transfers, or native macOS/Windows/ARM execution.
+
+Credential-reflection regression: before the fix, ten HTTP 400/502 JSON cases leaked a synthetic submitted credential into diagnostic messages or server codes. They pass after suppressing arbitrary response diagnostics for secret-bearing requests. Only the five recognized device-poll protocol codes remain available internally; ordinary request errors retain diagnostics.
+
+Verification friction: a new fixture incorrectly required local rejection of missing credentials and redundant pass-through tests were removed rather than changing the existing authentication contract. Two unchecked recorder-body closes were corrected. The first vulnerability scan found eight reachable Go 1.27.1 standard-library advisories, all fixed in Go 1.27.2; `go.mod` now requires that patch, which also controls CI/release toolchain selection. The existing disposable MinIO builder pin was not changed by this CLI toolchain repair.
+
+The Go patch upgrade exposed an incompatible export-data reader in golangci-lint v2.13.2 (`export data version 5 is greater than maximum supported version 4`). The linter pin was advanced to v2.14.0, whose updated `golang.org/x/tools` supports the patched toolchain; lint policy is unchanged.
+
+With Go 1.27.2, `just check` (including golangci-lint v2.14.0), `just race`, `just vuln` (no vulnerabilities), and `just cross` passed. Six cross-builds establish compilation, not native execution. A newly built Linux amd64 CLI against a loopback server accepted an import HTTP 202 with exit 0, suppressed reflected source credentials on HTTP 502 with exit 5/empty stdout, preserved the submitted body, and sent exactly one request per invocation. Initial smoke-harness assertions were corrected to separate binary/config paths and permit the existing plaintext-HTTP warning; no production workaround was needed.
+
+Independent operation-contract review found no defects. Safety review identified a caller coverage gap: actual device polling set `Sensitive` but not `SecretBody`, bypassing the new redaction path. Four end-to-end polling regressions failed before repair: HTTP 400/502 reflected errors, an HTTP 200 error envelope, and an invalid token type. The caller now enables secret-body protection; successful HTTP responses accept only the five known polling status codes without arbitrary error/token-type diagnostics. All four regressions then passed, as did existing pending/slow-down/terminal polling tests. A newly built CLI exercised all four failures against a loopback server: empty stdout, no credential reflection, one code request and one poll each; HTTP errors exited 5 and malformed successful responses exited 1. No real external device authorization is claimed.
+
+After the review repair, `just check`, `just race`, `just vuln` (no vulnerabilities), and `just cross` passed again. `just stamp-skill` set the consumer skill to `4.0.0`; the release planner reported `release: true`, next tag `v4.0.0`, and passed its stamp gate.
+
+Focused independent re-review of the device-polling repair found no remaining defects.

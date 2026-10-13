@@ -4,7 +4,7 @@ description: Manage Kaneo workspaces, projects, tasks, board columns, and commen
 license: MIT
 compatibility: Requires the separately installed kaneo-cli and network access to the user's Kaneo instance. Stable CLI versions also make a best-effort GitHub update check on the version command. Shell examples use POSIX syntax; adapt filesystem operations to the host.
 metadata:
-  version: "3.0.0"
+  version: "4.0.0"
 ---
 
 # Kaneo CLI
@@ -215,6 +215,22 @@ Use `task list-assigned --workspace-id "$WORKSPACE_ID"` for your assigned open t
 `workspace get-my-project-access` and `workspace list-project-access` expose access restrictions. `workspace update-member-project-access --workspace-id ... --user-id ... --yes --body-file ...` accepts `projectAccess: "all"` or `"selected"` plus `projectIds`. Selected access can hide projects, tasks, and activity; never interpret invisibility as deletion. Invitations accept the same access fields, and invitation reads return them.
 
 Instance administrators can use `admin list-workspaces` (`--search`, `--page`, `--limit`), `list-workspace-members`, `list-workspace-roles`, `add-workspace-member`, `update-workspace-member-role`, `remove-workspace-member`, and `transfer-workspace-ownership`. These require an administrator **session**, not an API key. Removal and ownership transfer require `--yes`; ownership transfer makes the chosen existing member the sole owner and demotes former owners to admins.
+
+## Kaneo 2.46 discovery and imports
+
+`workspace list` discovers accessible workspaces; `workspace get --workspace-id ...` reads one, and `workspace get-my-capabilities --workspace-id ...` checks the caller's named workspace actions. A capability is not a guarantee of access to every project.
+
+`github list-repositories --project-id ... --search TEXT` accepts at most 100 characters. Search is case-insensitive over repository name and description. Follow the returned `nextPage` installation/repository cursors with the same search; a page can be empty while `nextPage` is non-null, so do not stop at an empty page.
+
+For cross-tool imports, put the source-specific `connection` and destination `workspaceId` in a protected JSON file or stdin, never command-line credentials. `import list-source-projects --body-file ...` discovers source IDs. `import start-run --body-file ...` additionally takes `projectIds` (1–50 unique IDs) and optional `includeComments` (default true). Supported sources are PLANKA, Plane, Linear, Jira, Trello and Kaneo; consult generated help for each connection variant. `import get-trello-authorize-url --workspace-id ...` returns a public Trello authorization link or null when unconfigured, not a user token; it never opens a browser.
+
+HTTP 202 from `import start-run` means **accepted**, not complete: exit 0 prints the envelope. Save `run.id`, then explicitly call `import get-run --workspace-id ... --run-id ...`, or `import list-runs --workspace-id ...`. Inspect `run.projects[].status`, counts and warnings; do not resubmit `start-run` to poll. This differs from the resumable `github import-issues` and `label delete` protocols above. HTTP 409 can mean a workspace import already runs; HTTP 429 can mean server-wide import capacity or an API-key limit. There is no automatic retry. Public-source access is required by the server's destination guard; local/private URLs are rejected.
+
+`notification mark-unread --id ...` preserves a notification; `notification delete --id ... --yes` removes one permanently. `notification clear-read --yes` removes only read notifications, optionally scoped by `--workspace-id`; omission covers all workspaces. `custom-field update --id ... --body-file ...` updates field properties; types can change only between dropdown and multiselect, and options still used by tasks cannot be removed or renamed.
+
+`calendar-feed create` now accepts `{}` or empty `labelIds` to include all scheduled project tasks. Imported task comments additionally accept `externalSource: "plane"`, `"linear"` or `"kaneo"` with `externalUserName`; attribution requires workspace-settings permission.
+
+Error contracts changed: missing resources can now return HTTP 404 (`not_found`) instead of 400, documented API failures use JSON error bodies, and absent integration reads can return JSON null. Inspect status and code, not exact server wording. Errors for credential-bearing requests intentionally use generic status diagnostics, preventing reflected source credentials from reaching stderr.
 
 ## Integration synchronization
 

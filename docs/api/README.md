@@ -1,8 +1,8 @@
 # Vendored API reference
 
-`api/openapi.json` is an exact snapshot of upstream release tag `v2.35.0`, fetched on 2026-10-08. Its SHA-256, upstream source relationship, and the complete upstream MIT notice are recorded in [`api/provenance.json`](../../api/provenance.json).
+`api/openapi.json` is an exact snapshot of upstream release tag `v2.46.2`, fetched on 2026-10-13. Its SHA-256, upstream source relationship, and the complete upstream MIT notice are recorded in [`api/provenance.json`](../../api/provenance.json).
 
-The relationship is verified rather than inferred from this repository's license: upstream [`usekaneo/kaneo`](https://github.com/usekaneo/kaneo) `apps/docs/docs.json` selects `openapi.json` as its API Reference. The pinned bytes match `apps/docs/openapi.json` at release commit `8bc9550279d5054e04f020028f40c315c3866cb1`. The live official document instead matches main `b329155c63fe50707ba927e014d4dc3acf7e2e97`: its unreleased `createCalendarFeed` contract allows omitted or empty `labelIds`, whereas v2.35.0 requires at least one. The maintainer explicitly approved the immutable release baseline; that live-doc change is excluded.
+The relationship is verified rather than inferred from this repository's license: upstream [`usekaneo/kaneo`](https://github.com/usekaneo/kaneo) `apps/docs/docs.json` selects `openapi.json` as its API Reference. The pinned bytes match both the live official document and `apps/docs/openapi.json` at release commit `46ef6f78da1f0c9630d88c56f1686ebfc8de7beb`. All 221 operations retain canonical command mappings; the maintainer approved the breaking error-contract changes. The authentication guide describes `X-RateLimit-*` headers on successful requests while the spec incorrectly restricts them to exceeded limits: upstream source sends them for valid API-key requests as well as window-limit failures. See the provenance supplement and [verification evidence](../verification.md#api-baseline-refresh-to-kaneo-2462-2026-10-13).
 
 ## Inventory
 
