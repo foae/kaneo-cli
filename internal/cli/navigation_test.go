@@ -123,7 +123,6 @@ func TestNavigationRejectsInvalidInputBeforeOutput(t *testing.T) {
 		mcpArgs("--code-challenge", validChallenge[:42]+"="),
 		mcpArgs("--client-id", ""),
 		mcpArgs("--client-id", strings.Repeat("c", 129)),
-		append(mcpArgs(), "--state", strings.Repeat("s", 1025)),
 	} {
 		status, stdout, _ := env.run(args...)
 		if status != 2 || stdout != "" {
@@ -157,7 +156,7 @@ func mcpArgs(override ...string) []string {
 func TestMCPAuthorizationAcceptsBoundaryValues(t *testing.T) {
 	env := newTestEnv(t)
 	env.setAPIURL("https://kaneo.example/api")
-	args := append(mcpArgs("--client-id", strings.Repeat("c", 128)), "--state", strings.Repeat("s", 1024))
+	args := mcpArgs("--client-id", strings.Repeat("c", 128))
 	if status, stdout, stderr := env.run(args...); status != 0 || stdout == "" {
 		t.Fatalf("status=%d stdout=%q stderr=%q", status, stdout, stderr)
 	}

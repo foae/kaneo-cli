@@ -499,3 +499,22 @@ Independent operation-contract review found no defects. Safety review identified
 After the review repair, `just check`, `just race`, `just vuln` (no vulnerabilities), and `just cross` passed again. `just stamp-skill` set the consumer skill to `4.0.0`; the release planner reported `release: true`, next tag `v4.0.0`, and passed its stamp gate.
 
 Focused independent re-review of the device-polling repair found no remaining defects.
+
+## API baseline refresh to Kaneo 2.47.0 (2026-10-25)
+
+Baseline: upstream tag `v2.47.0`, commit `85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5`; exact release and official OpenAPI bytes both SHA-256 `d2ee146f46e81d42342065a7fefddd02b6868d9057b80713c5c6f7991f6449af`. The inventory stays at 221 operations: none added, removed or renamed; four operation contracts and the shared `WorkflowRule` schema changed. The authentication guide changed only one link (SHA-256 `02c8e3d7b5e26a16f237e8f226c6b8030adac6d80715fd5e4dd647a6c725fc82`). Provenance supplements were rechecked at the new commit: better-auth stays 1.6.26, `validate-task-fields.ts` and `rate-limit-headers.ts` are unchanged, and the LICENSE bytes are identical. The rate-limit header description defect is still present.
+
+Changes: `authorizeMcpOAuthClient` drops `state` `maxLength: 1024` (upstream `c063ef6fd7`; the existing 8 KiB raw-URL bound in `apps/api/src/mcp/request-bounds.ts` answers HTTP 414). `upsertWorkflowRule` constrains `eventType` to six Kaneo event names (upstream `ac018f2534`). `createColumn` suffixes a duplicate derived slug instead of returning 409, which now means a reserved slug. `importTasks` documents column-name status matching and email assignees. The CLI removes its `--state` cap; the other changes are pass-through and reach users through regenerated body help and docs.
+
+Environment: Linux amd64, Go 1.27.3, just 1.59.0. Disposable image `ghcr.io/usekaneo/kaneo@sha256:3df62194406061d9a162409b4c08d8af5225e423ce813d509694cea616ac9d23`; observed OCI version `2.47.0`, OCI revision `e407bf62976142721dfe32a0bccde8c69aa2e581` (distinct from the release commit). PostgreSQL and MinIO use the Compose pins; the MinIO image was rebuilt with the `golang:1.27.3-bookworm` builder. Fresh Compose ownership and `hasUsers:false,hasAdmin:false` were verified before HTTP bootstrap. The CLI ran with ambient `KANEO_*` variables explicitly unset. All containers and volumes were removed afterward.
+
+Built-CLI live acceptance:
+
+- `column create` with an existing name returned slug `review-2`; name `Planned` returned HTTP 409 `conflict`/exit 5 for the reserved slug.
+- `workflow-rule upsert-project` saved `pr_opened`; `pull_request.opened` returned HTTP 400/exit 5 naming the six allowed values, so the server enforces the enum the CLI forwards unchanged.
+- `task import` mapped status `To Do` (a column name) to `to-do` and resolved an upper-cased member email to the user ID; `Review`, the name of two columns, failed that task as ambiguous; an unknown status became `planned`. The mixed result exited 5 `partial_failure` with the result on stdout.
+- `mcp start-authorization` printed URLs for 1500- and 6000-character states (previously rejected locally with exit 2); the server answered 302 for both and 414 for a 9000-character state.
+
+Fixture-only: help text listing the `eventType` enum, exact long-state round-trip through the printed URL with no network request, and unchanged body forwarding for both an enum and a legacy event type.
+
+Independent review found no material defects and six low-severity items, all fixed: consumer guidance against blind `column create` retries, precise suffix wording, the `task_reserved_statuses` supplement updated for documented import resolution, `upstream_main_commit_verified` set to upstream `main` `9293522d7f35c95f029c55d60dde34d79453efd9` (same OpenAPI SHA-256), a stale 1024-character boundary value removed, and these results recorded. After the fixes and `just stamp-skill` (consumer skill `4.0.1`), `just check` (golangci-lint v2.15.0, 0 issues), `just race`, `just vuln` (govulncheck v1.9.0, no vulnerabilities) and `just cross` passed; the release planner reported `release: true`, next tag `v4.0.1`, and passed its stamp gate. Six cross-builds establish compilation, not native execution.

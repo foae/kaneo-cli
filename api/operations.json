@@ -3,7 +3,7 @@
   "operation_count": 221,
   "source": {
     "openapi_path": "api/openapi.json",
-    "sha256": "5e2f5751617e2c5563d96662a0c480ab0d0124ef8dc3e3f4212ba4efda51d631"
+    "sha256": "d2ee146f46e81d42342065a7fefddd02b6868d9057b80713c5c6f7991f6449af"
   },
   "operations": [
     {
@@ -5041,7 +5041,7 @@
         "Columns"
       ],
       "summary": "Create column",
-      "description": "Add a column to the end of a project's board. The slug is derived from the name.",
+      "description": "Add a column to the end of a project's board. The slug is derived from the name, with a numeric suffix such as `-2` when another column in the project already uses it.",
       "command": {
         "group": "column",
         "action": "create",
@@ -5148,7 +5148,7 @@
               }
             }
           },
-          "description": "The slug is reserved, or already used in this project"
+          "description": "The slug is reserved for a virtual task status"
         },
         "429": {
           "$ref": "#/components/responses/ApiKeyRateLimited"
@@ -12551,11 +12551,12 @@
           }
         },
         {
+          "description": "Opaque client state, returned unchanged. The complete authorization URL is limited to 8 KiB.",
           "in": "query",
           "name": "state",
           "required": false,
           "schema": {
-            "maxLength": 1024,
+            "description": "Opaque client state, returned unchanged. The complete authorization URL is limited to 8 KiB.",
             "type": "string"
           }
         }
@@ -17823,12 +17824,14 @@
                         ]
                       },
                       "status": {
+                        "description": "Column slug, current column name, or slugified current name. Unknown values map to planned with a warning; ambiguous names fail the task import.",
                         "type": "string"
                       },
                       "title": {
                         "type": "string"
                       },
                       "userId": {
+                        "description": "Assignable user's ID or email address. Emails match case-insensitively. Null, empty, or omitted leaves the task unassigned.",
                         "type": [
                           "string",
                           "null"
@@ -20552,6 +20555,14 @@
                   "type": "string"
                 },
                 "eventType": {
+                  "enum": [
+                    "branch_push",
+                    "pr_opened",
+                    "pr_merged",
+                    "issue_opened",
+                    "issue_closed",
+                    "issue_reopened"
+                  ],
                   "type": "string"
                 },
                 "integrationType": {

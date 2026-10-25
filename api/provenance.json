@@ -3,20 +3,20 @@
   "openapi": {
     "local_path": "api/openapi.json",
     "official_url": "https://kaneo.app/docs/openapi.json",
-    "retrieved_at": "2026-10-13T21:11:27Z",
-    "sha256": "5e2f5751617e2c5563d96662a0c480ab0d0124ef8dc3e3f4212ba4efda51d631",
+    "retrieved_at": "2026-10-25T12:08:24Z",
+    "sha256": "d2ee146f46e81d42342065a7fefddd02b6868d9057b80713c5c6f7991f6449af",
     "operation_count_observed": 221,
     "upstream_repository": "https://github.com/usekaneo/kaneo",
     "upstream_path": "apps/docs/openapi.json",
-    "upstream_source_commit": "46ef6f78da1f0c9630d88c56f1686ebfc8de7beb",
-    "upstream_source_commit_url": "https://github.com/usekaneo/kaneo/commit/46ef6f78da1f0c9630d88c56f1686ebfc8de7beb",
-    "upstream_main_commit_verified": "46ef6f78da1f0c9630d88c56f1686ebfc8de7beb",
-    "upstream_raw_url": "https://raw.githubusercontent.com/usekaneo/kaneo/46ef6f78da1f0c9630d88c56f1686ebfc8de7beb/apps/docs/openapi.json",
-    "source_relationship": "Pinned immutable release v2.46.2 at 46ef6f78da1f0c9630d88c56f1686ebfc8de7beb; its apps/docs/docs.json API Reference selects openapi.json. The live official document and release snapshot match byte for byte."
+    "upstream_source_commit": "85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5",
+    "upstream_source_commit_url": "https://github.com/usekaneo/kaneo/commit/85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5",
+    "upstream_main_commit_verified": "9293522d7f35c95f029c55d60dde34d79453efd9",
+    "upstream_raw_url": "https://raw.githubusercontent.com/usekaneo/kaneo/85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5/apps/docs/openapi.json",
+    "source_relationship": "Pinned immutable release v2.47.0 at 85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5; its apps/docs/docs.json API Reference selects openapi.json. The live official document and release snapshot match byte for byte."
   },
   "license": {
     "spdx": "MIT",
-    "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/46ef6f78da1f0c9630d88c56f1686ebfc8de7beb/LICENSE",
+    "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5/LICENSE",
     "notice": "MIT License\n\nCopyright (c) 2024 Andrej Acevski\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
   },
   "supplements": {
@@ -24,9 +24,9 @@
       "official_url": "https://kaneo.app/docs/api-reference/authentication",
       "local_path": "api/authentication.md",
       "snapshot_url": "https://kaneo.app/docs/api-reference/authentication.md",
-      "sha256": "cf83f3ffc13939b1aa7486cde18f542cdf79ec509338a9697f0b5d26a9b63b25",
-      "snapshot_retrieved_at": "2026-10-13T21:11:27Z",
-      "retrieved_at": "2026-10-13T21:11:27Z",
+      "sha256": "02c8e3d7b5e26a16f237e8f226c6b8030adac6d80715fd5e4dd647a6c725fc82",
+      "snapshot_retrieved_at": "2026-10-25T12:08:24Z",
+      "retrieved_at": "2026-10-25T12:08:24Z",
       "scope": "Documentation supplement only; it is not an OpenAPI operation and is not included in operation_count_observed.",
       "facts": [
         "The guide describes device authorization for interactive clients: a device_code and user_code, browser approval, and a token poll with grant_type urn:ietf:params:oauth:grant-type:device_code. Earlier revisions named RFC 8628 explicitly; upstream commit 2f2bdf3148 (2026-09-26, \"docs: rebuild guides around current Kaneo workflows\") dropped the name but not the grant.",
@@ -44,7 +44,7 @@
       "operation_id": "getOrganizationRole",
       "source_url": "https://raw.githubusercontent.com/better-auth/better-auth/v1.6.26/packages/better-auth/src/plugins/organization/routes/crud-access-control.ts",
       "source_revision": "v1.6.26",
-      "relationship": "Kaneo at 46ef6f78da1f0c9630d88c56f1686ebfc8de7beb (v2.46.2) pins better-auth 1.6.26, unchanged from v2.35.0. The current OpenAPI still omits the role query parameters. This source tag is evidence for the contract, not a claim about the container's exact installed patch.",
+      "relationship": "Kaneo at 85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5 (v2.47.0) pins better-auth 1.6.26, unchanged from v2.35.0. The current OpenAPI still omits the role query parameters. This source tag is evidence for the contract, not a claim about the container's exact installed patch.",
       "scope": "CLI query supplement only. The pinned OpenAPI and generated source inventory remain unchanged.",
       "observed_at": "2026-09-21",
       "evidence": "Disposable pinned Kaneo v2.25.0: roleId and roleName each returned HTTP 200 and the newly created organization role when organizationId was supplied. See docs/verification.md.",
@@ -87,17 +87,17 @@
         "importTasks",
         "listTasks"
       ],
-      "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/46ef6f78da1f0c9630d88c56f1686ebfc8de7beb/apps/api/src/task/validate-task-fields.ts",
-      "source_revision": "46ef6f78da1f0c9630d88c56f1686ebfc8de7beb",
-      "relationship": "The pinned OpenAPI still describes task status as an unconstrained string and PUT /task/status/{id} as a move to another column. At v2.46.2 the declaring file still defines VIRTUAL_STATUSES as [\"planned\", \"archived\"], includes them in valid task statuses, and maps unknown import statuses to planned with a warning. This supplement is help text only; it is evidence for the contract, not a modification of the pinned snapshot.",
+      "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5/apps/api/src/task/validate-task-fields.ts",
+      "source_revision": "85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5",
+      "relationship": "The pinned OpenAPI still describes task status as an unconstrained string and PUT /task/status/{id} as a move to another column, without naming the reserved values. At v2.47.0 the declaring file still defines VIRTUAL_STATUSES as [\"planned\", \"archived\"] and includes them in valid task statuses. importTasks now documents its own resolution (apps/api/src/task/resolve-import-task-status.ts at the same revision): column slug, then exact current name, then slugified name; ambiguous names fail the task and unknown values map to planned with a warning. This supplement is help text only; it is evidence for the contract, not a modification of the pinned snapshot.",
       "scope": "CLI help supplement only. The pinned OpenAPI, the generated operation inventory and the generated request-body reference remain unchanged.",
       "observed_at": "2026-09-22",
       "evidence": "Disposable pinned Kaneo (image digest recorded in docs/verification.md): writing status \"planned\" or \"archived\" through updateTaskStatus returned HTTP 200 with columnId null and moved the task into the board's plannedTasks or archivedTasks container; writing a column slug back restored it with a non-null columnId. createTask accepted \"planned\" directly. moveTask rejected destinationStatus \"planned\" with HTTP 400 \"Selected status is not valid for the destination project\". An unknown status on updateTaskStatus returned HTTP 400 and left the task unchanged. importTasks accepted an unknown status, stored it as \"planned\" and reported success with a per-task warning. listTasks --status planned returned only the planned container. See docs/verification.md.",
-      "constraints": "Valid task statuses are the project's column slugs plus the reserved values \"planned\" and \"archived\" (upstream VIRTUAL_STATUSES). A column may not be created with either reserved slug, so the board's three containers cannot collide. moveTask accepts destination column slugs only."
+      "constraints": "Valid task statuses are the project's column slugs plus the reserved values \"planned\" and \"archived\" (upstream VIRTUAL_STATUSES). A column may not be created with either reserved slug, so the board's three containers cannot collide. moveTask accepts destination column slugs only. importTasks additionally accepts current column names."
     },
     "api_key_rate_limits": {
-      "source_url": "https://github.com/usekaneo/kaneo/blob/46ef6f78da1f0c9630d88c56f1686ebfc8de7beb/apps/api/src/utils/rate-limit-headers.ts",
-      "source_revision": "46ef6f78da1f0c9630d88c56f1686ebfc8de7beb",
+      "source_url": "https://github.com/usekaneo/kaneo/blob/85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5/apps/api/src/utils/rate-limit-headers.ts",
+      "source_revision": "85a32200e7c5bfb8e9c2c6bb208a37297e0ff5a5",
       "scope": "Documented discrepancy; exact upstream snapshots remain unchanged.",
       "relationship": "The OpenAPI ApiKeyRateLimited description says X-RateLimit headers are only sent when the rate limit was hit, whereas the authentication guide describes them on successful API-key requests. Source apiKeyCheckHeaders returns window metadata for valid keys as well as window-limit denials, but quota-only denials have no X-RateLimit headers. Retry-After can be omitted when quota never refills. Non-key authentication limits have their own Retry-After behavior.",
       "constraints": "The CLI preserves stable rate_limited error classification without automatic retries or inventing a retry delay. startImportRun HTTP 429 may instead mean the server has reached its concurrent import limit; HTTP 409 indicates an active workspace import."

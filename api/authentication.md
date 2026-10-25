@@ -22,7 +22,7 @@ curl --fail-with-body 'https://kaneo.example.com/api/task/tasks/PROJECT_ID' \
   -H "Authorization: Bearer $KANEO_API_KEY"
 ```
 
-Replace `PROJECT_ID` with the ID from a project URL. See [Make your first API request](/docs/api-reference/introduction) for the complete sequence.
+Replace `PROJECT_ID` with the ID from a project URL. See [Make your first API request](https://kaneo.app/docs/api-reference/introduction.md) for the complete sequence.
 
 ### JavaScript on a server
 

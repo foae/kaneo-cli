@@ -66,6 +66,10 @@ New commands are `workspace list|get|get-my-capabilities`, `import list-source-p
 
 Import connection secrets use `--body-file`/stdin. Credential-bearing operations suppress all server-supplied error messages and arbitrary error codes, retaining only recognized device-poll protocol codes internally. Ordinary non-secret error diagnostics remain available. The Trello authorization JSON contains a public application key, not a secret user token ([Trello contract](https://developer.atlassian.com/cloud/trello/guides/rest-api/api-introduction/)); it is returned unchanged without browser interaction.
 
+## Kaneo 2.47 refresh
+
+The immutable v2.47.0 baseline keeps 221 operations; no command was added, removed or renamed. `mcp start-authorization --state` drops its 1024-character pre-request limit because upstream removed it; the server's 8 KiB authorization-URL bound (HTTP 414) is unchanged and not duplicated client-side. Generated body help now lists the `workflow-rule upsert-project` `eventType` enum and the `task import` status and assignee rules. Request bodies are still forwarded unchanged: the server rejects out-of-enum event types with HTTP 400. `column create` returns a numerically suffixed slug when the derived slug is already used in the project (including by a renamed column) instead of HTTP 409, which now signals only a reserved slug.
+
 ## Exit codes
 
 | Code | Meaning |
