@@ -234,7 +234,7 @@ Error contracts changed: missing resources can now return HTTP 404 (`not_found`)
 
 ## Kaneo 2.47 changes
 
-`column create` no longer fails when another column in the project already uses the derived slug: the server appends a numeric suffix such as `-2`. Read the returned `slug` instead of assuming it equals the slugified name; HTTP 409 now means only a reserved slug (`planned`, `archived`).
+`column create` no longer fails when another column in the project already uses the derived slug: the server appends a numeric suffix such as `-2`. Read the returned `slug` instead of assuming it equals the slugified name; HTTP 409 now means only a reserved slug (`planned`, `archived`). Repeating a create is therefore no longer rejected: it adds a second column. Check `column list` before retrying a create whose outcome is uncertain.
 
 `workflow-rule upsert-project` accepts only the Kaneo event types `branch_push`, `pr_opened`, `pr_merged`, `issue_opened`, `issue_closed` and `issue_reopened`; provider event names such as `pull_request.opened` return HTTP 400. `task import` accepts an assignable user's ID or email address in `userId` (emails match case-insensitively).
 
