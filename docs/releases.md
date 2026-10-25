@@ -27,7 +27,7 @@ Before enabling releases, configure the `foae/kaneo-cli` repository to:
 - permit the repository's public-attestation plan, or explicitly accept that GitHub will reject the attestation step on an unsupported private/internal plan; and
 - keep `main` branch protection in force. The Formula update is a normal `chore(homebrew)` pull request and must not bypass review or required checks.
 
-The workflow has no secret other than the caller's `GITHUB_TOKEN`; do not add long-lived publishing credentials. Action revisions are pinned in [the release workflow](../.github/workflows/release.yml). GoReleaser is fixed at v2.18.2. `svu` is installed at v3.4.1 and its committed policy is `.svu.yml`.
+The workflow has no secret other than the caller's `GITHUB_TOKEN`; do not add long-lived publishing credentials. Action revisions are pinned in [the release workflow](../.github/workflows/release.yml). GoReleaser is fixed at v2.19.0. `svu` is installed at v3.4.1 and its committed policy is `.svu.yml`.
 
 ## Version policy
 

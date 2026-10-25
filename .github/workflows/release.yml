@@ -106,7 +106,7 @@ jobs:
         if: steps.version.outputs.release == 'true'
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
         with:
-          just-version: '1.58.0'
+          just-version: '1.59.0'
       - name: Set up container builder
         if: steps.version.outputs.release == 'true'
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -143,10 +143,10 @@ jobs:
           git push origin "refs/tags/$TAG"
       - name: Publish immutable archives and checksums
         if: steps.recovery.outputs.state == 'fresh'
-        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
           distribution: goreleaser
-          version: v2.18.2
+          version: v2.19.0
           args: release --clean --config .goreleaser.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -163,7 +163,7 @@ jobs:
             dist/kaneo-cli_*_checksums.txt
       - name: Log in to the package registry
         if: steps.recovery.outputs.state == 'fresh'
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

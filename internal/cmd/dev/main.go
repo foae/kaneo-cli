@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	goreleaserModule   = "github.com/goreleaser/goreleaser/v2@v2.18.2"
-	govulncheckModule  = "golang.org/x/vuln/cmd/govulncheck@v1.8.0"
-	golangciLintModule = "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0"
+	goreleaserModule   = "github.com/goreleaser/goreleaser/v2@v2.19.0"
+	govulncheckModule  = "golang.org/x/vuln/cmd/govulncheck@v1.9.0"
+	golangciLintModule = "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0"
 )
 
 var crossTargets = []struct {
