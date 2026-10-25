@@ -2,7 +2,7 @@
 
 ## Explicit developer commands
 
-Use Go 1.27.2+ and [just](https://github.com/casey/just) 1.58.0, the version pinned in CI. Install that version from the [upstream release](https://github.com/casey/just/releases/tag/1.58.0); check your installation with `just --version`. Recipes can be invoked from the repository root or a subdirectory and run at the root. Native Windows recipes use Windows PowerShell; Unix recipes use `sh`. No dotenv files are loaded implicitly.
+Use Go 1.27.3+ and [just](https://github.com/casey/just) 1.59.0, the version pinned in CI. Install that version from the [upstream release](https://github.com/casey/just/releases/tag/1.59.0); check your installation with `just --version`. Recipes can be invoked from the repository root or a subdirectory and run at the root. Native Windows recipes use Windows PowerShell; Unix recipes use `sh`. No dotenv files are loaded implicitly.
 
 Run `just` or `just --list` for the task menu; neither runs checks or starts services:
 

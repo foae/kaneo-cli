@@ -2,7 +2,7 @@
 
 Read [AGENTS.md](AGENTS.md) before implementation. The [work packets](docs/implementation.md) define the dependency order and acceptance requirements; [verification evidence](docs/verification.md) records completed scenarios and outstanding blockers.
 
-Use Go 1.27.2+, Git, and [just](https://github.com/casey/just) 1.58.0 (the CI-pinned version). Run `just` to discover tasks. Routine verification uses `just check`, `just race`, `just vuln`, and `just cross`; `just test` runs Go tests only. See [verification](docs/verification.md) for command details and direct Go alternatives. No Node runtime is required. Docker Compose is needed only for real-instance acceptance; GoReleaser and svu are pinned by release tooling.
+Use Go 1.27.3+, Git, and [just](https://github.com/casey/just) 1.59.0 (the CI-pinned version). Run `just` to discover tasks. Routine verification uses `just check`, `just race`, `just vuln`, and `just cross`; `just test` runs Go tests only. See [verification](docs/verification.md) for command details and direct Go alternatives. No Node runtime is required. Docker Compose is needed only for real-instance acceptance; GoReleaser and svu are pinned by release tooling.
 
 Use `just lint` for pinned golangci-lint feedback; the shared `check` command, CI and opt-in hooks include it. The [lint policy](docs/verification.md#lint-policy) favors correctness over stylistic restrictions. Fix findings rather than weakening the configuration.
 

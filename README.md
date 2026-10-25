@@ -70,7 +70,7 @@ API JSON goes to stdout; diagnostics go to stderr. Destructive commands require 
 - [CLI behavior, input and output](docs/cli-contract.md)
 - [API compatibility](docs/api/README.md) — 221 pinned operations mapped; external integrations are fixture-tested, not live-provider verified.
 - [Verification and platform limitations](docs/verification.md)
-- [Contributing](CONTRIBUTING.md) — Go 1.27.2+ and just; start with `just`, `just build`, `just check`.
+- [Contributing](CONTRIBUTING.md) — Go 1.27.3+ and just; start with `just`, `just build`, `just check`.
 - [Architecture](docs/architecture.md) · [Release process](docs/releases.md)
 
 [MIT licensed](LICENSE); vendored upstream material retains its own attribution.
