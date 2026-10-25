@@ -4,7 +4,7 @@ description: Maintainer workflow for kaneo-cli. Refresh the pinned Kaneo OpenAPI
 license: MIT
 disable-model-invocation: true
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # Update kaneo-cli to the latest Kaneo API
@@ -35,7 +35,7 @@ Everything else is yours to decide, including **naming new commands**. Follow th
    - tag spec equals pinned SHA → **already current**. Also check the authentication guide (`supplements.device_authorization.snapshot_url`) against its pinned SHA. If both match, report "already current at vX" and stop: no branch, no PR.
    - official spec differs from the tag spec → contract conflict (live docs ahead of or behind the release): stop and ask.
    - otherwise continue with that tag as the target.
-4. Create branch `<type>/api-baseline-vX.Y.Z`, where `<type>` is the commit type step 6.1 will use (`feat`, `fix` or `docs`). If step 2 changes the classification, rename the branch before pushing.
+4. Create branch `<type>/api-baseline-vX.Y.Z`, where `<type>` is the commit type step 5.1 will use (`feat`, `fix` or `docs`). If step 2 changes the classification, rename the branch before pushing.
 
 ## 2. Semantic diff
 
@@ -65,22 +65,22 @@ Delegate mechanical implementation to worker agents with disjoint files. Keep di
 
 Tests defend behavior, not source text or mock forwarding. For every new or changed operation add fixture tests covering: request method/path/query/body, pre-request validation of tightened constraints (rejects with nothing sent), public vs. authenticated credential handling, stdout/stderr/exit code for success and each new error/continuation status, and pagination edges when paging changed. The inventory cross-check must keep passing without loosening.
 
-## 5. Verify
+## 5. Commit, stamp, verify
 
-All must pass. Record exactly what ran and on which platform.
+`just check` includes the release planner's stamp gate. Once a releasable (`feat:`, `fix:` or breaking) commit exists on the branch, the gate fails until the consumer skill carries the planned version. That is why the work is committed and stamped before the checks run. Never loosen the gate, skip it, or stamp before committing: stamping first makes the gate expect the previous version (see `docs/releases.md`).
 
-1. `just check`, `just race`, `just vuln`, `just cross`.
-2. **Disposable live instance (mandatory).** Use `integration/compose.yaml` exactly as `docs/verification.md` "Disposable real Kaneo" describes: remove leftover stacks first, prove the fresh stack with `docker compose ps`, bootstrap over HTTP, run the built binary against every new and changed operation that the instance can exercise, then `down --volumes --remove-orphans`. List anything that could not be exercised live (e.g. needs a GitHub App or SMTP) as fixture-only. Never record generated credentials.
-3. Add a dated `## API baseline refresh to Kaneo X.Y.Z (YYYY-MM-DD)` section to `docs/verification.md` modeled on the 2.27.0 one: API SHA-256, image digest, observed server version, scenarios and outcomes, fixture-only items.
-4. Commit the work with its Conventional Commit type (step 6.1), so the review sees it.
-5. **Review (mandatory).** Run the `reviewer` agent on `git diff main...HEAD`. Fix every confirmed finding, or stop if one cannot be fixed cleanly, then rerun step 1 and commit the fixes.
+1. Commit type: `feat:` for new operations or flags, `fix:` for corrections only, `docs:` for a behavior-free refresh, and never a breaking release without asking (see Autonomy). A multi-commit PR squash-merges under the PR title, so the PR title must carry the same type. Commit the work with that type.
+2. Stamp (releasable types only; a `docs:` refresh skips this). Stamp against an up-to-date `main` in a full clone (`git fetch --tags origin`; the planner refuses shallow clones). If `main` has an untagged releasable merge (its release run is still pending or failed), wait for or resolve that release first: stamping now would claim the same version twice. Then `just stamp-skill` sets `metadata.version` in `skills/kaneo-cli/SKILL.md` to the planned release. Commit it. `go run ./internal/cmd/release plan` must report `release: true` and the intended next tag, and pass the stamp gate.
+3. All must pass; record exactly what ran and on which platform: `just check`, `just race`, `just vuln`, `just cross`. A stamp-gate failure here means step 2 is stale or was skipped: redo it, never work around it.
+4. **Disposable live instance (mandatory).** Use `integration/compose.yaml` exactly as `docs/verification.md` "Disposable real Kaneo" describes: remove leftover stacks first, prove the fresh stack with `docker compose ps`, bootstrap over HTTP, run the built binary against every new and changed operation that the instance can exercise, then `down --volumes --remove-orphans`. List anything that could not be exercised live (e.g. needs a GitHub App or SMTP) as fixture-only. Never record generated credentials.
+5. Add a dated `## API baseline refresh to Kaneo X.Y.Z (YYYY-MM-DD)` section to `docs/verification.md` modeled on the 2.27.0 one: API SHA-256, image digest, observed server version, scenarios and outcomes, fixture-only items. Commit it, so the review sees it.
+6. **Review (mandatory).** Run the `reviewer` agent on `git diff main...HEAD`. Fix every confirmed finding, or stop if one cannot be fixed cleanly. Commit the fixes with the same type, which keeps the stamp valid, then rerun step 3. If a fix changes the release type (for example `fix:` becomes `feat:`), re-stamp per step 2 first.
 
-## 6. Version stamp, PR, merge
+## 6. PR and merge
 
-1. Commit type: `feat:` for new operations or flags, `fix:` for corrections only, `docs:` for a behavior-free refresh, and never a breaking release without asking (see Autonomy). A multi-commit PR squash-merges under the PR title, so the PR title must carry the same type.
-2. Stamp against an up-to-date `main` in a full clone (`git fetch --tags origin`; the planner refuses shallow clones). If `main` has an untagged releasable merge (its release run is still pending or failed), wait for or resolve that release first: stamping now would claim the same version twice. Then `just stamp-skill` sets `metadata.version` in `skills/kaneo-cli/SKILL.md` to the planned release. Commit it. `go run ./internal/cmd/release plan` must report `release: true` and the intended next tag, and pass the stamp gate; `just check` again.
-3. Push, and open the PR modeled on #28: summary of new/changed commands and flags, behavior changes, verification (checks, live acceptance, fixture-only, review), and any recorded discrepancies. End with the repository's attribution line.
-4. CI runs only after merge to `main`, not on PRs. Merge with squash once the local checks and review are green, then pull `main`.
+1. Before pushing, `git fetch --tags origin`. If a release was tagged on `main` since you stamped, rebase onto `main`, redo step 5.2 and rerun `just check`. `go run ./internal/cmd/release plan` must still report `release: true` and the intended next tag.
+2. Push, and open the PR modeled on #28: summary of new/changed commands and flags, behavior changes, verification (checks, live acceptance, fixture-only, review), and any recorded discrepancies. End with the repository's attribution line.
+3. CI runs only after merge to `main`, not on PRs. Merge with squash once the local checks and review are green, then pull `main`.
 
 ## 7. Release and Homebrew. A release is not done until brew serves it
 
