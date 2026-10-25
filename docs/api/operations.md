@@ -2,7 +2,7 @@
 
 # API operation inventory
 
-This inventory contains 221 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `5e2f5751617e2c5563d96662a0c480ab0d0124ef8dc3e3f4212ba4efda51d631`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
+This inventory contains 221 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `d2ee146f46e81d42342065a7fefddd02b6868d9057b80713c5c6f7991f6449af`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
 
 Detailed request schemas, query/path parameters, effective security, and responses are in the generated [`api/operations.json`](../../api/operations.json). Schema references resolve against the pinned OpenAPI snapshot.
 
@@ -1426,9 +1426,9 @@ JSON body (required):
       dueDate (optional): string or null
       priority (optional): string
       startDate (optional): string or null
-      status (required): string
+      status (required): string — Column slug, current column name, or slugified current name. Unknown values map to planned with a warning; ambiguous names fail the task import.
       title (required): string
-      userId (optional): string or null
+      userId (optional): string or null — Assignable user's ID or email address. Emails match case-insensitively. Null, empty, or omitted leaves the task unassigned.
 ```
 
 ### `task move` request
@@ -1728,7 +1728,7 @@ Path parameters (not JSON body fields):
 ```text
 JSON body (required):
   columnId (required): string
-  eventType (required): string
+  eventType (required): string (one of: "branch_push", "pr_opened", "pr_merged", "issue_opened", "issue_closed", "issue_reopened")
   integrationType (required): string
 ```
 

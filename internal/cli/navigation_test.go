@@ -123,7 +123,6 @@ func TestNavigationRejectsInvalidInputBeforeOutput(t *testing.T) {
 		mcpArgs("--code-challenge", validChallenge[:42]+"="),
 		mcpArgs("--client-id", ""),
 		mcpArgs("--client-id", strings.Repeat("c", 129)),
-		append(mcpArgs(), "--state", strings.Repeat("s", 1025)),
 	} {
 		status, stdout, _ := env.run(args...)
 		if status != 2 || stdout != "" {

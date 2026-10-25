@@ -106,7 +106,7 @@ printf '%s' "$backlog_body" | kaneo-cli task update-status --id "$TASK_ID" --bod
 - `task move` does not. Its `destinationStatus` must be a column slug of the destination project; a reserved value is rejected with HTTP 400.
 - Any other unrecognized status is rejected with HTTP 400 and the task is left unchanged.
 - Neither bucket records the column a task came from, and neither stores a column itself. When restoring, state which column you are restoring to, or ask; do not guess the first column.
-- `task import` is the exception to the rejection rule: an unrecognized status is silently rewritten to `planned`, so the task lands in the Backlog, the response still reports success, and the only trace is a string in `results.tasks[].warnings`. Read those warnings; a zero exit status does not mean the import was clean.
+- `task import` is the exception to the rejection rule. Its `status` matches a column slug, a current column name or the slugified current name; a name matching several columns fails that task. An otherwise unrecognized status is silently rewritten to `planned`, so the task lands in the Backlog, the response still reports success, and the only trace is a string in `results.tasks[].warnings`. Read those warnings; a zero exit status does not mean the import was clean.
 
 ## Add a comment
 
@@ -231,6 +231,14 @@ HTTP 202 from `import start-run` means **accepted**, not complete: exit 0 prints
 `calendar-feed create` now accepts `{}` or empty `labelIds` to include all scheduled project tasks. Imported task comments additionally accept `externalSource: "plane"`, `"linear"` or `"kaneo"` with `externalUserName`; attribution requires workspace-settings permission.
 
 Error contracts changed: missing resources can now return HTTP 404 (`not_found`) instead of 400, documented API failures use JSON error bodies, and absent integration reads can return JSON null. Inspect status and code, not exact server wording. Errors for credential-bearing requests intentionally use generic status diagnostics, preventing reflected source credentials from reaching stderr.
+
+## Kaneo 2.47 changes
+
+`column create` no longer fails when another column in the project already uses the derived slug: the server appends a numeric suffix such as `-2`. Read the returned `slug` instead of assuming it equals the slugified name; HTTP 409 now means only a reserved slug (`planned`, `archived`).
+
+`workflow-rule upsert-project` accepts only the Kaneo event types `branch_push`, `pr_opened`, `pr_merged`, `issue_opened`, `issue_closed` and `issue_reopened`; provider event names such as `pull_request.opened` return HTTP 400. `task import` accepts an assignable user's ID or email address in `userId` (emails match case-insensitively).
+
+`mcp start-authorization --state` no longer has a 1024-character limit. The server still rejects an authorization URL over 8 KiB with HTTP 414.
 
 ## Integration synchronization
 

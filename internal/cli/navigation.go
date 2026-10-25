@@ -27,7 +27,7 @@ var mcpAuthorizationParams = []navigationParam{
 	{readParam: readParam{name: "redirect_uri", in: paramQuery, flag: "redirect-uri", required: true, maxLen: 2048, help: "OAuth redirect URI"}},
 	{readParam: readParam{name: "code_challenge", in: paramQuery, flag: "code-challenge", required: true, pattern: `^[A-Za-z0-9_-]{43}$`, help: "S256 PKCE code challenge (43 base64url characters)"}},
 	{readParam: readParam{name: "code_challenge_method", in: paramQuery, flag: "code-challenge-method", required: true, enum: []string{"S256"}, help: "PKCE code challenge method"}},
-	{readParam: readParam{name: "state", in: paramQuery, flag: "state", maxLen: 1024, help: "OAuth state"}},
+	{readParam: readParam{name: "state", in: paramQuery, flag: "state", help: "Opaque OAuth state, returned unchanged"}},
 }
 
 func (a *app) newAuthDeviceAuthorizationPageCommand() *cobra.Command {
