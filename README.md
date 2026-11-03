@@ -44,6 +44,14 @@ Go to the GitHub repository and install kaneo-cli if it isn't already installed,
 
 Then log in using the commands below. For manual skill installation, version pinning, updates, or the optional Claude Code plugin, see the [skill installation guide](docs/installation.md#agent-skill).
 
+### Upgrade the CLI and companion skill together
+
+An executable upgrade does not upgrade an installed agent skill. On an explicit upgrade request, run `kaneo-cli version` and record the installed version, or explicitly select the CLI release you intend to install. Use that exact `vX.Y.Z` release for both components; do not fetch the skill from mutable `main`.
+
+For the skill, reuse the [portable installation mechanism](docs/installation.md#portable-installation): download **Source code (zip)** from the selected release and replace the complete installed `skills/kaneo-cli/` directory, including `LICENSE`, using your agent's documented installation location. If using the [Claude Code plugin](docs/installation.md#optional-claude-code-plugin), remove and re-add its marketplace pinned to `#vX.Y.Z`, then reinstall as documented there. Reload the agent's skills.
+
+Read the installed skill's `metadata.version` and compare it with the JSON `version` field reported by `kaneo-cli version`, removing one optional leading `v` from the CLI value: both must then equal `X.Y.Z` (the tag without `v`). Missing metadata means unknown, not a match. The CLI does not detect installed skills or verify this pairing. Do not silently update either installation; if only one component was authorized for upgrade, report the mismatch and the matching release needed.
+
 ## Quick start
 
 ```sh

@@ -154,9 +154,7 @@ func (a *app) newRootCommand() *cobra.Command {
 			return help(cmd)
 		},
 	}
-	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
-		return &usageError{err: err}
-	})
+	root.SetFlagErrorFunc(usageFlagError)
 	root.PersistentFlags().StringVar(&a.flags.profile, "profile", "", "Named profile to use")
 	root.PersistentFlags().StringVar(&a.flags.apiURL, "api-url", "", "Full API base URL, including the API path")
 	root.PersistentFlags().StringVar(&a.flags.timeout, "timeout", "", "Request timeout (for example 30s)")
@@ -220,9 +218,9 @@ func noArgs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if cmd.Parent() == nil {
-		return &usageError{err: fmt.Errorf("unknown command %q for %q", args[0], cmd.Name())}
+		return usageWithRecovery(cmd, fmt.Errorf("unknown command %q for %q", args[0], cmd.Name()), args)
 	}
-	return &usageError{err: fmt.Errorf("unexpected argument %q", args[0])}
+	return usageWithRecovery(cmd, fmt.Errorf("unexpected argument %q", args[0]), args)
 }
 
 func writeVersion(out io.Writer, info buildinfo.Info) error {
