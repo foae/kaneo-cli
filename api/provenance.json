@@ -95,6 +95,28 @@
       "evidence": "Disposable pinned Kaneo (image digest recorded in docs/verification.md): writing status \"planned\" or \"archived\" through updateTaskStatus returned HTTP 200 with columnId null and moved the task into the board's plannedTasks or archivedTasks container; writing a column slug back restored it with a non-null columnId. createTask accepted \"planned\" directly. moveTask rejected destinationStatus \"planned\" with HTTP 400 \"Selected status is not valid for the destination project\". An unknown status on updateTaskStatus returned HTTP 400 and left the task unchanged. importTasks accepted an unknown status, stored it as \"planned\" and reported success with a per-task warning. listTasks --status planned returned only the planned container. See docs/verification.md.",
       "constraints": "Valid task statuses are the project's column slugs plus the reserved values \"planned\" and \"archived\" (upstream VIRTUAL_STATUSES). A column may not be created with either reserved slug, so the board's three containers cannot collide. moveTask accepts destination column slugs only. importTasks additionally accepts current column names."
     },
+    "global_search_limit": {
+      "operation_id": "globalSearch",
+      "source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/e0ebc61748654f4e33e713dcb441be726ec1cfc4/apps/api/src/search/schema.ts",
+      "source_revision": "e0ebc61748654f4e33e713dcb441be726ec1cfc4",
+      "scope": "CLI query constraint supplement only. The pinned OpenAPI and generated source inventory remain unchanged.",
+      "relationship": "GET /search declares limit as a string with default 20 but omits its numeric constraints. The pinned source applies Number conversion followed by integer validation with minimum 1 and maximum 50.",
+      "evidence": "Source inspection at Kaneo v2.49.0 and live disposable-instance acceptance on 2026-11-03. With 52 matching tasks, omitted limit returned 20, explicit 1 returned 1, and explicit 50 returned 50. Invalid limits failed before HTTP in an isolated fixture. A tasks-only search at limit 50 returned totalCount 50 despite 52 matching tasks.",
+      "count_source_url": "https://raw.githubusercontent.com/usekaneo/kaneo/e0ebc61748654f4e33e713dcb441be726ec1cfc4/apps/api/src/search/controllers/global-search.ts",
+      "constraints": "The CLI uses its standard decimal-integer flag syntax for explicit limits in 1-50, preserving supplied bytes. Omission leaves the server default 20 in control. Search has no documented pagination. Each type query is capped before totalCount is computed from the combined matches; equality with the returned count does not prove completeness. The CLI preserves this server count.",
+      "parameters": [
+        {
+          "in": "query",
+          "name": "limit",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        }
+      ]
+    },
     "api_key_rate_limits": {
       "source_url": "https://github.com/usekaneo/kaneo/blob/e0ebc61748654f4e33e713dcb441be726ec1cfc4/apps/api/src/utils/rate-limit-headers.ts",
       "source_revision": "e0ebc61748654f4e33e713dcb441be726ec1cfc4",

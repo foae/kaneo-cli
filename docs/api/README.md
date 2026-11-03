@@ -28,6 +28,10 @@ The official [authentication guide](https://kaneo.app/docs/api-reference/authent
 
 The exact guide is pinned at [`api/authentication.md`](../../api/authentication.md), with its own retrieval date and SHA-256 in provenance. It supplies the JSON code-request and token-poll examples without pretending to be a complete schema.
 
+## Search limit supplement
+
+The `globalSearch` operation (`GET /search`) declares `limit` as a string with default `"20"` but omits the integer bounds enforced by the [pinned server schema](https://github.com/usekaneo/kaneo/blob/e0ebc61748654f4e33e713dcb441be726ec1cfc4/apps/api/src/search/schema.ts). `supplements.global_search_limit` in `api/provenance.json` records that discrepancy and the CLI's decimal-integer range of 1–50. Explicit values are validated before a request; omission preserves the server default. The exact OpenAPI and generated source inventory remain unchanged.
+
 ## Explicit refresh procedure
 
 Never fetch upstream during ordinary generation, checks or builds.

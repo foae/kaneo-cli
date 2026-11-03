@@ -4,7 +4,7 @@ description: Maintainer workflow for kaneo-cli. Refresh the pinned Kaneo OpenAPI
 license: MIT
 disable-model-invocation: true
 metadata:
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Update kaneo-cli to the latest Kaneo API
@@ -31,11 +31,26 @@ Everything else is yours to decide, including **naming new commands**. Follow th
 
 1. `git switch main && git pull --ff-only`; the tree must be clean.
 2. Latest upstream release: `gh api repos/usekaneo/kaneo/releases/latest --jq .tag_name`. Pinned baseline: `api/provenance.json` (`openapi.upstream_source_commit`, `openapi.sha256`) and the tag named in `docs/api/README.md`.
-3. Download `openapi.official_url` and the tag's `apps/docs/openapi.json` (raw URL at the tag's commit) to a temp dir. Check HTTP success and JSON content, never an HTML error page. Compare SHA-256:
+3. Download `openapi.official_url` and the tag's `apps/docs/openapi.json` (raw URL at the resolved tag commit) to a temp dir using the byte-exact recipe below. Check HTTP success and JSON content, never an HTML error page. Compare SHA-256:
    - tag spec equals pinned SHA → **already current**. Also check the authentication guide (`supplements.device_authorization.snapshot_url`) against its pinned SHA. If both match, report "already current at vX" and stop: no branch, no PR.
    - official spec differs from the tag spec → contract conflict (live docs ahead of or behind the release): stop and ask.
    - otherwise continue with that tag as the target.
 4. Create branch `<type>/api-baseline-vX.Y.Z`, where `<type>` is the commit type step 5.1 will use (`feat`, `fix` or `docs`). If step 2 changes the classification, rename the branch before pushing.
+
+Use provenance's official URL and a source URL pinned to the resolved release commit, never mutable `main`. Set `OFFICIAL_URL` and `TAG_SPEC_URL` to those reviewed URLs, then run:
+
+```sh
+set -eu
+refresh_dir="$(mktemp -d "${TMPDIR:-/tmp}/kaneo-refresh.XXXXXX")"
+curl --fail --silent --show-error --location "$OFFICIAL_URL" --dump-header "$refresh_dir/official.headers" --output "$refresh_dir/official.json"
+curl --fail --silent --show-error --location "$TAG_SPEC_URL" --dump-header "$refresh_dir/tag.headers" --output "$refresh_dir/tag.json"
+python3 -c 'import json,sys; [json.load(open(p, "rb")) for p in sys.argv[1:]]' "$refresh_dir/official.json" "$refresh_dir/tag.json"
+sha256sum api/openapi.json "$refresh_dir/official.json" "$refresh_dir/tag.json"
+cmp "$refresh_dir/official.json" "$refresh_dir/tag.json"
+printf 'Retained review files: %s\n' "$refresh_dir"
+```
+
+Inspect response content types as well as parsing JSON. SHA values must establish official/tag equality and comparison to provenance's pinned SHA; a mismatch is not permission to replace the snapshot. Download the authentication Markdown to another temporary file using the same curl flags and `--output`, reject HTML/challenge content, and verify its SHA against provenance. For a reviewed change, copy the retained download bytes into the snapshots and record their SHA-256; never round-trip JSON through a formatter, command substitution or a serializer. Record the printed absolute temporary path across tool invocations; shell variables may not persist. Remove that owned temporary directory after review and any approved snapshot copy, including when the refresh stops on a conflict.
 
 ## 2. Semantic diff
 
@@ -54,7 +69,7 @@ Follow the refresh procedure in `docs/api/README.md` steps 3–7:
 - Replace `api/openapi.json` (and `api/authentication.md` if it changed) with the reviewed bytes; update `api/provenance.json` (SHA-256, `retrieved_at`, source commit/URLs, `operation_count_observed`, verified `main` commit) and the tag, date and commit hash in `docs/api/README.md`. Recheck every `supplements` entry in provenance against the new spec and update gaps that closed.
 - Map every new operation in `api/commands.json`, then `go run ./internal/cmd/specinventory` and inspect the generated diff.
 - Implement every new operation in the existing data-driven style (read/write specs, browser/binary contracts per `AGENTS.md`); none may stay `planned` without an explicit reason in the docs. Apply tightened constraints before any request. Handle new response semantics (pagination, continuation, partial success) without silent retries.
-- Move the Kaneo image digest in `integration/compose.yaml` to the target tag's image and update its audit comment.
+- Move the Kaneo image digest in `integration/compose.yaml` to the target release's verified image and update its audit comment. Upstream uses `ghcr.io/usekaneo/kaneo:X.Y.Z`, stripping the release tag's leading `v` (unlike this CLI's own image tags). Set `UPSTREAM_TAG` to the selected release tag, then inspect `docker buildx imagetools inspect "ghcr.io/usekaneo/kaneo:${UPSTREAM_TAG#v}"` and its `--raw` manifest. Verify the manifest's required platform entries and release identity against upstream publication/source evidence; record the reported manifest digest and pin `ghcr.io/usekaneo/kaneo@sha256:...`, not the mutable tag. Failure to resolve or verify the manifest stops the refresh; never guess a digest or keep an unrelated old pin.
 - Update the consumer skill `skills/kaneo-cli/SKILL.md` wherever commands, flags, recipes or behavior changed, plus `docs/cli-contract.md` and any other affected docs.
 - Update the operation count and evidence links in `release/readiness.json` (`public-api`), and the count everywhere it is stated as current: `AGENTS.md`, `README.md`, `docs/implementation.md`, `docs/cli-contract.md` and the release header in `.goreleaser.yaml`. `git grep -nE "\b<old count>\b"` finds stragglers; dated entries in `docs/verification.md` are history and keep their numbers.
 - Record discrepancies (source URL, revision, endpoint, observed behavior, impact) per `AGENTS.md`; upstream defects left unfixed go in `docs/reported_bugs/`.
@@ -84,7 +99,7 @@ Tests defend behavior, not source text or mock forwarding. For every new or chan
 
 ## 7. Release and Homebrew. A release is not done until brew serves it
 
-1. Watch the `main` CI run for the merge commit: `gh run list --workflow CI --branch main --commit <merge-sha> --json databaseId --jq '.[0].databaseId'`, then `gh run watch <id> --exit-status` (use `ci-triage <id>` on failure). It tags `vX.Y.Z`, publishes archives, packages and the container image, then opens `chore(homebrew): update kaneo-cli vX.Y.Z`. A failure after publication follows the recovery section of `docs/releases.md`. Never re-tag, clobber or rerun blindly.
+1. Watch the `main` CI run for the merge commit: `gh run list --workflow CI --branch main --commit <merge-sha> --json databaseId --jq '.[0].databaseId'`, then `gh run watch <id> --exit-status` (use `ci-triage <id>` on failure). It tags `vX.Y.Z`, publishes archives, packages and the container image, then opens `chore(homebrew): update kaneo-cli vX.Y.Z`. For a transient dependency-download failure before publication, first inspect logs and prove remote tag/release/image absence as required by `docs/releases.md`, then `gh run rerun <id> --failed` without moving refs or changing dependency/action/artifact pins. Any publication or ambiguous state follows the existing after-publication recovery rules there. Never re-tag, clobber or rerun blindly.
 2. Find the Formula PR by its branch: `gh pr list --head chore/homebrew-vX.Y.Z --state open` (a title search does not match `chore(homebrew)`). Verify every `sha256` in its `Formula/kaneo-cli.rb` against the release's `kaneo-cli_X.Y.Z_checksums.txt` by exact filename. Compare parsed values in a script, not by eyeballing shell output. All four must match; a mismatch stops the run.
 3. Merge the Formula PR, then `brew update` and `brew info foae/kaneo-cli/kaneo-cli` must report the new stable version. If `kaneo-cli` is brew-installed here, `brew upgrade kaneo-cli` and confirm `kaneo-cli version`.
 

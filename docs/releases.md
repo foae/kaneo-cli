@@ -57,6 +57,19 @@ Only after GitHub artifacts are published does it push `ghcr.io/foae/kaneo-cli:v
 
 On first publication GitHub can create the package as private. The owner must make that package public in its GitHub package settings. The workflow checks anonymous registry access after attestation and fails if the documented public image is inaccessible; it does not silently accept authenticated-only success. No long-lived token or automatic settings change is used.
 
+### Transient failure before publication
+
+A dependency-download timeout or registry/network error is not itself evidence that nothing was published. First inspect the failed job and its logs (`gh run view RUN_ID --log-failed`), identify the exact verified commit and planned tag, and establish that the failure occurred before publication. Independently check remote state:
+
+```sh
+gh api repos/foae/kaneo-cli/git/ref/tags/vX.Y.Z
+gh api repos/foae/kaneo-cli/releases/tags/vX.Y.Z
+```
+
+Both lookups must establish absence (HTTP 404 with authenticated repository access confirmed); transport, authorization and rate-limit failures do not prove absence. Also use the release workflow's scoped registry absence check for the versioned image; an existing image or inconclusive lookup stops this path. If no remote tag, release or image was published and the logs confirm a transient dependency-download failure, rerun only the failed CI jobs with `gh run rerun RUN_ID --failed`. Keep the original commit, refs, dependency versions, action pins and artifact/image pins unchanged. Do not move a tag, push a replacement commit, loosen checks or change pins to make a transient download pass.
+
+This path is only for proven pre-publication failure. If any publication occurred or state is ambiguous, use the conservative recovery rules below instead; do not blindly rerun publication.
+
 A same-tag retry is intentionally conservative. The workflow checks completeness even when HEAD is already tagged and the release planner proposes no new version. `release/recover.sh <tag> <expected-commit>` requires the expected commit locally, checks the remote tag's peeled commit and refuses a different SHA. It downloads and verifies every expected asset against the checksum manifest. For commits containing `release/container.sh`, completeness additionally requires all four native packages, the recorded container digest, and matching registry content. Earlier releases retain their six-archive contract. Missing or conflicting state fails closed; the workflow does not move tags, overwrite assets or retry publication.
 
 For ambiguous partial publication, stop automatic retries. Preserve the tag and failed-run evidence. Repair only independently verified missing artifacts in an unpublished draft through a reviewed one-off action, never overwrite/clobber options. [Published immutable releases cannot accept additional assets](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository#editing-a-release); a published release missing an archive/package requires a new reviewed version. A GitHub release with a missing container requires a reviewed image publication from the exact tagged source and verified released binaries, followed by recording and attesting its digest. If a tag points at a wrong SHA or existing content conflicts, abandon that version; never retag it. There is no atomic rollback across GitHub Releases and GHCR.

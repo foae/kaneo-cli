@@ -28,8 +28,8 @@ func inventoryOperations(t *testing.T) []inventoryOperation {
 	if err := json.Unmarshal(raw, &doc); err != nil {
 		t.Fatalf("parse inventory: %v", err)
 	}
-	// The source inventory deliberately stays faithful to OpenAPI. Apply only
-	// separately reviewed CLI parameters from provenance when checking coverage.
+	// The source inventory deliberately stays faithful to OpenAPI. Add omitted
+	// parameters or replace incomplete constraints with reviewed provenance.
 	raw, err = os.ReadFile(filepath.Join("..", "..", "api", "provenance.json"))
 	if err != nil {
 		t.Fatalf("read provenance: %v", err)
@@ -43,7 +43,19 @@ func inventoryOperations(t *testing.T) []inventoryOperation {
 	for i := range doc.Operations {
 		for _, supplement := range provenance.Supplements {
 			if supplement.OperationID == doc.Operations[i].OperationID {
-				doc.Operations[i].Parameters = append(doc.Operations[i].Parameters, supplement.Parameters...)
+				for _, param := range supplement.Parameters {
+					replaced := false
+					for j, existing := range doc.Operations[i].Parameters {
+						if existing.In == param.In && existing.Name == param.Name {
+							doc.Operations[i].Parameters[j] = param
+							replaced = true
+							break
+						}
+					}
+					if !replaced {
+						doc.Operations[i].Parameters = append(doc.Operations[i].Parameters, param)
+					}
+				}
 			}
 		}
 	}

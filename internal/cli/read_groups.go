@@ -421,7 +421,8 @@ var readSpecs = []readSpec{
 			{name: "type", in: paramQuery, flag: "type", enum: []string{"all", "tasks", "projects", "workspaces", "comments", "activities"}},
 			{name: "workspaceId", in: paramQuery, flag: "workspace-id", required: true, minLen: 1},
 			{name: "projectId", in: paramQuery, flag: "project-id"},
-			{name: "limit", in: paramQuery, flag: "limit"},
+			// The OpenAPI omits the source-enforced range; see global_search_limit in api/provenance.json.
+			{name: "limit", in: paramQuery, flag: "limit", numeric: true, bounded: true, minimum: 1, maximum: 50, help: "Maximum results (server default 20; no pagination)"},
 			{name: "userEmail", in: paramQuery, flag: "user-email"},
 		},
 	},

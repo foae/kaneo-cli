@@ -1,6 +1,6 @@
 # Authentication and named profiles
 
-**Implemented locally:** named profiles, keyring-first credential storage with a warned plaintext fallback, API-key input, the RFC 8628 device flow and local logout. The pinned API baseline does not expose a server-side revocation endpoint, so `auth logout` only removes the local credential. Source: [official authentication guide](https://kaneo.app/docs/api-reference/authentication), pinned alongside the API baseline. Kaneo documents API keys and device authorization (the RFC 8628 device-code grant); `kaneo-cli` is a documented default client ID. Self-hosted administrators can restrict allowed client IDs.
+**Implemented locally:** named profiles, keyring-first credential storage with a warned plaintext fallback, API-key input, the RFC 8628 device flow and local logout. `auth logout` only removes local credentials; server session revocation is a separate operation described below. Source: [official authentication guide](https://kaneo.app/docs/api-reference/authentication), pinned alongside the API baseline. Kaneo documents API keys and device authorization (the RFC 8628 device-code grant); `kaneo-cli` is a documented default client ID. Self-hosted administrators can restrict allowed client IDs.
 
 ## Profiles and precedence
 
@@ -16,9 +16,20 @@ Local `profile list`, `profile use`, `profile set`, `profile delete`, and `auth 
 
 `KANEO_TOKEN` is an invocation-only credential override; do not persist it. Persistent API keys are accepted via stdin or a protected file (`auth login --api-key-file PATH`, or `-` for stdin), not a token argument in shell history. Device login explicitly stores the resulting token in the selected profile. An explicit login also binds the profile's stored API URL to the URL the credential was obtained from. `auth logout` and `profile delete` remove stored credentials and require `--yes`. Public operations (`instance get-status`, `config get`) do not load or transmit a stored credential; `auth get-session` does. Document the source of effective settings without revealing values of secrets.
 
-Use `os.UserConfigDir` for configuration, atomic updates and platform-appropriate locking for concurrent changes. Store no credential in the nonsecret configuration file. Do not write config or create directories just to run help/version. Keep profile names out of filesystem path construction. Local profile deletion removes only that profile's associated credential; no server-side revocation is exposed by the pinned API.
+Use `os.UserConfigDir` for configuration, atomic updates and platform-appropriate locking for concurrent changes. Store no credential in the nonsecret configuration file. Do not write config or create directories just to run help/version. Keep profile names out of filesystem path construction. Local profile deletion removes only that profile's associated credentials; it does not revoke a server session.
 
 Bind credentials to both profile and normalized API URL. The CLI accepts only HTTP(S) API bases, trims surrounding whitespace, lowercases scheme and host, removes a default port and one trailing slash, and preserves the base path. It neither probes URLs nor changes a dashboard or proxy URL into an API URL: supply the API base yourself (normally including `/api`) and never append `/api` twice. Changing an origin or API base path requires explicit reauthentication/rebinding; do not transplant old tokens. Redirects must never forward credentials across origins. Logout removes local credentials reliably from the actual active backend; don't leave a plaintext fallback behind after keyring migration.
+
+### Revoke another server session
+
+With the intended profile and instance selected, list sessions and identify the exact other session to revoke:
+
+```sh
+kaneo-cli user list-sessions
+kaneo-cli user revoke-session --session-id "$SESSION_ID" --yes
+```
+
+Revocation is destructive: obtain authorization for that session before using `--yes`. These commands require a user session, not an API key (HTTP 403). The pinned API forbids revoking the current session (HTTP 409); do not retry it or substitute another session. `auth logout --yes` and `profile delete NAME --yes` remain local removal only, not server revocation. These session commands do not establish an API-key revocation mechanism.
 
 ## Storage policy chosen for this project
 
