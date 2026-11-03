@@ -12,21 +12,6 @@ import (
 	"testing"
 )
 
-// fullyCoveredOperations names the operations outside the generic write table
-// that are nonetheless implemented, so the coverage
-// check can account for every pinned operation.
-var fullyCoveredOperations = map[string]string{
-	"getSession":                 "packet 1",
-	"getConfig":                  "packet 1",
-	"getInstanceStatus":          "packet 1",
-	"getDeviceAuthorizationPage": "dedicated browser URL handoff",
-	"authorizeMcpOAuthClient":    "dedicated browser URL handoff",
-	"createTaskImageUpload":      "dedicated task create-image-upload",
-	"stageTaskAssetUpload":       "dedicated task stage-asset-upload",
-	"uploadUserAvatar":           "dedicated user upload-avatar",
-	"uploadProjectBackground":    "dedicated project create-background-upload",
-}
-
 func TestWriteSpecsMatchInventory(t *testing.T) {
 	ops := inventoryOperations(t)
 	byID := make(map[string]inventoryOperation, len(ops))

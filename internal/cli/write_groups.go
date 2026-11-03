@@ -3,8 +3,8 @@ package cli
 // Mutating operation table for packet 3 coverage, derived from
 // api/operations.json (the pinned OpenAPI inventory). write_ops_test.go fails
 // if this table drifts from the inventory or leaves a non-GET operation
-// uncovered. Two presigned/base64 upload operations use dedicated commands and
-// are listed in fullyCoveredOperations; browser-navigation GET operations use
+// uncovered. File-backed upload operations use dedicated commands and are
+// listed in fullyCoveredOperations; browser-navigation GET operations use
 // dedicated URL-handoff commands.
 
 // writeSpecs maps every implemented mutating operation to a CLI command.
@@ -1139,9 +1139,10 @@ var writeSpecs = []writeSpec{
 		group: "admin", action: "add-workspace-member",
 		short:       "Add a user to a workspace",
 		operationID: "addAdminWorkspaceMember", method: "POST",
-		path:  "/admin/workspaces/{workspaceId}/members",
-		body:  true,
-		notes: "Requires an instance administrator session token; API keys are rejected. The member starts with access to every project.",
+		path:        "/admin/workspaces/{workspaceId}/members",
+		body:        true,
+		destructive: true,
+		notes:       "Requires the workspaces:manage instance permission and a user session; API keys are rejected. The member starts with access to every project.",
 		params: []readParam{
 			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
 		},
@@ -1152,7 +1153,7 @@ var writeSpecs = []writeSpec{
 		operationID: "removeAdminWorkspaceMember", method: "DELETE",
 		path:        "/admin/workspaces/{workspaceId}/members/{userId}",
 		destructive: true,
-		notes:       "Requires an instance administrator session token; API keys are rejected. Removes membership, not the user account.",
+		notes:       "Requires the workspaces:manage instance permission and a user session; API keys are rejected. Removes membership, not the user account.",
 		params: []readParam{
 			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
 			{name: "userId", in: paramPath, flag: "user-id", required: true},
@@ -1162,9 +1163,10 @@ var writeSpecs = []writeSpec{
 		group: "admin", action: "update-workspace-member-role",
 		short:       "Change a workspace member's role",
 		operationID: "updateAdminWorkspaceMemberRole", method: "PUT",
-		path:  "/admin/workspaces/{workspaceId}/members/{userId}/role",
-		body:  true,
-		notes: "Requires an instance administrator session token; API keys are rejected. Use transfer-workspace-ownership to make a member the owner.",
+		path:        "/admin/workspaces/{workspaceId}/members/{userId}/role",
+		body:        true,
+		destructive: true,
+		notes:       "Requires the workspaces:manage instance permission and a user session; API keys are rejected. Use transfer-workspace-ownership to make a member the owner.",
 		params: []readParam{
 			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
 			{name: "userId", in: paramPath, flag: "user-id", required: true},
@@ -1177,7 +1179,7 @@ var writeSpecs = []writeSpec{
 		path:        "/admin/workspaces/{workspaceId}/owner",
 		body:        true,
 		destructive: true,
-		notes:       "Requires an instance administrator session token; API keys are rejected. Makes an existing member the only owner; previous owners become admins.",
+		notes:       "Requires the workspaces:manage instance permission and a user session; API keys are rejected. Makes an existing member the only owner; previous owners become admins.",
 		params: []readParam{
 			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
 		},
@@ -1231,6 +1233,306 @@ var writeSpecs = []writeSpec{
 			{name: "projectId", in: paramPath, flag: "project-id", required: true, minLen: 1},
 			{name: "provider", in: paramPath, flag: "provider", required: true, enum: []string{"github", "gitea", "gitlab"}},
 			{name: "linkId", in: paramPath, flag: "link-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "archive-workspace",
+		short:       "Archive a workspace",
+		operationID: "archiveAdminWorkspace", method: "POST",
+		path:        "/admin/workspaces/{workspaceId}/archive",
+		destructive: true,
+		notes:       "Disable a workspace without deleting anything. Its members, API keys, MCP clients, public links, calendar feeds, notifications, and integrations stop working, and requests for it return 403 with the code WORKSPACE_ARCHIVED. Open realtime connections are closed. Restore it to undo. Requires the `workspaces:archive` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "admin", action: "create-user",
+		short:       "Create a user",
+		operationID: "createAdminUser", method: "POST",
+		path:        "/admin/users",
+		body:        true,
+		destructive: true,
+		notes:       "Create an account with an instance role. No password is set or returned. When password sign-in is available, the user is emailed a single-use link, valid for 2 days, to choose their own password. When password registration or the login form is disabled, the account is created with a verified email so the user can sign in with single sign-on, and no email is sent. Registration restrictions do not apply to administrators. Requires the `users:create` instance permission; API keys are rejected.",
+	},
+	{
+		group: "admin", action: "create-role",
+		short:       "Create a custom instance role",
+		operationID: "createInstanceRole", method: "POST",
+		path:        "/admin/roles",
+		body:        true,
+		destructive: true,
+		notes:       "Create a role that grants a set of instance permissions. Assign it to users by name. Requires the `roles:manage` permission, which only the built-in `admin` role has; API keys are rejected.",
+	},
+	{
+		group: "admin", action: "create-webhook",
+		short:       "Create an instance webhook",
+		operationID: "createInstanceWebhook", method: "POST",
+		path:        "/admin/webhooks",
+		body:        true,
+		destructive: true,
+		notes:       "The signing secret is returned once. URLs must resolve to public addresses (HTTPS in production). Requires the instance:settings instance permission and a user session. API keys are rejected. The CLI redacts the returned signing secret; it is never printed.",
+	},
+	{
+		group: "admin", action: "deactivate-user",
+		short:       "Deactivate a user",
+		operationID: "deactivateAdminUser", method: "POST",
+		path:        "/admin/users/{userId}/deactivate",
+		destructive: true,
+		notes:       "Block a user from signing in and end all of their sessions. Their data stays. Requires the `users:disable` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "delete-user",
+		short:       "Delete a user",
+		operationID: "deleteAdminUser", method: "DELETE",
+		path:        "/admin/users/{userId}",
+		destructive: true,
+		notes:       "Permanently delete a user's account, the same way they could themselves: workspaces where they are the only member are deleted, and they leave the others. Fails while they are the only owner of a workspace with other members. Requires the `users:delete` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "delete-workspace",
+		short:       "Delete a workspace",
+		operationID: "deleteAdminWorkspace", method: "DELETE",
+		path:        "/admin/workspaces/{workspaceId}",
+		destructive: true,
+		notes:       "Permanently delete a workspace and everything in it, archived or not, the same way its owner can: projects, tasks, members, invitations and uploaded files go, and open realtime connections are closed. The administrator does not need to be a member. Requires the `workspaces:delete` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "admin", action: "delete-role",
+		short:       "Delete a custom instance role",
+		operationID: "deleteInstanceRole", method: "DELETE",
+		path:        "/admin/roles/{roleId}",
+		destructive: true,
+		notes:       "Delete a role that no user has. Requires the `roles:manage` permission; API keys are rejected.",
+		params: []readParam{
+			{name: "roleId", in: paramPath, flag: "role-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "delete-webhook",
+		short:       "Delete an instance webhook",
+		operationID: "deleteInstanceWebhook", method: "DELETE",
+		path:        "/admin/webhooks/{webhookId}",
+		destructive: true,
+		notes:       "Requires the instance:settings instance permission and a user session. API keys are rejected.",
+		params: []readParam{
+			{name: "webhookId", in: paramPath, flag: "webhook-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "mark-user-email-verified",
+		short:       "Mark an email as verified",
+		operationID: "markAdminUserEmailVerified", method: "PUT",
+		path:        "/admin/users/{userId}/email-verified",
+		destructive: true,
+		notes:       "Mark a non-guest user's email address as verified without asking them, for example so a single sign-on identity with the same address can link to the account. Requires the `users:credentials` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "reactivate-user",
+		short:       "Reactivate a user",
+		operationID: "reactivateAdminUser", method: "POST",
+		path:        "/admin/users/{userId}/reactivate",
+		destructive: true,
+		notes:       "Let a deactivated user sign in again. Requires the `users:disable` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "remove-user-avatar",
+		short:       "Remove a user's avatar",
+		operationID: "removeAdminUserAvatar", method: "DELETE",
+		path:        "/admin/users/{userId}/avatar",
+		destructive: true,
+		notes:       "Remove the user's profile picture. A picture managed by the identity provider can't be removed, but an earlier Kaneo upload can. Requires the `users:update` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "restore-workspace",
+		short:       "Restore an archived workspace",
+		operationID: "restoreAdminWorkspace", method: "POST",
+		path:        "/admin/workspaces/{workspaceId}/restore",
+		destructive: true,
+		notes:       "Make an archived workspace usable again, with all of its data, members, and integrations as they were. Requires the `workspaces:archive` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "workspaceId", in: paramPath, flag: "workspace-id", required: true},
+		},
+	},
+	{
+		group: "admin", action: "revoke-user-api-key",
+		short:       "Revoke a user's API key",
+		operationID: "revokeAdminUserApiKey", method: "DELETE",
+		path:        "/admin/users/{userId}/api-keys/{apiKeyId}",
+		destructive: true,
+		notes:       "Delete a user's API key so it stops working immediately, and record it in the audit log. Requires the `users:api_keys` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1, maxLen: 200},
+			{name: "apiKeyId", in: paramPath, flag: "api-key-id", required: true, minLen: 1, maxLen: 200},
+		},
+	},
+	{
+		group: "admin", action: "revoke-user-session",
+		short:       "Sign out one of a user's sessions",
+		operationID: "revokeAdminUserSession", method: "DELETE",
+		path:        "/admin/users/{userId}/sessions/{sessionId}",
+		destructive: true,
+		notes:       "End one session immediately, including its realtime connections, and record it in the audit log. The administrator's own current session can't be ended here; sign out instead. Requires the `users:sessions` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1, maxLen: 200},
+			{name: "sessionId", in: paramPath, flag: "session-id", required: true, minLen: 1, maxLen: 200},
+		},
+	},
+	{
+		group: "admin", action: "revoke-user-sessions",
+		short:       "Sign out all of a user's sessions",
+		operationID: "revokeAdminUserSessions", method: "DELETE",
+		path:        "/admin/users/{userId}/sessions",
+		destructive: true,
+		notes:       "End every session of a user immediately, including realtime connections, and record it in the audit log. When administrators target themselves, their current session is kept. API keys keep working; revoke them separately. Requires the `users:sessions` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1, maxLen: 200},
+		},
+	},
+	{
+		group: "user", action: "revoke-session",
+		short:       "Sign out one of your sessions",
+		operationID: "revokeOwnSession", method: "DELETE",
+		path:        "/user/sessions/{sessionId}",
+		destructive: true,
+		notes:       "End another of the current user's sessions by id and close its realtime connections. To end every other session use better-auth's `POST /api/auth/revoke-other-sessions`; to end the current one, sign out.",
+		params: []readParam{
+			{name: "sessionId", in: paramPath, flag: "session-id", required: true, minLen: 1, maxLen: 200},
+		},
+	},
+	{
+		group: "admin", action: "rotate-webhook-secret",
+		short:       "Rotate a webhook signing secret",
+		operationID: "rotateInstanceWebhookSecret", method: "POST",
+		path:        "/admin/webhooks/{webhookId}/rotate-secret",
+		destructive: true,
+		notes:       "Returns the new secret once. Queued deliveries use the new secret. Requires the instance:settings instance permission and a user session. API keys are rejected. The CLI redacts the returned signing secret; it is never printed.",
+		params: []readParam{
+			{name: "webhookId", in: paramPath, flag: "webhook-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "send-test-email",
+		short:       "Send a test email",
+		operationID: "sendAdminTestEmail", method: "POST",
+		path:  "/admin/system/test-email",
+		notes: "Send a test email to the calling administrator's own address to check the SMTP settings. There is no recipient parameter. Limited to 5 per administrator every 10 minutes on each API instance. Requires the `system:read` instance permission; API keys are rejected.",
+	},
+	{
+		group: "admin", action: "send-user-password-reset",
+		short:       "Email a password reset link",
+		operationID: "sendAdminUserPasswordReset", method: "POST",
+		path:        "/admin/users/{userId}/password-reset-email",
+		destructive: true,
+		notes:       "Email the user a single-use link to choose a new password, using the regular reset lifetime. The link is never returned to the administrator. Requires the `users:credentials` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "send-user-verification-email",
+		short:       "Email a verification link",
+		operationID: "sendAdminUserVerificationEmail", method: "POST",
+		path:  "/admin/users/{userId}/verification-email",
+		notes: "Email the user a link, valid for 24 hours, that confirms their email address. The link is never returned to the administrator. Requires the `users:credentials` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "test-webhook",
+		short:       "Queue a test webhook delivery",
+		operationID: "testInstanceWebhook", method: "POST",
+		path:  "/admin/webhooks/{webhookId}/test",
+		notes: "Queues a webhook.test event regardless of selected categories. Requires the instance:settings instance permission and a user session. API keys are rejected.",
+		params: []readParam{
+			{name: "webhookId", in: paramPath, flag: "webhook-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "update-user",
+		short:       "Update a user",
+		operationID: "updateAdminUser", method: "PATCH",
+		path:        "/admin/users/{userId}",
+		body:        true,
+		destructive: true,
+		notes:       "Change a user's name, email, or instance role. A new email must be verified again. You can't change your own role or remove the last administrator. Requires the `users:update` instance permission; API keys are rejected.",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "external-link", action: "update-task",
+		short:       "Update a manual link",
+		operationID: "updateExternalLink", method: "PATCH",
+		path:  "/external-link/task/{taskId}/{id}",
+		body:  true,
+		notes: "Change the title of a manually added link, or the status of a manually added pull request link. Integration-managed links cannot be changed through this endpoint.",
+		params: []readParam{
+			{name: "taskId", in: paramPath, flag: "task-id", required: true},
+			{name: "id", in: paramPath, flag: "id", required: true},
+		},
+	},
+	{
+		group: "admin", action: "update-role",
+		short:       "Update a custom instance role",
+		operationID: "updateInstanceRole", method: "PUT",
+		path:        "/admin/roles/{roleId}",
+		body:        true,
+		destructive: true,
+		notes:       "Rename a role or replace its permissions. Users who have it keep it under the new name, and permission changes apply to their next request. Requires the `roles:manage` permission; API keys are rejected.",
+		params: []readParam{
+			{name: "roleId", in: paramPath, flag: "role-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "update-settings",
+		short:       "Update instance settings",
+		operationID: "updateInstanceSettings", method: "PATCH",
+		path:        "/admin/settings",
+		body:        true,
+		destructive: true,
+		notes:       "Change one or more instance-wide settings. Other API instances apply a change within a few seconds. Requires the `instance:settings` instance permission; API keys are rejected.",
+	},
+	{
+		group: "admin", action: "update-webhook",
+		short:       "Update an instance webhook",
+		operationID: "updateInstanceWebhook", method: "PUT",
+		path:        "/admin/webhooks/{webhookId}",
+		body:        true,
+		destructive: true,
+		notes:       "Requires the instance:settings instance permission and a user session. API keys are rejected.",
+		params: []readParam{
+			{name: "webhookId", in: paramPath, flag: "webhook-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "task", action: "update-recurrence",
+		short:       "Update task recurrence",
+		operationID: "updateTaskRecurrence", method: "PUT",
+		path:  "/task/recurrence/{id}",
+		body:  true,
+		notes: "Make a task repeat, or stop it repeating. Setting a rule requires task:update and task:create; clearing it requires task:update. When a repeating task moves into a final column, the next task is created in the project's first open column with its dates moved forward one interval from the completed task's due date, and the rule moves to that new task. A completed task cannot start repeating: reopen it, or set the rule on its next task.",
+		params: []readParam{
+			{name: "id", in: paramPath, flag: "id", required: true},
 		},
 	},
 }

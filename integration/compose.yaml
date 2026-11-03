@@ -1,5 +1,5 @@
 # Disposable acceptance environment only. Never deploy these test credentials.
-# Pins audited 2026-10-25 (Kaneo 2.47.0); image identity is not API-spec compatibility proof.
+# Pins audited 2026-11-03 (Kaneo 2.49.0); image identity is not API-spec compatibility proof.
 services:
   postgres:
     image: postgres:18.6-alpine3.24@sha256:898c60cb390d1085bc97bdd6a1ae968757421df394b071848b52b1c09c89d6a5
@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 30
   kaneo:
-    image: ghcr.io/usekaneo/kaneo@sha256:3df62194406061d9a162409b4c08d8af5225e423ce813d509694cea616ac9d23
+    image: ghcr.io/usekaneo/kaneo@sha256:cd1826b1aba3ce736015cadf6f6c975d923aac00f4b6aaa7aedb29bc722dae49
     ports:
       - "127.0.0.1:15173:5173"
       - "127.0.0.1:19000:19000"
@@ -27,6 +27,8 @@ services:
       POSTGRES_USER: kaneo
       POSTGRES_PASSWORD: local-acceptance-only
       AUTH_SECRET: local-acceptance-only-not-for-production-0123456789abcdef
+      # Synthetic key enables encrypted notification/webhook acceptance only.
+      NOTIFICATION_SECRET_ENCRYPTION_KEY: local-acceptance-encryption-only-not-for-production
       DEVICE_AUTH_CLIENT_IDS: kaneo-cli
       DISABLE_EMAIL_OTP_SIGN_IN: "true"
       S3_ENDPOINT: http://localhost:19000

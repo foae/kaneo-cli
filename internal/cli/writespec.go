@@ -32,8 +32,8 @@ type writeSpec struct {
 	params      []readParam
 	// body marks an operation with a documented JSON request body.
 	body bool
-	// destructive marks a delete/remove/revoke/reset-equivalent operation that
-	// requires --yes before any request.
+	// destructive marks an operation that deletes data, revokes credentials,
+	// or changes access/security settings and requires --yes before any request.
 	destructive bool
 	// public marks an operation whose documented security is empty.
 	public bool
@@ -156,6 +156,8 @@ func (a *app) runWrite(cmd *cobra.Command, spec writeSpec) error {
 // exactly one request is made and the caller decides whether to repeat it.
 func writeMutationResult(out io.Writer, resp *client.Response, operation string) error {
 	switch operation {
+	case "createInstanceWebhook", "rotateInstanceWebhookSecret":
+		return writeRedactedJSON(out, resp, "secret")
 	case "updateGitlabIntegration":
 		return writeRedactedJSON(out, resp, "webhookSecret")
 	case "bulkUpdateTasks", "importTasks", "importGitHubIssues", "importGiteaIssues", "importGitlabIssues":
