@@ -4,7 +4,7 @@ description: Manage Kaneo workspaces, projects, tasks, board columns, and commen
 license: MIT
 compatibility: Requires the separately installed kaneo-cli and network access to the user's Kaneo instance. Stable CLI versions also make a best-effort GitHub update check on the version command. Shell examples use POSIX syntax; adapt filesystem operations to the host.
 metadata:
-  version: "4.0.1"
+  version: "5.0.0"
 ---
 
 # Kaneo CLI
@@ -26,7 +26,7 @@ API successes are JSON on stdout, without a wrapper; no-content success has empt
 
 ## Credentials and JSON bodies
 
-Prefer credentials already configured by the user. `KANEO_TOKEN` is an invocation-only override: obtain it through an approved secret manager or environment, never literal command arguments, chat, logs, or checked-in files. Persistent login accepts `auth login --api-key-file PATH` (or `-` for stdin); only perform login when requested. The OS keyring is preferred; the CLI warns if it falls back to unencrypted local storage. Do not silently accept that storage tradeoff for the user. `auth logout` is local credential removal only; the pinned API exposes no server-side revocation endpoint.
+Prefer credentials already configured by the user. `KANEO_TOKEN` is an invocation-only override: obtain it through an approved secret manager or environment, never literal command arguments, chat, logs, or checked-in files. Persistent login accepts `auth login --api-key-file PATH` (or `-` for stdin); only perform login when requested. The OS keyring is preferred; the CLI warns if it falls back to unencrypted local storage. Do not silently accept that storage tradeoff for the user. `auth logout` is local credential removal only. For authorized server-side session revocation, discover IDs with `user list-sessions` and use `user revoke-session --session-id ID --yes` for another session; the current session cannot be revoked this way (HTTP 409).
 
 Unencrypted-storage and credential-bearing HTTP warnings are remembered across CLI invocations, not repeated on every call. Silence is not evidence of encryption: use HTTPS and an OS keyring for that. New profiles or destinations warn independently; restoring the keyring resets the fallback-storage warning. Do not print environment contents or credential files. Use `user get-current` (on Kaneo 2.28 and later) or `auth get-session` only if identity verification is needed; the CLI redacts `session.token` from the latter's output, so both responses are safe to read for identity, but still do not indiscriminately paste responses around. Never dump full HTTP responses for debugging. Browser handoff commands print a URL; exit zero does not mean authorization completed.
 
@@ -119,7 +119,7 @@ printf '%s' "$comment_body" | kaneo-cli comment create-task --task-id "$TASK_ID"
 
 Post only evidence actually obtained. Read comments back if verification is needed.
 
-To attach a web link to a task, `external-link create --task-id "$TASK_ID"` takes `{"url":...,"title":...}` (an HTTP or HTTPS URL; `title` optional, at most 200 characters). `external-link list-task` returns manual links alongside integration-managed ones; `external-link delete` removes only manual links and requires `--yes`.
+To attach a web link to a task, `external-link create --task-id "$TASK_ID"` takes `{"url":...,"title":...}` (an HTTP or HTTPS URL; `title` optional, at most 200 characters). A pull-request link additionally takes `resourceType: "pull_request"` and `metadata` with `state: "open"|"closed"`, optional `merged` and `draft` booleans. `external-link update-task --task-id ... --id ... --body-file ...` edits a manual link's title or pull-request status metadata. `external-link list-task` returns manual links alongside integration-managed ones; update/delete cannot edit integration-managed links, and `external-link delete` requires `--yes`.
 
 ## Relations, labels, and task transfer
 
@@ -214,7 +214,7 @@ Use `task list-assigned --workspace-id "$WORKSPACE_ID"` for your assigned open t
 
 `workspace get-my-project-access` and `workspace list-project-access` expose access restrictions. `workspace update-member-project-access --workspace-id ... --user-id ... --yes --body-file ...` accepts `projectAccess: "all"` or `"selected"` plus `projectIds`. Selected access can hide projects, tasks, and activity; never interpret invisibility as deletion. Invitations accept the same access fields, and invitation reads return them.
 
-Instance administrators can use `admin list-workspaces` (`--search`, `--page`, `--limit`), `list-workspace-members`, `list-workspace-roles`, `add-workspace-member`, `update-workspace-member-role`, `remove-workspace-member`, and `transfer-workspace-ownership`. These require an administrator **session**, not an API key. Removal and ownership transfer require `--yes`; ownership transfer makes the chosen existing member the sole owner and demotes former owners to admins.
+Instance administrators and delegated instance roles can use `admin list-workspaces` (`--search`, `--page`, `--limit`), `list-workspace-members`, `list-workspace-roles`, `add-workspace-member`, `update-workspace-member-role`, `remove-workspace-member`, and `transfer-workspace-ownership`. These require a **session**, not an API key, and the relevant `workspaces:read` or `workspaces:manage` instance permission. Membership mutations require `--yes`; ownership transfer makes the chosen existing member the sole owner and demotes former owners to admins.
 
 ## Kaneo 2.46 discovery and imports
 
@@ -239,6 +239,20 @@ Error contracts changed: missing resources can now return HTTP 404 (`not_found`)
 `workflow-rule upsert-project` accepts only the Kaneo event types `branch_push`, `pr_opened`, `pr_merged`, `issue_opened`, `issue_closed` and `issue_reopened`; provider event names such as `pull_request.opened` return HTTP 400. `task import` accepts an assignable user's ID or email address in `userId` (emails match case-insensitively).
 
 `mcp start-authorization --state` no longer has a 1024-character limit. The server still rejects an authorization URL over 8 KiB with HTTP 414.
+
+## Kaneo 2.49 permissions and administration
+
+Existing project, task, label and integration reads enforce read permissions and API-key scope in addition to membership. Notifications and ticket lookups also filter by current resource access. Empty or hidden results do not establish deletion. A new HTTP 403 calls for an authorized permission review, never automatic privilege escalation or credential switching. Comment edits/deletes additionally require `task:update`; archived workspaces are omitted from ordinary workspace lists and inaccessible until an authorized restore.
+
+Use `admin get-access` to inspect instance capabilities. `admin` also offers `get-overview`, `get-settings`, `get-system-status`, `list-audit-log`, user lifecycle and credential/session management, workspace archive/restore/delete, instance roles and webhooks. These are administrative operations, not ordinary task work: act only on explicitly authorized targets. Read command help for the permission and body. Admin routes reject API keys; role mutations require the built-in admin's `roles:manage`, and webhooks require `instance:settings`. `admin list-users` can filter `--status`, `--role` and `--email-verified`. Pagination is explicit via `--page`/`--limit`.
+
+Access-changing administration requires `--yes`, including new users/roles/webhooks, settings updates and the existing membership add/role-update commands. `admin set-user-avatar --user-id ID --file PATH` uses the same 512 KiB image limit as `user upload-avatar`; provider-managed pictures can return HTTP 403. `admin create-webhook` and `rotate-webhook-secret` redact `secret` rather than expose a signing credential. SMTP delivery and webhook delivery are not proven by a queued response: inspect the result and delivery records.
+
+`task-relation list-project --project-id ID` reads project-wide relations. `task create` accepts a recurrence rule, and `task update-recurrence --id ID --body-file ...` sets `{"recurrence":{"frequency":"weekly","interval":1,"timeZone":"Europe/Bucharest","weekdays":[1]}}` or clears with `{"recurrence":null}`. Frequencies are daily/weekly/monthly/yearly, interval is 1–99, weekdays 0–6 apply only to weekly rules, and the time zone must be an IANA name. Setting requires task create and update permissions; clearing requires update. On completion the server creates a successor in the first open column, advances dates from the due date and moves the rule to it. Read back the successor; do not create it yourself. A completed task cannot start repeating.
+
+The completion response can retain stale recurrence metadata. Re-read the task or board for post-completion state rather than interpreting that response as proof the completed task still repeats.
+
+`custom-field update` accepts `hiddenOptions`, a subset of `options`, to retire choices while preserving existing selections. Hidden choices cannot be selected anew or used as defaults. Omit the field to keep the still-valid hidden choices; send an empty array only when unhiding is authorized.
 
 ## Integration synchronization
 

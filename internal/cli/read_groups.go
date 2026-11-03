@@ -526,6 +526,15 @@ var readSpecs = []readSpec{
 		},
 	},
 	{
+		group: "task-relation", action: "list-project",
+		short:       "Get relations between tasks in a project",
+		operationID: "getProjectTaskRelations",
+		path:        "/task-relation/project/{projectId}",
+		params: []readParam{
+			{name: "projectId", in: paramPath, flag: "project-id", required: true},
+		},
+	},
+	{
 		group: "task-relation", action: "list-task",
 		short:       "Get task relations",
 		operationID: "getTaskRelations",
@@ -625,19 +634,99 @@ var readSpecs = []readSpec{
 		},
 	},
 	{
+		group: "admin", action: "get-access",
+		short:       "Get your instance permissions (user session required)",
+		operationID: "getAdminAccess",
+		path:        "/admin/access",
+	},
+	{
+		group: "admin", action: "get-overview",
+		short:       "Get the administration overview (user session required)",
+		operationID: "getAdminOverview",
+		path:        "/admin/overview",
+	},
+	{
+		group: "admin", action: "get-system-status",
+		short:       "Get system status (system:read permission required)",
+		operationID: "getAdminSystemStatus",
+		path:        "/admin/system",
+	},
+	{
+		group: "admin", action: "get-settings",
+		short:       "Get instance settings (instance:settings permission required)",
+		operationID: "getInstanceSettings",
+		path:        "/admin/settings",
+	},
+	{
+		group: "admin", action: "list-audit-log",
+		short:       "List administrative actions (audit:read permission required)",
+		operationID: "listAdminAuditLog",
+		path:        "/admin/audit-log",
+		params: []readParam{
+			{name: "action", in: paramQuery, flag: "action", maxLen: 100, pattern: `^[a-z_]+(\.[a-z_]+)?$`, help: "Exact action such as user.deleted, or a category such as user"},
+			{name: "actorId", in: paramQuery, flag: "actor-id", maxLen: 200, help: "Only entries performed by this user ID"},
+			{name: "targetType", in: paramQuery, flag: "target-type", maxLen: 100, help: "Only entries about this kind of target, such as user"},
+			{name: "targetId", in: paramQuery, flag: "target-id", maxLen: 200, help: "Only entries about this target ID"},
+			{name: "page", in: paramQuery, flag: "page", numeric: true, bounded: true, minimum: 1, maximum: 1000000},
+			{name: "limit", in: paramQuery, flag: "limit", numeric: true, bounded: true, minimum: 1, maximum: 100},
+		},
+	},
+	{
+		group: "admin", action: "list-user-api-keys",
+		short:       "List user API key metadata (users:api_keys permission required)",
+		operationID: "listAdminUserApiKeys",
+		path:        "/admin/users/{userId}/api-keys",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1, maxLen: 200},
+		},
+	},
+	{
+		group: "admin", action: "list-user-sessions",
+		short:       "List user sessions (users:sessions permission required)",
+		operationID: "listAdminUserSessions",
+		path:        "/admin/users/{userId}/sessions",
+		params: []readParam{
+			{name: "userId", in: paramPath, flag: "user-id", required: true, minLen: 1, maxLen: 200},
+		},
+	},
+	{
+		group: "admin", action: "list-roles",
+		short:       "List custom instance roles (users:read permission required)",
+		operationID: "listInstanceRoles",
+		path:        "/admin/roles",
+	},
+	{
+		group: "admin", action: "list-webhook-deliveries",
+		short:       "List recent webhook deliveries (instance:settings permission required)",
+		operationID: "listInstanceWebhookDeliveries",
+		path:        "/admin/webhooks/{webhookId}/deliveries",
+		params: []readParam{
+			{name: "webhookId", in: paramPath, flag: "webhook-id", required: true, minLen: 1},
+		},
+	},
+	{
+		group: "admin", action: "list-webhooks",
+		short:       "List instance webhooks (instance:settings permission required)",
+		operationID: "listInstanceWebhooks",
+		path:        "/admin/webhooks",
+	},
+	{
 		group: "admin", action: "list-users",
-		short:       "List instance users",
+		short:       "List instance users (users:read permission required)",
 		operationID: "listAdminUsers",
 		path:        "/admin/users",
 		params: []readParam{
 			{name: "search", in: paramQuery, flag: "search", maxLen: 200, help: "Case-insensitive match against user name or email"},
+			{name: "status", in: paramQuery, flag: "status", enum: []string{"active", "deactivated"}, help: "Only active or only deactivated accounts"},
+			{name: "role", in: paramQuery, flag: "role", minLen: 1, maxLen: 64, help: "Instance role: admin, a custom role name, or user"},
+			{name: "emailVerified", in: paramQuery, flag: "email-verified", enum: []string{"true", "false"}, help: "Filter by email verification"},
 			{name: "page", in: paramQuery, flag: "page", numeric: true, bounded: true, minimum: 1, maximum: 1000000},
 			{name: "limit", in: paramQuery, flag: "limit", numeric: true, bounded: true, minimum: 1, maximum: 100},
 		},
 	},
 	{
 		group: "admin", action: "list-workspaces",
-		short:       "List instance workspaces (administrator session required)",
+		short:       "List instance workspaces (workspaces:read permission required)",
 		operationID: "listAdminWorkspaces",
 		path:        "/admin/workspaces",
 		params: []readParam{
@@ -648,7 +737,7 @@ var readSpecs = []readSpec{
 	},
 	{
 		group: "admin", action: "list-workspace-members",
-		short:       "List workspace members (administrator session required)",
+		short:       "List workspace members (workspaces:read permission required)",
 		operationID: "listAdminWorkspaceMembers",
 		path:        "/admin/workspaces/{workspaceId}/members",
 		params: []readParam{
@@ -657,7 +746,7 @@ var readSpecs = []readSpec{
 	},
 	{
 		group: "admin", action: "list-workspace-roles",
-		short:       "List assignable workspace roles (administrator session required)",
+		short:       "List assignable workspace roles (workspaces:read permission required)",
 		operationID: "listAdminWorkspaceRoles",
 		path:        "/admin/workspaces/{workspaceId}/roles",
 		params: []readParam{
@@ -709,6 +798,12 @@ var readSpecs = []readSpec{
 		short:       "Get current user",
 		operationID: "getCurrentUser",
 		path:        "/user/me",
+	},
+	{
+		group: "user", action: "list-sessions",
+		short:       "List your active sessions (user session required)",
+		operationID: "listOwnSessions",
+		path:        "/user/sessions",
 	},
 	{
 		group: "workspace", action: "get-my-project-access",

@@ -2,7 +2,7 @@
 
 # API operation inventory
 
-This inventory contains 221 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `d2ee146f46e81d42342065a7fefddd02b6868d9057b80713c5c6f7991f6449af`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
+This inventory contains 262 operations from [`api/openapi.json`](../../api/openapi.json) (SHA-256 `6b88e87292655e3b4b7d2f8455a2b1d1def042eaa464a628cb26e668cf3a3875`). Each entry is mapped to a CLI command with a coverage status: `implemented` commands have runnable behavior, `planned` commands are design references only.
 
 Detailed request schemas, query/path parameters, effective security, and responses are in the generated [`api/operations.json`](../../api/operations.json). Schema references resolve against the pinned OpenAPI snapshot.
 
@@ -56,12 +56,48 @@ JSON body (required):
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
 | `admin add-workspace-member` | `POST` | `/admin/workspaces/{workspaceId}/members` | `addAdminWorkspaceMember` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409, 429 |
-| `admin list-users` | `GET` | `/admin/users` | `listAdminUsers` | `implemented` | 3 |  | 200, 400, 401, 403, 429 |
+| `admin archive-workspace` | `POST` | `/admin/workspaces/{workspaceId}/archive` | `archiveAdminWorkspace` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429 |
+| `admin create-role` | `POST` | `/admin/roles` | `createInstanceRole` | `implemented` | 0 | yes | 201, 400, 401, 403, 409, 429 |
+| `admin create-user` | `POST` | `/admin/users` | `createAdminUser` | `implemented` | 0 | yes | 201, 400, 401, 403, 409, 429 |
+| `admin create-webhook` | `POST` | `/admin/webhooks` | `createInstanceWebhook` | `implemented` | 0 | yes | 201, 400, 401, 403, 404, 409, 429 |
+| `admin deactivate-user` | `POST` | `/admin/users/{userId}/deactivate` | `deactivateAdminUser` | `implemented` | 1 |  | 200, 400, 401, 403, 404, 429 |
+| `admin delete-role` | `DELETE` | `/admin/roles/{roleId}` | `deleteInstanceRole` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429 |
+| `admin delete-user` | `DELETE` | `/admin/users/{userId}` | `deleteAdminUser` | `implemented` | 1 |  | 200, 400, 401, 403, 404, 409, 429 |
+| `admin delete-webhook` | `DELETE` | `/admin/webhooks/{webhookId}` | `deleteInstanceWebhook` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
+| `admin delete-workspace` | `DELETE` | `/admin/workspaces/{workspaceId}` | `deleteAdminWorkspace` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429 |
+| `admin get-access` | `GET` | `/admin/access` | `getAdminAccess` | `implemented` | 0 |  | 200, 401, 403, 429 |
+| `admin get-overview` | `GET` | `/admin/overview` | `getAdminOverview` | `implemented` | 0 |  | 200, 401, 403, 429 |
+| `admin get-settings` | `GET` | `/admin/settings` | `getInstanceSettings` | `implemented` | 0 |  | 200, 401, 403, 429 |
+| `admin get-system-status` | `GET` | `/admin/system` | `getAdminSystemStatus` | `implemented` | 0 |  | 200, 401, 403, 429 |
+| `admin list-audit-log` | `GET` | `/admin/audit-log` | `listAdminAuditLog` | `implemented` | 6 |  | 200, 400, 401, 403, 429 |
+| `admin list-roles` | `GET` | `/admin/roles` | `listInstanceRoles` | `implemented` | 0 |  | 200, 401, 403, 429 |
+| `admin list-user-api-keys` | `GET` | `/admin/users/{userId}/api-keys` | `listAdminUserApiKeys` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
+| `admin list-user-sessions` | `GET` | `/admin/users/{userId}/sessions` | `listAdminUserSessions` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
+| `admin list-users` | `GET` | `/admin/users` | `listAdminUsers` | `implemented` | 6 |  | 200, 400, 401, 403, 429 |
+| `admin list-webhook-deliveries` | `GET` | `/admin/webhooks/{webhookId}/deliveries` | `listInstanceWebhookDeliveries` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
+| `admin list-webhooks` | `GET` | `/admin/webhooks` | `listInstanceWebhooks` | `implemented` | 0 |  | 200, 401, 403, 404, 429 |
 | `admin list-workspace-members` | `GET` | `/admin/workspaces/{workspaceId}/members` | `listAdminWorkspaceMembers` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
 | `admin list-workspace-roles` | `GET` | `/admin/workspaces/{workspaceId}/roles` | `listAdminWorkspaceRoles` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
 | `admin list-workspaces` | `GET` | `/admin/workspaces` | `listAdminWorkspaces` | `implemented` | 3 |  | 200, 400, 401, 403, 429 |
+| `admin mark-user-email-verified` | `PUT` | `/admin/users/{userId}/email-verified` | `markAdminUserEmailVerified` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429 |
+| `admin reactivate-user` | `POST` | `/admin/users/{userId}/reactivate` | `reactivateAdminUser` | `implemented` | 1 |  | 200, 400, 401, 403, 404, 429 |
+| `admin remove-user-avatar` | `DELETE` | `/admin/users/{userId}/avatar` | `removeAdminUserAvatar` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
 | `admin remove-workspace-member` | `DELETE` | `/admin/workspaces/{workspaceId}/members/{userId}` | `removeAdminWorkspaceMember` | `implemented` | 2 |  | 200, 401, 403, 404, 409, 429 |
+| `admin restore-workspace` | `POST` | `/admin/workspaces/{workspaceId}/restore` | `restoreAdminWorkspace` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429 |
+| `admin revoke-user-api-key` | `DELETE` | `/admin/users/{userId}/api-keys/{apiKeyId}` | `revokeAdminUserApiKey` | `implemented` | 2 |  | 200, 401, 403, 404, 429 |
+| `admin revoke-user-session` | `DELETE` | `/admin/users/{userId}/sessions/{sessionId}` | `revokeAdminUserSession` | `implemented` | 2 |  | 200, 401, 403, 404, 409, 429 |
+| `admin revoke-user-sessions` | `DELETE` | `/admin/users/{userId}/sessions` | `revokeAdminUserSessions` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
+| `admin rotate-webhook-secret` | `POST` | `/admin/webhooks/{webhookId}/rotate-secret` | `rotateInstanceWebhookSecret` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429 |
+| `admin send-test-email` | `POST` | `/admin/system/test-email` | `sendAdminTestEmail` | `implemented` | 0 |  | 200, 401, 403, 409, 429, 502 |
+| `admin send-user-password-reset` | `POST` | `/admin/users/{userId}/password-reset-email` | `sendAdminUserPasswordReset` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429, 502, 503 |
+| `admin send-user-verification-email` | `POST` | `/admin/users/{userId}/verification-email` | `sendAdminUserVerificationEmail` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429, 502, 503 |
+| `admin set-user-avatar` | `PUT` | `/admin/users/{userId}/avatar` | `setAdminUserAvatar` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 413, 429 |
+| `admin test-webhook` | `POST` | `/admin/webhooks/{webhookId}/test` | `testInstanceWebhook` | `implemented` | 1 |  | 202, 401, 403, 404, 409, 429 |
 | `admin transfer-workspace-ownership` | `PUT` | `/admin/workspaces/{workspaceId}/owner` | `transferAdminWorkspaceOwnership` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 429 |
+| `admin update-role` | `PUT` | `/admin/roles/{roleId}` | `updateInstanceRole` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409, 429 |
+| `admin update-settings` | `PATCH` | `/admin/settings` | `updateInstanceSettings` | `implemented` | 0 | yes | 200, 400, 401, 403, 409, 429 |
+| `admin update-user` | `PATCH` | `/admin/users/{userId}` | `updateAdminUser` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409, 429 |
+| `admin update-webhook` | `PUT` | `/admin/webhooks/{webhookId}` | `updateInstanceWebhook` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 429 |
 | `admin update-workspace-member-role` | `PUT` | `/admin/workspaces/{workspaceId}/members/{userId}/role` | `updateAdminWorkspaceMemberRole` | `implemented` | 2 | yes | 200, 400, 401, 403, 404, 409, 429 |
 
 ### `admin add-workspace-member` request
@@ -75,6 +111,45 @@ JSON body (required):
   userId (required): string (min length: 1)
 ```
 
+### `admin create-role` request
+
+```text
+JSON body (required):
+  name (required): string — Lowercase letters, digits and hyphens, starting with a letter. `admin` and `user` are reserved.
+  permissions (required): array<string (one of: "users:read", "users:create", "users:update", "users:disable", "users:delete", "users:credentials", "users:sessions", "users:api_keys", "workspaces:read", "workspaces:manage", "workspaces:archive", "workspaces:delete", "audit:read", "system:read", "instance:settings")> (max items: 30) — Instance permissions the role grants. `roles:manage` belongs to the built-in admin role only.
+    items: string (one of: "users:read", "users:create", "users:update", "users:disable", "users:delete", "users:credentials", "users:sessions", "users:api_keys", "workspaces:read", "workspaces:manage", "workspaces:archive", "workspaces:delete", "audit:read", "system:read", "instance:settings")
+```
+
+### `admin create-user` request
+
+```text
+JSON body (required):
+  email (required): string (format: email) (max length: 254) — The new user's email address. They sign in with it and receive their password link there.
+  name (required): string (min length: 1, max length: 200)
+  role (optional): string (min length: 1, max length: 64) — Instance role, as for updates. Defaults to the instance's default role for new users.
+```
+
+### `admin create-webhook` request
+
+```text
+JSON body (required):
+  categories (required): array<string (one of: "user", "session", "api_key", "workspace", "role", "instance", "email", "webhook")> (min items: 1, max items: 8)
+    items: string (one of: "user", "session", "api_key", "workspace", "role", "instance", "email", "webhook")
+  enabled (required): boolean
+  url (required): string (format: uri) (max length: 2048)
+```
+
+### `admin set-user-avatar` request
+
+Path parameters (not JSON body fields):
+- `userId` (required): string (min length: 1)
+
+```text
+JSON body (required):
+  contentType (required): string (max length: 64) — One of image/png, image/jpeg, or image/webp.
+  data (required): string (max length: 700076) — Base64 encoded image bytes.
+```
+
 ### `admin transfer-workspace-ownership` request
 
 Path parameters (not JSON body fields):
@@ -83,6 +158,57 @@ Path parameters (not JSON body fields):
 ```text
 JSON body (required):
   userId (required): string (min length: 1) — An existing member who becomes the only owner. Previous owners become admins.
+```
+
+### `admin update-role` request
+
+Path parameters (not JSON body fields):
+- `roleId` (required): string (min length: 1)
+
+```text
+JSON body (required):
+  name (required): string — Lowercase letters, digits and hyphens, starting with a letter. `admin` and `user` are reserved.
+  permissions (required): array<string (one of: "users:read", "users:create", "users:update", "users:disable", "users:delete", "users:credentials", "users:sessions", "users:api_keys", "workspaces:read", "workspaces:manage", "workspaces:archive", "workspaces:delete", "audit:read", "system:read", "instance:settings")> (max items: 30) — Instance permissions the role grants. `roles:manage` belongs to the built-in admin role only.
+    items: string (one of: "users:read", "users:create", "users:update", "users:disable", "users:delete", "users:credentials", "users:sessions", "users:api_keys", "workspaces:read", "workspaces:manage", "workspaces:archive", "workspaces:delete", "audit:read", "system:read", "instance:settings")
+```
+
+### `admin update-settings` request
+
+```text
+JSON body (required):
+  defaultRole (optional): string (min length: 1, max length: 64) — Instance role for new users: `user` or a custom role name, never `admin`. You can only choose a role whose permissions you have.
+  disabledIntegrations (optional): array<string> (max items: 32) — Integration provider types to turn off. Their connections stop syncing and delivering, and projects can't connect them.
+    items: string
+  instanceName (optional): string or null (max length: 60) — Shown in page titles and email headers and subjects. Empty or null restores Kaneo.
+  passwordRegistrationEnabled (optional): boolean — When false, new accounts must use a social or OIDC provider. Locked when `DISABLE_PASSWORD_REGISTRATION=true`.
+  registrationEnabled (optional): boolean — When false, only people with a valid invitation can create an account. Locked when `DISABLE_REGISTRATION=true`.
+  requireEmailVerification (optional): boolean — New password sign-ups must confirm their email before they can sign in. Requires email delivery.
+  workspaceCreationRestricted (optional): boolean — Only administrators can create workspaces. Locked when `DISABLE_WORKSPACE_CREATION=true`.
+```
+
+### `admin update-user` request
+
+Path parameters (not JSON body fields):
+- `userId` (required): string (min length: 1)
+
+```text
+JSON body (required):
+  email (optional): string (format: email) (max length: 254) — A new address must be verified again. It can't belong to another user.
+  name (optional): string (min length: 1, max length: 200)
+  role (optional): string (min length: 1, max length: 64) — Instance role: `admin` administers the instance, `user` has no instance permissions, or the name of a custom role. Only administrators can assign `admin`, and nobody can assign a role with permissions they don't have.
+```
+
+### `admin update-webhook` request
+
+Path parameters (not JSON body fields):
+- `webhookId` (required): string (min length: 1)
+
+```text
+JSON body (required):
+  categories (required): array<string (one of: "user", "session", "api_key", "workspace", "role", "instance", "email", "webhook")> (min items: 1, max items: 8)
+    items: string (one of: "user", "session", "api_key", "workspace", "role", "instance", "email", "webhook")
+  enabled (required): boolean
+  url (required): string (format: uri) (max length: 2048)
 ```
 
 ### `admin update-workspace-member-role` request
@@ -273,6 +399,8 @@ Path parameters (not JSON body fields):
 ```text
 JSON body (required):
   defaultValue (optional): string or null — Value new tasks start with. Send `null` or an empty string to clear it. Multiselect defaults are a JSON array of options.
+  hiddenOptions (optional): array<string> — Options to retire without removing them: tasks keep their existing selections, but hidden options can't be picked anew or used as the default. Must be a subset of `options`. Omit to keep the current hidden options that are still options.
+    items: string
   name (optional): string — New name for the field. Cannot be blank.
   options (optional): array<string> — The full option list for dropdown and multiselect fields, in display order. Adding and reordering options is always allowed. Removing or renaming an option that a task still uses is rejected with 400, so task values are never changed silently.
     items: string
@@ -333,6 +461,7 @@ JSON body (required):
 | `external-link create` | `POST` | `/external-link/task/{taskId}` | `createExternalLink` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 429 |
 | `external-link delete` | `DELETE` | `/external-link/task/{taskId}/{id}` | `deleteExternalLink` | `implemented` | 2 |  | 200, 400, 401, 403, 404, 429 |
 | `external-link list-task` | `GET` | `/external-link/task/{taskId}` | `getExternalLinksByTask` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
+| `external-link update-task` | `PATCH` | `/external-link/task/{taskId}/{id}` | `updateExternalLink` | `implemented` | 2 | yes | 200, 400, 401, 403, 404, 429 |
 
 ### `external-link create` request
 
@@ -341,8 +470,28 @@ Path parameters (not JSON body fields):
 
 ```text
 JSON body (required):
+  metadata (optional): object — Pull request status. Only accepted for `pull_request` links.
+    draft (optional): boolean (default: false)
+    merged (optional): boolean (default: false)
+    state (required): string (one of: "open", "closed")
+  resourceType (optional): string (one of: "url", "pull_request") (default: "url") — `url` for a resource link, or `pull_request` to show the link as a pull request with its status
   title (optional): string (max length: 200)
   url (required): string (format: uri) — An HTTP or HTTPS URL
+```
+
+### `external-link update-task` request
+
+Path parameters (not JSON body fields):
+- `taskId` (required): string
+- `id` (required): string
+
+```text
+JSON body (required):
+  metadata (optional): object — Pull request status. Only accepted for `pull_request` links.
+    draft (optional): boolean (default: false)
+    merged (optional): boolean (default: false)
+    state (required): string (one of: "open", "closed")
+  title (optional): string (max length: 200)
 ```
 
 ## gitea
@@ -714,7 +863,7 @@ JSON body (required):
 | `label detach-task` | `DELETE` | `/label/{id}/task` | `detachLabelFromTask` | `implemented` | 1 |  | 200, 400, 401, 403, 404, 429 |
 | `label get` | `GET` | `/label/{id}` | `getLabel` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
 | `label list-task` | `GET` | `/label/task/{taskId}` | `getTaskLabels` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
-| `label list-workspace` | `GET` | `/label/workspace/{workspaceId}` | `getWorkspaceLabels` | `implemented` | 1 |  | 200, 401, 404, 429 |
+| `label list-workspace` | `GET` | `/label/workspace/{workspaceId}` | `getWorkspaceLabels` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
 | `label update` | `PUT` | `/label/{id}` | `updateLabel` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409, 429 |
 
 ### `label attach-task` request
@@ -1190,7 +1339,7 @@ JSON body (required):
 | `project get-public` | `GET` | `/public-project/{id}` | `getPublicProject` | `implemented` | 11 |  | 200, 400, 403, 404, 503 |
 | `project get-public-description` | `GET` | `/public-project/{id}/description` | `getPublicProjectDescriptionPage` | `implemented` | 3 |  | 200, 400, 404, 409, 503 |
 | `project get-public-task-description` | `GET` | `/public-project/{id}/task/{taskId}/description` | `getPublicTaskDescriptionPage` | `implemented` | 4 |  | 200, 400, 404, 409, 503 |
-| `project list` | `GET` | `/project` | `listProjects` | `implemented` | 2 |  | 200, 400, 401, 404, 429 |
+| `project list` | `GET` | `/project` | `listProjects` | `implemented` | 2 |  | 200, 400, 401, 403, 404, 429 |
 | `project move` | `PUT` | `/project/{id}/move` | `moveProject` | `implemented` | 1 | yes | 200, 400, 401, 402, 403, 404, 409, 429 |
 | `project reorder` | `PUT` | `/project/reorder` | `reorderProjects` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 429 |
 | `project unarchive` | `PUT` | `/project/{id}/unarchive` | `unarchiveProject` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429 |
@@ -1261,7 +1410,7 @@ JSON body (required):
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `search global` | `GET` | `/search` | `globalSearch` | `implemented` | 6 |  | 200, 400, 401, 404, 429 |
+| `search global` | `GET` | `/search` | `globalSearch` | `implemented` | 6 |  | 200, 400, 401, 403, 404, 429 |
 
 ## slack
 
@@ -1336,6 +1485,7 @@ JSON body (required):
 | `task update-description` | `PUT` | `/task/description/{id}` | `updateTaskDescription` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 429 |
 | `task update-due-date` | `PUT` | `/task/due-date/{id}` | `updateTaskDueDate` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 429 |
 | `task update-priority` | `PUT` | `/task/priority/{id}` | `updateTaskPriority` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 429 |
+| `task update-recurrence` | `PUT` | `/task/recurrence/{id}` | `updateTaskRecurrence` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 409, 429 |
 | `task update-status` | `PUT` | `/task/status/{id}` | `updateTaskStatus` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 429 |
 | `task update-title` | `PUT` | `/task/title/{id}` | `updateTaskTitle` | `implemented` | 1 | yes | 200, 400, 401, 403, 404, 429 |
 
@@ -1365,6 +1515,12 @@ JSON body (required):
     items: string
   dueDate (optional): string
   priority (required): string (one of: "no-priority", "low", "medium", "high", "urgent")
+  recurrence (optional): object
+    frequency (required): string (one of: "daily", "weekly", "monthly", "yearly")
+    interval (required): integer (minimum: 1, maximum: 99) — Repeat every this many days, weeks, months, or years.
+    timeZone (required): string — IANA time zone used to keep the next due date on the same local day and time.
+    weekdays (optional): array<integer (minimum: 0, maximum: 6)> (min items: 1, max items: 7) — Weekly rules only: the days to repeat on, 0 for Sunday to 6 for Saturday. Without them, a weekly rule repeats on the due date's weekday.
+      items: integer (minimum: 0, maximum: 6)
   startDate (optional): string
   status (required): string — The target column's slug.
   title (required): string
@@ -1521,6 +1677,25 @@ JSON body (required):
   priority (required): string (one of: "no-priority", "low", "medium", "high", "urgent")
 ```
 
+### `task update-recurrence` request
+
+Path parameters (not JSON body fields):
+- `id` (required): string
+
+```text
+JSON body (required):
+  recurrence (required): one of: object | null — Null stops the task from repeating.
+    one of:
+      option 1:
+        frequency (required): string (one of: "daily", "weekly", "monthly", "yearly")
+        interval (required): integer (minimum: 1, maximum: 99) — Repeat every this many days, weeks, months, or years.
+        timeZone (required): string — IANA time zone used to keep the next due date on the same local day and time.
+        weekdays (optional): array<integer (minimum: 0, maximum: 6)> (min items: 1, max items: 7) — Weekly rules only: the days to repeat on, 0 for Sunday to 6 for Saturday. Without them, a weekly rule repeats on the due date's weekday.
+          items: integer (minimum: 0, maximum: 6)
+      option 2:
+        value: null
+```
+
 ### `task update-status` request
 
 Path parameters (not JSON body fields):
@@ -1547,6 +1722,7 @@ JSON body (required):
 | --- | --- | --- | --- | --- | ---: | --- | --- |
 | `task-relation create` | `POST` | `/task-relation` | `createTaskRelation` | `implemented` | 0 | yes | 200, 400, 401, 403, 404, 409, 429 |
 | `task-relation delete` | `DELETE` | `/task-relation/{id}` | `deleteTaskRelation` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
+| `task-relation list-project` | `GET` | `/task-relation/project/{projectId}` | `getProjectTaskRelations` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
 | `task-relation list-task` | `GET` | `/task-relation/{taskId}` | `getTaskRelations` | `implemented` | 1 |  | 200, 401, 403, 404, 429 |
 
 ### `task-relation create` request
@@ -1643,10 +1819,12 @@ JSON body (required):
 
 | Command | Method | Path | Operation ID | Status | Parameters | Request body | Responses |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `user delete-avatar` | `DELETE` | `/user/avatar` | `deleteUserAvatar` | `implemented` | 0 |  | 200, 401, 429 |
+| `user delete-avatar` | `DELETE` | `/user/avatar` | `deleteUserAvatar` | `implemented` | 0 |  | 200, 401, 403, 429 |
 | `user download-avatar` | `GET` | `/user/avatar/{id}` | `getUserAvatar` | `implemented` | 1 |  | 200, 304, 404 |
 | `user get-current` | `GET` | `/user/me` | `getCurrentUser` | `implemented` | 0 |  | 200, 401, 404, 429 |
-| `user upload-avatar` | `PUT` | `/user/avatar` | `uploadUserAvatar` | `implemented` | 0 | yes | 200, 400, 401, 408, 413, 429 |
+| `user list-sessions` | `GET` | `/user/sessions` | `listOwnSessions` | `implemented` | 0 |  | 200, 401, 403, 429 |
+| `user revoke-session` | `DELETE` | `/user/sessions/{sessionId}` | `revokeOwnSession` | `implemented` | 1 |  | 200, 401, 403, 404, 409, 429 |
+| `user upload-avatar` | `PUT` | `/user/avatar` | `uploadUserAvatar` | `implemented` | 0 | yes | 200, 400, 401, 403, 408, 413, 429 |
 
 ### `user upload-avatar` request
 

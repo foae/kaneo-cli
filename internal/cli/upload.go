@@ -28,11 +28,16 @@ func (a *app) newUploadCommands() []groupedCommand {
 		{group: "project", cmd: a.newProjectBackgroundUploadCommand()},
 		{group: "task", cmd: a.newTaskImageUploadCommand()},
 		{group: "task", cmd: a.newTaskStagedUploadCommand()},
-		{group: "user", cmd: a.newUserUploadAvatarCommand()},
+		{group: "admin", cmd: a.newAvatarUploadCommand(true)},
+		{group: "user", cmd: a.newAvatarUploadCommand(false)},
 	}
 }
 
 func readBodyFile(path string) ([]byte, error) {
+	return readFileWithinLimit(path, maxRequestBody, "request body")
+}
+
+func readFileWithinLimit(path string, limit int, label string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, &processError{err: err}
@@ -46,15 +51,15 @@ func readBodyFile(path string) ([]byte, error) {
 	if !info.Mode().IsRegular() {
 		return nil, &usageError{err: fmt.Errorf("%q is not a regular file", path)}
 	}
-	if info.Size() > maxRequestBody {
-		return nil, &usageError{err: fmt.Errorf("request body exceeds %d bytes", maxRequestBody)}
+	if info.Size() > int64(limit) {
+		return nil, &usageError{err: fmt.Errorf("%s exceeds %d bytes", label, limit)}
 	}
-	data, err := io.ReadAll(io.LimitReader(file, maxRequestBody+1))
+	data, err := io.ReadAll(io.LimitReader(file, int64(limit)+1))
 	if err != nil {
 		return nil, &processError{err: err}
 	}
-	if len(data) > maxRequestBody {
-		return nil, &usageError{err: fmt.Errorf("request body exceeds %d bytes", maxRequestBody)}
+	if len(data) > limit {
+		return nil, &usageError{err: fmt.Errorf("%s exceeds %d bytes", label, limit)}
 	}
 	return data, nil
 }
@@ -314,21 +319,45 @@ func validateStorageURL(raw string) (string, error) {
 	return parsed.String(), nil
 }
 
-func (a *app) newUserUploadAvatarCommand() *cobra.Command {
+func (a *app) newAvatarUploadCommand(admin bool) *cobra.Command {
+	action, short := "upload-avatar", "Upload the current user's avatar"
+	if admin {
+		action, short = "set-user-avatar", "Set a user's avatar"
+	}
 	cmd := &cobra.Command{
-		Use:   "upload-avatar",
-		Short: "Upload the current user's avatar",
+		Use:   action,
+		Short: short,
 		Args:  noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return a.runUserUploadAvatar(cmd)
+			return a.runAvatarUpload(cmd, admin)
 		},
+	}
+	if admin {
+		cmd.Long = short + "\n\nRequires the users:update instance permission and a user session; API keys are rejected. Requires --yes. A picture managed by the identity provider cannot be changed."
+		cmd.Flags().String("user-id", "", "User ID (required)")
 	}
 	cmd.Flags().String("file", "", "Local image file, PNG/JPEG/WebP up to 512 KiB (required)")
 	cmd.Flags().String("content-type", "", "Image content type; defaults from the file extension")
 	return cmd
 }
 
-func (a *app) runUserUploadAvatar(cmd *cobra.Command) error {
+func (a *app) runAvatarUpload(cmd *cobra.Command, admin bool) error {
+	apiPath, operation := "/user/avatar", "uploadUserAvatar"
+	if admin {
+		userID, _ := cmd.Flags().GetString("user-id")
+		if err := validateParam(readParam{flag: "user-id", in: paramPath, minLen: 1}, userID); err != nil {
+			return &usageError{err: err}
+		}
+		var err error
+		apiPath, err = expandPath("/admin/users/{userId}/avatar", map[string]string{"userId": userID})
+		if err != nil {
+			return &processError{err: err}
+		}
+		operation = "setAdminUserAvatar"
+		if !a.flags.yes {
+			return &usageError{err: fmt.Errorf("refusing to run %s without --yes", operation)}
+		}
+	}
 	filePath, _ := cmd.Flags().GetString("file")
 	contentType, _ := cmd.Flags().GetString("content-type")
 	if filePath == "" {
@@ -342,12 +371,12 @@ func (a *app) runUserUploadAvatar(cmd *cobra.Command) error {
 	default:
 		return &usageError{err: errors.New("--content-type must be image/png, image/jpeg or image/webp")}
 	}
-	data, err := readBodyFile(filePath)
+	data, err := readFileWithinLimit(filePath, maxAvatarBytes, "avatar")
 	if err != nil {
 		return err
 	}
-	if len(data) > maxAvatarBytes {
-		return &usageError{err: fmt.Errorf("avatar exceeds %d bytes", maxAvatarBytes)}
+	if len(data) == 0 {
+		return &usageError{err: errors.New("avatar file is empty")}
 	}
 
 	body, err := json.Marshal(map[string]string{
@@ -369,10 +398,11 @@ func (a *app) runUserUploadAvatar(cmd *cobra.Command) error {
 	}
 	resp, err := apiClient.Do(ctx, client.Request{
 		Method:      "PUT",
-		Path:        "/user/avatar",
+		Path:        apiPath,
 		Body:        body,
 		ContentType: "application/json",
-		OperationID: "uploadUserAvatar",
+		OperationID: operation,
+		Sensitive:   true,
 	})
 	if err != nil {
 		return err
